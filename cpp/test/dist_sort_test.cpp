@@ -30,8 +30,7 @@ void testDistSort(const std::vector<int>& sort_cols,
                                      {0, 0, SortOptions::INITIAL_SAMPLE}));
 
   std::vector<std::shared_ptr<Table>> gathered;
-  CHECK_CYLON_STATUS(ctx->GetCommunicator()->Gather(out, /*root*/0, /*gather_from_root*/true,
-                                                    &gathered));
+  CHECK_CYLON_STATUS(ctx->GetCommunicator()->AllGather(out, &gathered));
 
   if (RANK == 0) {
     std::shared_ptr<Table> exp, result;
@@ -96,7 +95,6 @@ TEMPLATE_LIST_TEST_CASE("Dist sort testing", "[dist sort]", ArrowNumericTypes) {
       ctx, global_arrow_table->Slice(RANK * rows_per_tab, rows_per_tab),
       table1));
   std::shared_ptr<Table> global_table;
-  LOG(INFO) << "HERE!!!";
 
   CHECK_CYLON_STATUS(
       Table::FromArrowTable(ctx, global_arrow_table, global_table));
@@ -118,8 +116,8 @@ TEMPLATE_LIST_TEST_CASE("Dist sort testing", "[dist sort]", ArrowNumericTypes) {
       auto pool = cylon::ToArrowPool(ctx);
 
       std::shared_ptr<arrow::Table> arrow_empty_table;
-      auto arrow_status = util::CreateEmptyTable(table1->get_table()->schema(),
-                                                 &arrow_empty_table, pool);
+      REQUIRE(util::CreateEmptyTable(table1->get_table()->schema(),
+                                     &arrow_empty_table, pool).ok());
       auto empty_table = std::make_shared<Table>(ctx, arrow_empty_table);
       table1 = empty_table;
     }
@@ -127,15 +125,35 @@ TEMPLATE_LIST_TEST_CASE("Dist sort testing", "[dist sort]", ArrowNumericTypes) {
     std::shared_ptr<Table> out, out2;
     auto ctx = table1->GetContext();
     std::shared_ptr<arrow::Table> arrow_output;
-    auto status = DistributedSort(table1, {1, 0}, out, {0, 0});
-    REQUIRE(status.is_ok());
-    status = DistributedSort(table1, {1, 0}, out2, {0, 0},
-                    {0, 0, SortOptions::INITIAL_SAMPLE});
-    REQUIRE(status.is_ok());
+    CHECK_CYLON_STATUS(DistributedSort(table1, {1, 0}, out, {0, 0}));
+    CHECK_CYLON_STATUS(DistributedSort(table1, {1, 0}, out2, {0, 0},
+                                       {0, 0, SortOptions::INITIAL_SAMPLE}));
     bool eq;
-    status = DistributedEquals(out, out2, eq);
+    CHECK_CYLON_STATUS(DistributedEquals(out, out2, eq));
     REQUIRE(eq);
   }
+}
+
+TEMPLATE_LIST_TEST_CASE("Dist sort empty table", "[dist sort]", ArrowNumericTypes) {
+  auto type = default_type_instance<TestType>();
+  auto schema = arrow::schema({{arrow::field("a", type)},
+                               {arrow::field("b", arrow::float32())}});
+  auto empty_table = TableFromJSON(schema, {R"([])"});
+  std::shared_ptr<Table> table1;
+
+  CHECK_CYLON_STATUS(Table::FromArrowTable(ctx, empty_table, table1));
+  bool eq;
+
+  std::shared_ptr<Table> out;
+  // todo: check this for regular sampling! https://github.com/cylondata/cylon/issues/611
+//  CHECK_CYLON_STATUS(DistributedSort(table1, {1, 0}, out, {0, 0}));
+//  CHECK_CYLON_STATUS(DistributedEquals(table1, out, eq));
+//  REQUIRE(eq);
+
+  CHECK_CYLON_STATUS(DistributedSort(table1, {1, 0}, out, {0, 0},
+                                     {0, 0, SortOptions::INITIAL_SAMPLE}));
+  CHECK_CYLON_STATUS(Equals(table1, out, eq));
+  REQUIRE(eq);
 }
 
 TEST_CASE("Binary search testing", "[binary search]") {

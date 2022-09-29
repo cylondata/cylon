@@ -22,8 +22,40 @@
 #include "cylon/ctx/cylon_context.hpp"
 #include "test_utils.hpp"
 
+#ifdef BUILD_CYLON_GLOO
+#include "cylon/net/gloo/gloo_communicator.hpp"
+#endif
+
+#ifdef BUILD_CYLON_UCX
+#include "cylon/net/ucx/ucx_communicator.hpp"
+#endif
+
+std::string COMM_ARG;
+
 namespace cylon {
 namespace test {
+
+std::shared_ptr<net::CommConfig> MakeConfig(MPI_Comm comm){
+  if (COMM_ARG == "mpi") {
+    LOG(INFO) << "Using MPI";
+    return net::MPIConfig::Make(comm);
+  }
+
+#ifdef BUILD_CYLON_GLOO
+  if (COMM_ARG == "gloo-mpi") {
+    LOG(INFO) << "Using Gloo with MPI";
+    return net::GlooConfig::MakeWithMpi(comm);
+  }
+#endif
+
+#ifdef BUILD_CYLON_UCX
+  if (COMM_ARG == "ucx") {
+    LOG(INFO) << "Using UCX with MPI";
+    return net::UCXConfig::Make(comm);
+  }
+#endif
+  return nullptr;
+}
 
 TEST_CASE("custom mpi communicator") {
   MPI_Init(nullptr, nullptr);
@@ -48,9 +80,10 @@ TEST_CASE("custom mpi communicator") {
     MPI_Comm new_comm;
     REQUIRE(MPI_Comm_split(MPI_COMM_WORLD, color, l_rank, &new_comm) == MPI_SUCCESS);
 
-    auto mpi_config = cylon::net::MPIConfig::Make(new_comm);
+    auto config = MakeConfig(new_comm);
+    REQUIRE(config);
     std::shared_ptr<cylon::CylonContext> ctx;
-    REQUIRE(cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok());
+    REQUIRE(cylon::CylonContext::InitDistributed(config, &ctx).is_ok());
 
     REQUIRE(l_rank == ctx->GetRank());
     if (color == 0) {
@@ -67,8 +100,9 @@ TEST_CASE("custom mpi communicator") {
     color = rank / 2; // [0, 0, 1, 1]
     REQUIRE(MPI_Comm_split(MPI_COMM_WORLD, color, l_rank, &new_comm) == MPI_SUCCESS);
 
-    mpi_config = cylon::net::MPIConfig::Make(new_comm);
-    REQUIRE(cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok());
+    config = MakeConfig(new_comm);
+    REQUIRE(config);
+    REQUIRE(cylon::CylonContext::InitDistributed(config, &ctx).is_ok());
 
     REQUIRE(l_rank == ctx->GetRank());
     REQUIRE(ctx->GetWorldSize() == 2);
@@ -95,9 +129,8 @@ TEST_CASE("custom mpi communicator") {
 
 int main(int argc, char *argv[]) {
   Catch::Session session;
-  std::string comm_args = "mpi";
 
-  auto cli = session.cli() | Catch::clara::Opt(comm_args, "mpi|gloo-mpi|ucc")["--comm"]("comm args");
+  auto cli = session.cli() | Catch::clara::Opt(COMM_ARG, "mpi|gloo-mpi|ucx")["--comm"]("comm args");
 
   // Now pass the new composite back to Catch2 so it uses that
   session.cli(cli);
@@ -107,6 +140,6 @@ int main(int argc, char *argv[]) {
   if (returnCode != 0) // Indicates a command line error
     return returnCode;
 
-  LOG(INFO) << "comm args: " << comm_args;
+  LOG(INFO) << "comm args: " << COMM_ARG;
   return session.run();
 }

@@ -86,6 +86,7 @@ def read_csv(filepath: str, use_threads=True, names=None, sep=",", block_size: i
 
     return DataFrame(table)
 
+
 class CylonEnv(object):
 
     def __init__(self, config=None, distributed=True) -> None:
@@ -117,6 +118,7 @@ class CylonEnv(object):
     def barrier(self):
         self._context.barrier()
 
+
 class GroupByDataFrame(object):
     def __init__(self, df: DataFrame, by=None, groupby_type: str = 'hash') -> None:
         super().__init__()
@@ -126,7 +128,8 @@ class GroupByDataFrame(object):
         self.groupby_type = groupby_type
 
     def __do_groupby(self, op_dict) -> DataFrame:
-        return DataFrame(self.df.to_table().groupby(self.by, op_dict, groupby_type=self.groupby_type))
+        return DataFrame(
+            self.df.to_table().groupby(self.by, op_dict, groupby_type=self.groupby_type))
 
     def __apply_on_remaining_columns(self, op: str) -> DataFrame:
         op_dict = {}
@@ -299,7 +302,7 @@ class DataFrame(object):
                 data = data.rename(columns=columns)
             return data
         elif not data:
-            return cn.Table.from_pydict(context, {})    
+            return cn.Table.from_pydict(context, {})
         else:
             raise ValueError(f"Invalid data structure, {type(data)}")
 
@@ -397,13 +400,13 @@ class DataFrame(object):
             df._change_context(env)
             return self._table.distributed_equals(df._table, ordered)
 
-    def repartition(self, rows_per_partition, receive_build_rank_order=None, env: CylonEnv=None):
+    def repartition(self, rows_per_partition, receive_build_rank_order=None, env: CylonEnv = None):
         if env != None:
             self._change_context(env)
         df = DataFrame(self._table.repartition(rows_per_partition, receive_build_rank_order))
         return df
 
-    def evenly_partition(self, env: CylonEnv=None):
+    def evenly_partition(self, env: CylonEnv = None):
         if env != None:
             self._change_context(env)
         return self._table.evenly_partition()
@@ -441,7 +444,7 @@ class DataFrame(object):
             1      3      6
         """
         return self._table.iloc
-    
+
     def __len__(self):
         """
         This operator returns number of rows in the df.
@@ -459,7 +462,7 @@ class DataFrame(object):
 
         """
         return self._table.row_count
-    
+
     def set_index(self, key, indexing_type: IndexingType = IndexingType.LINEAR, drop: bool = False):
         """
         Set index of the pycylon DataFrame
@@ -484,8 +487,8 @@ class DataFrame(object):
 
         """
         return self._table.set_index(key, indexing_type, drop)
-    
-    @property 
+
+    @property
     def index(self):
         """
         Returns the index of the df.
@@ -503,7 +506,7 @@ class DataFrame(object):
 
         """
         return self._table.get_index()
-      
+
     def get_hash_object(self, index=True, encoding="utf8", hash_key=None, categorize=True):
         """
         Returns a data hash of the df.
@@ -525,13 +528,14 @@ class DataFrame(object):
         """
 
         pdf = self.to_pandas()
-        hashed_series = pd.util.hash_pandas_object(pdf, index=index, encoding=encoding, hash_key=hash_key, categorize=categorize)
-        hashed_pdf = hashed_series.to_frame() 
-        context = CylonContext(config=None, distributed=False) 
+        hashed_series = pd.util.hash_pandas_object(pdf, index=index, encoding=encoding,
+                                                   hash_key=hash_key, categorize=categorize)
+        hashed_pdf = hashed_series.to_frame()
+        context = CylonContext(config=None, distributed=False)
         return DataFrame(cn.Table.from_pandas(context, hashed_pdf))
-      
+
     @property
-    def values(self) -> np.ndarray: #pandas series.values and here should be same
+    def values(self) -> np.ndarray:  # pandas series.values and here should be same
         """
         Returns Numpy ndarray object representation of the df.
 
@@ -553,13 +557,13 @@ class DataFrame(object):
         if len(self.columns) >= 2:
             return self.to_numpy()
         else:
-            if len(self.columns)==0:
-                return np.empty(self.shape, dtype=float) 
+            if len(self.columns) == 0:
+                return np.empty(self.shape, dtype=float)
 
             dict = self.to_dict()
             col = self.columns[0]
             return np.array(list(dict[col]))
-          
+
     @property
     def dtypes(self):
         """
@@ -582,11 +586,11 @@ class DataFrame(object):
         types = schema.types
         i = 0
         for value in schema.names:
-            dict[value] = pa.DataType.to_pandas_dtype(types[i]) 
+            dict[value] = pa.DataType.to_pandas_dtype(types[i])
             i += 1
 
         return dict
-      
+
     def select_dtypes(self, include=None, exclude=None) -> DataFrame:
         """
         Return a subset of the df's columns based on the column dtypes.
@@ -648,9 +652,8 @@ class DataFrame(object):
             include = (include,) if include is not None else ()
         if not isinstance(exclude, (list, tuple)):
             exclude = (exclude,) if exclude is not None else ()
-            
+
         selection = (frozenset(include), frozenset(exclude))
-        
 
         if not any(selection):
             raise ValueError("at least one of include or exclude must be nonempty")
@@ -663,7 +666,8 @@ class DataFrame(object):
                 f"include and exclude overlap on {(include & exclude)}"
             )
 
-        def extract_unique_dtypes_from_dtypes_set(dtypes_set: FrozenSet[np.generic], unique_dtypes: np.ndarray) -> List[
+        def extract_unique_dtypes_from_dtypes_set(dtypes_set: FrozenSet[np.generic],
+                                                  unique_dtypes: np.ndarray) -> List[
             np.generic]:
             extracted_dtypes = [
                 unique_dtype
@@ -679,15 +683,14 @@ class DataFrame(object):
             ]
             return extracted_dtypes
 
-        #get unique dtypes from cylon df - set operation
+        # get unique dtypes from cylon df - set operation
         unique_set = set(self.dtypes.values())
         unique_dtypes = np.array(list(unique_set), dtype=object)
 
-
         if include:
             included_dtypes = extract_unique_dtypes_from_dtypes_set(include, unique_dtypes)
-            
-            extracted_columns=[
+
+            extracted_columns = [
                 column
                 for column, dtype in self.dtypes.items()
                 if dtype in included_dtypes
@@ -699,7 +702,7 @@ class DataFrame(object):
                 pass
             else:
                 excluded_dtypes = extract_unique_dtypes_from_dtypes_set(exclude, unique_dtypes)
-                
+
                 extracted_columns = [
                     column
                     for column, dtype in self.dtypes.items()
@@ -1628,66 +1631,43 @@ class DataFrame(object):
     def sort_values(
             self,
             by,
-            axis=0,
             ascending=True,
-            inplace=False,
-            kind="quicksort",
-            na_position="last",
-            ignore_index=False,
-            key=None,
-            num_samples: int = 0,
-            num_bins: int = 0,
-            env: CylonEnv = None
-    ) -> DataFrame:
+            env: CylonEnv = None,
+            **sort_options) -> DataFrame:
         """
-        Sort by the values along either axis.
+        Sort by the values along columns.
         Parameters
         ----------
-
-        axis : %(axes_single_arg)s, default 0
-             Axis to be sorted.
+        by : str or list of str
+            Name or list of names to sort by.
+                if axis is 0 or ‘index’ then by may contain index levels and/or column labels.
+                if axis is 1 or ‘columns’ then by may contain column levels and/or index labels.
         ascending : bool or list of bool, default True
              Sort ascending vs. descending. Specify list for multiple sort
              orders.  If this is a list of bools, must match the length of
              the by.
-        inplace(Unsupported) : bool, default False
-             If True, perform operation in-place.
-        kind(Unsupported) : {'quicksort', 'mergesort', 'heapsort', 'stable'}, default 'quicksort'
-             Choice of sorting algorithm. See also :func:`numpy.sort` for more
-             information. `mergesort` and `stable` are the only stable algorithms. For
-             DataFrames, this option is only applied when sorting on a single
-             column or label.
-        na_position(Unsupported) : {'first', 'last'}, default 'last'
-             Puts NaNs at the beginning if `first`; `last` puts NaNs at the
-             end.
-        ignore_index(Unsupported) : bool, default False
-             If True, the resulting axis will be labeled 0, 1, …, n - 1.
-             .. versionadded:: 1.0.0
-        key(Unsupported) : callable, optional
-            Apply the key function to the values
-            before sorting. This is similar to the `key` argument in the
-            builtin :meth:`sorted` function, with the notable difference that
-            this `key` function should be *vectorized*. It should expect a
-            ``Series`` and return a Series with the same shape as the input.
-            It will be applied to each column in `by` independently.
-            .. versionadded:: 1.1.0
-        num_samples: int, default 0
-            Number of samples to determine key distribution. Only used in a distributed env. Need to pass a
-            deterministic value common to every process. If num_samples == 0, the value would be handled internally.
-        num_bins: int, default 0
-            Number of bins in the histogram of the key distribution. Only used in a distributed env. Need to pass a
-            deterministic value common to every process. If num_bins == 0, the value would be handled internally.
         env: CylonEnv, default (None)
-            Execution environment used to distinguish between distributed and local operations. default None (local env)
+            Execution environment used to distinguish between distributed and local operations.
+            default None (local env)
+        sort_options:
+            Options to be passed to SortOptions class
+            ex:
+            sampling: str
+                Sampling algorithm. Choices {'initial', 'regular'} default 'initial'
+            num_samples: int, default 0
+                Number of samples to determine key distribution. Only used in a distributed env.
+                Need to pass a deterministic value common to every process. If num_samples == 0,
+                the value would be handled internally.
+            num_bins: int, default 0
+                Number of bins in the histogram of the key distribution. Only used in a distributed
+                env. Need to pass a deterministic value common to every process. If num_bins == 0,
+                the value would be handled internally.
 
         Returns
         -------
-        DataFrame or None
-            DataFrame with sorted values or None if ``inplace=True``.
-        See Also
-        --------
-        DataFrame.sort_index : Sort a DataFrame by the index.
-        Series.sort_values : Similar method for a Series.
+        DataFrame
+            DataFrame with sorted values
+
         Examples
         --------
         >>> df = DataFrame({
@@ -1735,7 +1715,7 @@ class DataFrame(object):
         if env is None:
             return DataFrame(self._table.sort(order_by=by, ascending=ascending))
         else:
-            sort_opts = SortOptions(num_bins=num_bins, num_samples=num_samples)
+            sort_opts = SortOptions(**sort_options)
             return DataFrame(
                 self._change_context(env)._table.distributed_sort(order_by=by, ascending=ascending,
                                                                   sort_options=sort_opts))
@@ -2166,7 +2146,8 @@ class DataFrame(object):
             return DataFrame(self._change_context(env)._table.distributed_unique(columns=subset,
                                                                                  inplace=inplace))
 
-    def groupby(self, by: Union[int, str, List], groupby_type="hash", env: CylonEnv = None) -> GroupByDataFrame:
+    def groupby(self, by: Union[int, str, List], groupby_type="hash",
+                env: CylonEnv = None) -> GroupByDataFrame:
         """
         A groupby operation involves some combination of splitting the object, applying a function, and combining the results. 
         This can be used to group large amounts of data and compute operations on these groups.
@@ -2307,6 +2288,7 @@ class DataFrame(object):
         1  11.262736  20.857489
         """
         return DataFrame(self._table.applymap(func))
+
 
 # -------------------- staticmethods ---------------------------
 
