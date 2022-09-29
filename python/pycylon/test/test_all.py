@@ -312,23 +312,10 @@ if os.environ.get('CYLON_GLOO') and os.environ.get('CYLON_UCC'):
         print("38. Create and destroy multiple environments in MPI")
         return os.system(
             f"{get_mpi_command()} -n 4 python -m pytest "
-            f"python/pycylon/test/test_mpi_multiple_env_init.py"))
-        assert responses[-1] == 0
+            f"python/pycylon/test/test_mpi_multiple_env_init.py")
 
 def test_dist_slice():
     print("39. Dist Slice Test")
-    responses.append(os.system(get_mpi_command() + " -n 4 python -m pytest --with-mpi "
-                                                   "python/pycylon/test/test_slice.py"))
-    assert responses[-1] == 0
+    return os.system(get_mpi_command() + " -n 4 python -m pytest --with-mpi "
+                                                   "python/pycylon/test/test_slice.py")
 
-
-def test_all():
-    ar = np.array(responses)
-    total = len(responses)
-    failed_count = sum(ar > 0)
-
-    if failed_count > 0:
-        print(f"{failed_count} of {total}  Tests Failed !!!")
-        assert False
-    else:
-        print("All Tests Passed!")
