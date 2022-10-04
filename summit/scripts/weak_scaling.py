@@ -22,8 +22,6 @@ def join(r, it=4, u=0.9):
     df1 = DataFrame(pd.DataFrame(data1).add_prefix("col"))
     df2 = DataFrame(pd.DataFrame(data2).add_prefix("col"))
 
-    print(env.rank, env.world_size)
-
     for i in range(it):
         env.barrier()
         t1 = time.time()
@@ -35,7 +33,7 @@ def join(r, it=4, u=0.9):
         tot_l = comm.reduce(len(df3))
 
         if env.rank == 0:
-            print("it", i, "t", sum_t / env.world_size, "l", tot_l)
+            print("w", env.world_size, "r", r, "it", i, "t", sum_t / env.world_size, "l", tot_l)
 
     env.finalize()
 
