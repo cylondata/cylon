@@ -45,8 +45,8 @@ if __name__ == "__main__":
     data.n = 1000000
     data.it = 10
     data.host = "summit"
-    StopWatch.start(f"join_summit_{n}_{it}")
+    StopWatch.start(f"join_{data.host}_{data.n}_{data.it}")
     join(data.n, it=data.it)
-    StopWatch.stop(f"join_summit_{n}_{it}")
+    StopWatch.stop(f"join_{data.host}_{data.n}_{data.it}")
     StopWatch.benchmark(msg=str(data))
 
