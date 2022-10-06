@@ -7,6 +7,8 @@ from pycylon.frame import CylonEnv, DataFrame
 from pycylon.net import MPIConfig
 from cloudmesh.common.StopWatch import StopWatch
 from cloudmesh.common.dotdict import dotdict
+from cloumesh.common.Shell import Shell
+
 
 
 def join(r, it=4, u=0.9, data=None):
@@ -43,12 +45,14 @@ def join(r, it=4, u=0.9, data=None):
 
 
 if __name__ == "__main__":
+
     data = dotdict()
+    data.branch = Shell.run("git branch | fgrep '*' ")
     data.n = 1000000
     data.it = 10
     data.host = "summit"
-    StopWatch.start(f"join_total_{data.host}_{data.n}_{data.it}")
+    StopWatch.start(f"join_{data.branch}_total_{data.host}_{data.n}_{data.it}")
     join(data.n, it=data.it, data=data)
-    StopWatch.stop(f"join_total_{data.host}_{data.n}_{data.it}")
+    StopWatch.stop(f"join_{data.branch}_total_{data.host}_{data.n}_{data.it}")
     StopWatch.benchmark(tag=str(data))
 
