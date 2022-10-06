@@ -41,9 +41,13 @@ CommType UCXConfig::Type() {
   return CommType::UCX;
 }
 
-std::shared_ptr<UCXConfig> UCXConfig::Make() {
-  return std::make_shared<UCXConfig>();
+std::shared_ptr<UCXConfig> UCXConfig::Make(MPI_Comm comm) {
+  return std::make_shared<UCXConfig>(comm);
 }
+
+UCXConfig::UCXConfig(MPI_Comm comm) : comm_(comm) {}
+
+MPI_Comm UCXConfig::GetMPIComm() const { return comm_; }
 
 std::unique_ptr<Channel> UCXCommunicator::CreateChannel() const {
   return std::make_unique<UCXChannel>(this);
@@ -91,8 +95,9 @@ Status UCXCommunicator::AllReduce(const std::shared_ptr<Column> &column,
   return {Code::NotImplemented, "Allreduce not implemented for ucx"};
 }
 
-UCXCommunicator::UCXCommunicator(MemoryPool *pool, bool externally_init)
-    : Communicator(pool, -1, -1), externally_init(externally_init) {}
+UCXCommunicator::UCXCommunicator(MemoryPool *pool, bool externally_init, MPI_Comm comm)
+    : Communicator(pool, -1, -1),
+      externally_init(externally_init), mpi_comm(comm) {}
 
 Status UCXCommunicator::AllReduce(const std::shared_ptr<Scalar> &values,
                                   net::ReduceOp reduce_op,
@@ -119,7 +124,9 @@ Status UCXCommunicator::Allgather(const std::shared_ptr<Scalar> &value,
 
 Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config, MemoryPool *pool,
                              std::shared_ptr<Communicator> *out) {
-  CYLON_UNUSED(config);
+  const auto &mpi_config = std::static_pointer_cast<UCXConfig>(config);
+  auto mpi_comm = mpi_config->GetMPIComm();
+
   // MPI init
   int initialized;
   MPI_Initialized(&initialized);
@@ -127,8 +134,12 @@ Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config, MemoryPo
     RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Init(nullptr, nullptr));
   }
 
-  *out = std::make_shared<UCXCommunicator>(pool, initialized);
-  auto &comm = static_cast<UCXCommunicator &>(**out);
+  if (mpi_comm == MPI_COMM_NULL) {
+    mpi_comm = MPI_COMM_WORLD;
+  }
+
+  *out = std::make_shared<UCXCommunicator>(pool, initialized, mpi_comm);
+  auto &comm = dynamic_cast<UCXCommunicator &>(**out);
 
   // Int variable used when iterating
   int sIndx;
@@ -143,8 +154,8 @@ Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config, MemoryPo
   ucp_address_t *address;
 
   // Get the rank for checking send to self, and initializations
-  MPI_Comm_rank(MPI_COMM_WORLD, &comm.rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &comm.world_size);
+  MPI_Comm_rank(mpi_comm, &comm.rank);
+  MPI_Comm_size(mpi_comm, &comm.world_size);
 
   int rank = comm.rank, world_size = comm.world_size;
 
@@ -165,7 +176,7 @@ Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config, MemoryPo
                                                   allAddresses.get(),
                                                   (int) ucpRecvWorkerAddr->addrSize,
                                                   MPI_BYTE,
-                                                  MPI_COMM_WORLD));
+                                                  mpi_comm));
 
   // Iterate and set the sends
   comm.endPointMap.reserve(world_size);
@@ -216,7 +227,7 @@ void UCXCommunicator::Finalize() {
 }
 
 void UCXCommunicator::Barrier() {
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(this->mpi_comm);
 }
 
 CommType UCXCommunicator::GetCommType() const {
@@ -249,9 +260,9 @@ static ucc_status_t oob_allgather_free(void *req) {
   return UCC_OK;
 }
 
-UCXUCCCommunicator::UCXUCCCommunicator(std::shared_ptr<Communicator> ucx_comm)
+UCXUCCCommunicator::UCXUCCCommunicator(const std::shared_ptr<Communicator> &ucx_comm)
     : Communicator(ucx_comm->GetMemoryPool(), ucx_comm->GetRank(), ucx_comm->GetWorldSize()),
-      ucx_comm_(std::move(ucx_comm)) {}
+      ucx_comm_(std::static_pointer_cast<UCXCommunicator>(ucx_comm)) {}
 
 Status UCXUCCCommunicator::Make(const std::shared_ptr<CommConfig> &config,
                                 MemoryPool *pool,
@@ -261,6 +272,8 @@ Status UCXUCCCommunicator::Make(const std::shared_ptr<CommConfig> &config,
 
   *out = std::make_shared<UCXUCCCommunicator>(std::move(ucx_comm));
   auto &comm = *std::static_pointer_cast<UCXUCCCommunicator>(*out);
+
+  auto mpi_comm = comm.ucx_comm_->mpi_comm;
 
   // initialize UCC team and context
   ucc_context_params_t ctx_params;
@@ -286,7 +299,7 @@ Status UCXUCCCommunicator::Make(const std::shared_ptr<CommConfig> &config,
   ctx_params.oob.allgather = oob_allgather;
   ctx_params.oob.req_test = oob_allgather_test;
   ctx_params.oob.req_free = oob_allgather_free;
-  ctx_params.oob.coll_info = (void *) MPI_COMM_WORLD;
+  ctx_params.oob.coll_info = (void *) mpi_comm;
   ctx_params.oob.n_oob_eps = static_cast<uint32_t>(comm.GetWorldSize());
   ctx_params.oob.oob_ep = static_cast<uint32_t>(comm.GetRank());
 
@@ -301,7 +314,7 @@ Status UCXUCCCommunicator::Make(const std::shared_ptr<CommConfig> &config,
   team_params.oob.allgather = oob_allgather;
   team_params.oob.req_test = oob_allgather_test;
   team_params.oob.req_free = oob_allgather_free;
-  team_params.oob.coll_info = (void *) MPI_COMM_WORLD;
+  team_params.oob.coll_info = (void *) mpi_comm;
   team_params.oob.n_oob_eps = static_cast<uint32_t>(comm.GetWorldSize());
   team_params.oob.oob_ep = static_cast<uint32_t>(comm.GetRank());
   RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_team_create_post(&comm.uccContext, 1, &team_params,
@@ -323,7 +336,7 @@ std::unique_ptr<Channel> UCXUCCCommunicator::CreateChannel() const {
 }
 
 void UCXUCCCommunicator::Finalize() {
-  if (!this->IsFinalized()) {
+  if (!IsFinalized()) {
     ucc_status_t status;
     while (uccTeam && (UCC_INPROGRESS == (status = ucc_team_destroy(uccTeam)))) {
       if (UCC_OK != status) {
@@ -331,7 +344,11 @@ void UCXUCCCommunicator::Finalize() {
         break;
       }
     }
-    ucc_context_destroy(uccContext);
+
+    if (!ucx_comm_->externally_init){
+      ucc_context_destroy(uccContext);
+    }
+
     ucx_comm_->Finalize(); // this will handle MPI_Finalize
     finalized = true;
   }

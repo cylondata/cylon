@@ -1,3 +1,52 @@
+# FROM SCRATCH
+
+ module purge
+ 1027  cd
+ 1028  mkdir python
+ 1029  cd ..
+ 1030  rm -rf python
+ 1031  mkdir -p ~/tmp
+ 1032  cd tmp
+ 1033  cd
+ 1034  cd tmp
+ 1035  ls
+ 1036   wget https://www.python.org/ftp/python/3.10.5/Python-3.10.5.tar.xz
+ 1037  tar xvf Python-3.10.5.tar.xz
+ 1038  cd Python-3.10.5/
+ 1040  mkdir local
+ 
+./configure --enable-optimizations --prefix=$HOME/local --enable-shared
+# ./configure --prefix=$HOME/local --enable-shared
+ 
+make -j install
+#  make altinstall
+
+
+rm -rf ~/CYLON
+which python
+export LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$HOME/cylon/build/arrow/install/lib64:$HOME/cylon/build/lib64:$LD_LIBRARY_PATH 
+
+~/local/bin/python3.10 -m venv ~/CYLON
+
+#
+source ~/CYLON/bin/activate
+#
+pip install pip -U
+CC=gcc MPICC=mpicc pip install --no-binary mpi4py install mpi4py
+pip install pytest-mpi
+pip install cmake
+pip install numpy
+#
+
+
+#  source ~/CYLON/bin/activate
+cd ~/cylon
+rm -rf build
+./build.sh -pyenv ~/CYLON -bpath $(pwd)/build --cpp --test --python --pytest --cmake-flags "-DMPI_C_COMPILER=$(which mpicc) -DMPI_CXX_COMPILER=$(which mpicxx)  -DCYLON_CUSTOM_MPIRUN=jsrun -DCYLON_MPIRUN_PARALLELISM_FLAG=\"-n\" -DCYLON_CUSTOM_MPIRUN_PARAMS=\"-a 1\" " -j 16
+```
+
+
 # SUMMIT Installation guide
 
 This document describes the instalation on summit. 
@@ -30,7 +79,10 @@ NOte: once you have created CYLON there is no need to rerun this.
 module purge
 module load gcc/9.3.0
 module load spectrum-mpi/10.4.0.3-20210112
-module load python/3.8-anaconda3
+export CC=`which gcc`
+export CXX=`which g++`
+export LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$HOME/cylon/build/arrow/install/lib64:$HOME/cylon/build/lib64:$HOME/cylon/build/glog/install/lib64/:$LD_LIBRARY_PATH
 ```
 
 Next check the python version 
@@ -109,6 +161,18 @@ If everything is ok, you will see at the end of the test output
 ================================================
 All tests passed (66 assertions in 4 test cases)
 ```
+
+python
+Python 3.10.5 (main, Sep  7 2022, 12:48:23) [GCC 9.3.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import pyarrow
+>>> import pyarrow as pa
+>>> pa.array([1])
+<pyarrow.lib.Int64Array object at 0x20001416fc40>
+[
+  1
+]
+
 
 
 ### Running batch scripts

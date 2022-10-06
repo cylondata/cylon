@@ -30,13 +30,13 @@ std::shared_ptr<arrow::Schema> build_final_table_schema(const std::shared_ptr<ar
                                        const std::string &right_table_prefix);
 
 Status build_final_table(const std::vector<int64_t> &left_indices,
-                                const std::vector<int64_t> &right_indices,
-                                const std::shared_ptr<arrow::Table> &left_tab,
-                                const std::shared_ptr<arrow::Table> &right_tab,
-                                const std::string &left_table_prefix,
-                                const std::string &right_table_prefix,
-                                std::shared_ptr<arrow::Table> *final_table,
-                                arrow::MemoryPool *memory_pool);
+                         const std::vector<int64_t> &right_indices,
+                         const std::shared_ptr<arrow::Table> &left_tab,
+                         const std::shared_ptr<arrow::Table> &right_tab,
+                         const std::string &left_table_prefix,
+                         const std::string &right_table_prefix,
+                         std::shared_ptr<arrow::Table> *final_table,
+                         arrow::MemoryPool *pool);
 
 Status build_final_table_inplace_index(
     size_t left_inplace_column, size_t right_inplace_column,

@@ -15,6 +15,8 @@
 IF CYTHON_UCX & CYTHON_UCC:
     from libcpp.memory cimport shared_ptr
 
+    from mpi4py.libmpi cimport MPI_Comm
+
     from pycylon.net.comm_type cimport CCommType
     from pycylon.net.comm_config cimport CommConfig
 
@@ -23,7 +25,7 @@ IF CYTHON_UCX & CYTHON_UCC:
             CCommType Type()
 
             @ staticmethod
-            shared_ptr[CUCXConfig] Make();
+            shared_ptr[CUCXConfig] Make(MPI_Comm comm);
 
 
     cdef class UCXConfig(CommConfig):

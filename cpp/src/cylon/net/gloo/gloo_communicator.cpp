@@ -58,7 +58,7 @@ Status GlooCommunicator::Make(const std::shared_ptr<CommConfig> &config,
       gloo_ctx = gloo::mpi::Context::createManaged();
     }
     if (gloo_config->timeout_ != kTimoutNotSet) {
-      gloo_ctx->setTimeout(std::chrono::seconds(gloo_config->timeout_));
+      gloo_ctx->setTimeout(gloo_config->timeout_);
     }
     ((gloo::mpi::Context &) *gloo_ctx).connectFullMesh(dev);
 #else
@@ -73,7 +73,7 @@ Status GlooCommunicator::Make(const std::shared_ptr<CommConfig> &config,
     gloo_ctx = std::make_shared<gloo::rendezvous::Context>(gloo_config->rank_,
                                                            gloo_config->world_size_);
     if (gloo_config->timeout_ != kTimoutNotSet) {
-      gloo_ctx->setTimeout(std::chrono::seconds(gloo_config->timeout_));
+      gloo_ctx->setTimeout(gloo_config->timeout_);
     }
     ((gloo::rendezvous::Context &) *gloo_ctx).connectFullMesh(*prefix_store, dev);
   }
