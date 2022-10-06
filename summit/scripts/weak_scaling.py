@@ -48,5 +48,5 @@ if __name__ == "__main__":
     StopWatch.start(f"join_{data.host}_{data.n}_{data.it}")
     join(data.n, it=data.it)
     StopWatch.stop(f"join_{data.host}_{data.n}_{data.it}")
-    StopWatch.benchmark(msg=str(data))
+    StopWatch.benchmark(tag=str(data))
 
