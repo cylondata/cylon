@@ -74,12 +74,16 @@ export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/
 
 This should pass all tests. If you like to run additional examples, see the next section
 
+The approximate time for running this is less then an hour.
+
 ## Example join 
+
+This test is done to execute a quick running example to see if things work.
 
 ```shell
 cd /ccs/home/gregorvl/cylon/python/pycylon/examples/dataframe
-jsrun -n 16 python  join.py
-jsrun -n 84 python  join.py
+time jsrun -n 16 python  join.py
+time jsrun -n 84 python  join.py
 ```
 
 ## Example with alias
@@ -90,3 +94,26 @@ alias CTEST='jsrun -n 4 pytest -p no:cacheprovider --with-mpi -q'
 CTEST python/pycylon/test/test_dist_rl.py  
 
 ```
+
+The approximate time for running this script is: TBD
+
+## Example: Long running job
+
+in the directory summit/scripts/we find a documentation and a script for 
+a long-running job helping to benchmark cylon on summit. 
+
+Run the scripts in set of **compute nodes** as follows.
+
+```bash
+module load python/3.7.7  
+source $HOME/CYLON/bin/activate
+
+module load gcc/9.3.0 
+
+BUILD_PATH=$HOME/cylon/build
+export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/lib64:$BUILD_PATH/lib64:$BUILD_PATH/lib:$LD_LIBRARY_PATH
+
+time jsrun -n <parallelism> python weak_scaling.py
+```
+
+The approximate time for running this is TBD
