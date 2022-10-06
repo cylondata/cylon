@@ -13,6 +13,9 @@ from cloudmesh.common.Shell import Shell
 # git = "/usr/bin/git"
 
 def join(r, it=4, u=0.9, data=None):
+
+    StopWatch.start(f"join_total_{data.host}_{data.n}_{data.it}")
+
     comm = MPI.COMM_WORLD
 
     config = MPIConfig(comm)
@@ -42,6 +45,12 @@ def join(r, it=4, u=0.9, data=None):
             print("w", env.world_size, "r", r, "it", i, "t", sum_t / env.world_size, "l", tot_l)
             StopWatch.stop(f"join_{i}_{data.host}_{data.n}_{data.it}")
 
+    StopWatch.stop(f"join_total_{data.host}_{data.n}_{data.it}")
+
+    if env.rank == 0:
+        StopWatch.benchmark(tag=str(data))
+
+
     env.finalize()
 
 
@@ -51,10 +60,7 @@ if __name__ == "__main__":
     data.n = 1000000
     data.it = 10
     data.host = "summit"
-    StopWatch.start(f"join_total_{data.host}_{data.n}_{data.it}")
     join(data.n, it=data.it, data=data)
-    StopWatch.stop(f"join_total_{data.host}_{data.n}_{data.it}")
-    StopWatch.benchmark(tag=str(data))
 
     # os.system(f"{git} branch | fgrep '*' ")
     # os.system(f"{git} rev-parse HEAD")
