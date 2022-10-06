@@ -20,7 +20,7 @@ to not only compiles cylon, but also runs a minimal cylon tests to see if
 cylon works.
 
 > **Note:** Although the compilation could be done on a front-end node, the
-> tests must be run on the worker nodes.)
+> tests must be run on the worker nodes.
 
 To give ample time we recommend the nodes be reserved for 1h 30min so
 you can after the compile test it out. The documentation here is
