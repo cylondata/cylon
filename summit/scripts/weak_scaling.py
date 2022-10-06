@@ -57,5 +57,5 @@ if __name__ == "__main__":
     StopWatch.benchmark(tag=str(data))
 
     os.system(f"{git} branch | fgrep '*' ")
-    os.system("git rev-parse HEAD")
+    os.system(f"{git} rev-parse HEAD")
 
