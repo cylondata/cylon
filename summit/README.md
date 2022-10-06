@@ -155,4 +155,10 @@ cd ~/cylon/summit/scripts
 time jsrun -n <parallelism> python weak_scaling.py
 ```
 
-The approximate time for running this is TBD
+The approximate time for running it is less than 15 seconds
+
+A script that changes the parameter of n is located in the scripts dir and can be called with 
+
+```bash
+sh ./benchmark-summit.sh 2>&1 | tee -a summit.log
+```
