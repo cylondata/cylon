@@ -5,7 +5,7 @@ from mpi4py import MPI
 from numpy.random import default_rng
 from pycylon.frame import CylonEnv, DataFrame
 from pycylon.net import MPIConfig
-form cloudmesh.common.StopWatch import StopWatch
+from cloudmesh.common.StopWatch import StopWatch
 from cloudmesh.common.dotdict import dotdict
 
 
