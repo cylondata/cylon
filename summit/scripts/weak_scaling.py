@@ -5,6 +5,8 @@ from mpi4py import MPI
 from numpy.random import default_rng
 from pycylon.frame import CylonEnv, DataFrame
 from pycylon.net import MPIConfig
+form cloudmesh.common.StopWatch import StopWatch
+from cloudmesh.common.dotdict import dotdict
 
 
 def join(r, it=4, u=0.9):
@@ -39,4 +41,12 @@ def join(r, it=4, u=0.9):
 
 
 if __name__ == "__main__":
-    join(1000000, it=10)
+    data = dotdict()
+    data.n = 1000000
+    data.it = 10
+    data.host = "summit"
+    StopWatch.start(f"join_summit_{n}_{it}")
+    join(data.n, it=data.it)
+    StopWatch.stop(f"join_summit_{n}_{it}")
+    StopWatch.benchmark(msg=str(data))
+

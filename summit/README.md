@@ -15,6 +15,8 @@ The solution is to use the guide we provide here.
 
 ## Intsall instructions
 
+If you have already installed cylon, you can skip this section and go to "Using the installed version"
+
 These instructions are to be executed on 2 reserved nodes on summit as
 to not only compiles cylon, but also runs a minimal cylon tests to see if
 cylon works.
@@ -82,9 +84,45 @@ This test is done to execute a quick running example to see if things work.
 
 ```shell
 cd /ccs/home/gregorvl/cylon/python/pycylon/examples/dataframe
-time jsrun -n 16 python  join.py
+time jsrun -n 16 python  join.py 
 time jsrun -n 84 python  join.py
 ```
+
+The code with -n 16 completes in about 15s
+
+The code with -n 84 completes in about 13s
+
+## Using the installed version
+
+In case you have cylon installed and want to run additional tests at a different login, 
+you can use the compiled version as follows.
+
+First, you need to obtian some nodes for some time (here 2 nodes with 1h 30min)
+
+```shell
+bsub -Is -W 1:30 -nnodes 2 -P gen150_bench $SHELL
+```
+
+Next, activate the prebuild cylon
+
+```bash
+module load python/3.7.7  
+source $HOME/CYLON/bin/activate
+
+module load gcc/9.3.0 
+
+BUILD_PATH=$HOME/cylon/build
+export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/lib64:$BUILD_PATH/lib64:$BUILD_PATH/lib:$LD_LIBRARY_PATH
+```
+
+Finally run an short example to see if things work
+
+```
+cd /ccs/home/gregorvl/cylon/python/pycylon/examples/dataframe
+time jsrun -n 16 python  join.py
+```
+
+This code witll complete in approximately 15s.
 
 ## Example with alias
 
@@ -113,6 +151,7 @@ module load gcc/9.3.0
 BUILD_PATH=$HOME/cylon/build
 export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/lib64:$BUILD_PATH/lib64:$BUILD_PATH/lib:$LD_LIBRARY_PATH
 
+cd ~/cylon/summit/scripts
 time jsrun -n <parallelism> python weak_scaling.py
 ```
 
