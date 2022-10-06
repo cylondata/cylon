@@ -7,7 +7,7 @@ from pycylon.frame import CylonEnv, DataFrame
 from pycylon.net import MPIConfig
 from cloudmesh.common.StopWatch import StopWatch
 from cloudmesh.common.dotdict import dotdict
-from cloumesh.common.Shell import Shell
+from cloudmesh.common.Shell import Shell
 
 
 
