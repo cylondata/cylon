@@ -1,0 +1,680 @@
+w 1 r 1000000 it 0 t 505.1126480102539 l 1111405
+w 1 r 1000000 it 1 t 503.6306381225586 l 1111405
+w 1 r 1000000 it 2 t 506.5770149230957 l 1111405
+w 1 r 1000000 it 3 t 506.16455078125 l 1111405
+w 1 r 1000000 it 4 t 524.9979496002197 l 1111405
+w 1 r 1000000 it 5 t 516.8752670288086 l 1111405
+w 1 r 1000000 it 6 t 522.5577354431152 l 1111405
+w 1 r 1000000 it 7 t 525.1092910766602 l 1111405
+w 1 r 1000000 it 8 t 523.9758491516113 l 1111405
+w 1 r 1000000 it 9 t 524.3117809295654 l 1111405
+
++---------------------------------+--------------------------------------------------+
+| Attribute                       | Value                                            |
+|---------------------------------+--------------------------------------------------|
+| ANSI_COLOR                      | "0;31"                                           |
+| BUG_REPORT_URL                  | "https://bugzilla.redhat.com/"                   |
+| CPE_NAME                        | "cpe:/o:redhat:enterprise_linux:8.2:GA"          |
+| HOME_URL                        | "https://www.redhat.com/"                        |
+| ID                              | "rhel"                                           |
+| ID_LIKE                         | "fedora"                                         |
+| NAME                            | "Red Hat Enterprise Linux"                       |
+| PLATFORM_ID                     | "platform:el8"                                   |
+| PRETTY_NAME                     | "Red Hat Enterprise Linux 8.2 (Ootpa)"           |
+| REDHAT_BUGZILLA_PRODUCT         | "Red Hat Enterprise Linux 8"                     |
+| REDHAT_BUGZILLA_PRODUCT_VERSION | 8.2                                              |
+| REDHAT_SUPPORT_PRODUCT          | "Red Hat Enterprise Linux"                       |
+| REDHAT_SUPPORT_PRODUCT_VERSION  | "8.2"                                            |
+| VERSION                         | "8.2 (Ootpa)"                                    |
+| VERSION_ID                      | "8.2"                                            |
+| cpu                             |                                                  |
+| cpu_cores                       | 44                                               |
+| cpu_count                       | 176                                              |
+| cpu_threads                     | 176                                              |
+| date                            | 2022-10-06 15:59:59.189392                       |
+| frequency                       | scpufreq(current=3800.0, min=2300.0, max=3800.0) |
+| mem.active                      | 11.7 GiB                                         |
+| mem.available                   | 561.7 GiB                                        |
+| mem.free                        | 548.1 GiB                                        |
+| mem.inactive                    | 14.5 GiB                                         |
+| mem.percent                     | 6.7 %                                            |
+| mem.total                       | 601.7 GiB                                        |
+| mem.used                        | 30.1 GiB                                         |
+| platform.version                | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| python                          | 3.7.7 (default, May 28 2021, 19:38:18)           |
+|                                 | [GCC 8.3.1 20191121 (Red Hat 8.3.1-5)]           |
+| python.pip                      | 22.2.2                                           |
+| python.version                  | 3.7.7                                            |
+| sys.platform                    | linux                                            |
+| uname.machine                   | ppc64le                                          |
+| uname.node                      | d30n06                                           |
+| uname.processor                 | ppc64le                                          |
+| uname.release                   | 4.18.0-193.46.1.el8_2.ppc64le                    |
+| uname.system                    | Linux                                            |
+| uname.version                   | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| user                            | None                                             |
++---------------------------------+--------------------------------------------------+
+
++------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+| Name                         | Status   |   Time |   Sum | Start               | tag                                        | msg   | Node   | User   | OS    | Version                             |
+|------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------|
+| join_total_summit_1000000_10 | ok       |  5.221 | 5.221 | 2022-10-06 15:59:53 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_0_summit_1000000_10     | ok       |  0.506 | 0.506 | 2022-10-06 15:59:53 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_1_summit_1000000_10     | ok       |  0.504 | 0.504 | 2022-10-06 15:59:54 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_2_summit_1000000_10     | ok       |  0.507 | 0.507 | 2022-10-06 15:59:54 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_3_summit_1000000_10     | ok       |  0.507 | 0.507 | 2022-10-06 15:59:55 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_4_summit_1000000_10     | ok       |  0.525 | 0.525 | 2022-10-06 15:59:56 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_5_summit_1000000_10     | ok       |  0.517 | 0.517 | 2022-10-06 15:59:56 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_6_summit_1000000_10     | ok       |  0.523 | 0.523 | 2022-10-06 15:59:57 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_7_summit_1000000_10     | ok       |  0.525 | 0.525 | 2022-10-06 15:59:57 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_8_summit_1000000_10     | ok       |  0.524 | 0.524 | 2022-10-06 15:59:58 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_9_summit_1000000_10     | ok       |  0.525 | 0.525 | 2022-10-06 15:59:58 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
++------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+# csv,timer,status,time,sum,start,tag,msg,uname.node,user,uname.system,platform.version
+# csv,join_total_summit_1000000_10,ok,5.221,5.221,2022-10-06 15:59:53,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_0_summit_1000000_10,ok,0.506,0.506,2022-10-06 15:59:53,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_1_summit_1000000_10,ok,0.504,0.504,2022-10-06 15:59:54,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_2_summit_1000000_10,ok,0.507,0.507,2022-10-06 15:59:54,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_3_summit_1000000_10,ok,0.507,0.507,2022-10-06 15:59:55,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_4_summit_1000000_10,ok,0.525,0.525,2022-10-06 15:59:56,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_5_summit_1000000_10,ok,0.517,0.517,2022-10-06 15:59:56,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_6_summit_1000000_10,ok,0.523,0.523,2022-10-06 15:59:57,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_7_summit_1000000_10,ok,0.525,0.525,2022-10-06 15:59:57,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_8_summit_1000000_10,ok,0.524,0.524,2022-10-06 15:59:58,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_9_summit_1000000_10,ok,0.525,0.525,2022-10-06 15:59:58,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+
+w 8 r 1000000 it 0 t 575.3898620605469 l 8886046
+w 8 r 1000000 it 1 t 565.0518238544464 l 8886046
+w 8 r 1000000 it 2 t 578.4429013729095 l 8886046
+w 8 r 1000000 it 3 t 577.844113111496 l 8886046
+w 8 r 1000000 it 4 t 576.4553546905518 l 8886046
+w 8 r 1000000 it 5 t 573.3127892017365 l 8886046
+w 8 r 1000000 it 6 t 574.8710036277771 l 8886046
+w 8 r 1000000 it 7 t 581.2621712684631 l 8886046
+w 8 r 1000000 it 8 t 575.177401304245 l 8886046
+w 8 r 1000000 it 9 t 572.7118253707886 l 8886046
+
++---------------------------------+--------------------------------------------------+
+| Attribute                       | Value                                            |
+|---------------------------------+--------------------------------------------------|
+| ANSI_COLOR                      | "0;31"                                           |
+| BUG_REPORT_URL                  | "https://bugzilla.redhat.com/"                   |
+| CPE_NAME                        | "cpe:/o:redhat:enterprise_linux:8.2:GA"          |
+| HOME_URL                        | "https://www.redhat.com/"                        |
+| ID                              | "rhel"                                           |
+| ID_LIKE                         | "fedora"                                         |
+| NAME                            | "Red Hat Enterprise Linux"                       |
+| PLATFORM_ID                     | "platform:el8"                                   |
+| PRETTY_NAME                     | "Red Hat Enterprise Linux 8.2 (Ootpa)"           |
+| REDHAT_BUGZILLA_PRODUCT         | "Red Hat Enterprise Linux 8"                     |
+| REDHAT_BUGZILLA_PRODUCT_VERSION | 8.2                                              |
+| REDHAT_SUPPORT_PRODUCT          | "Red Hat Enterprise Linux"                       |
+| REDHAT_SUPPORT_PRODUCT_VERSION  | "8.2"                                            |
+| VERSION                         | "8.2 (Ootpa)"                                    |
+| VERSION_ID                      | "8.2"                                            |
+| cpu                             |                                                  |
+| cpu_cores                       | 44                                               |
+| cpu_count                       | 176                                              |
+| cpu_threads                     | 176                                              |
+| date                            | 2022-10-06 16:00:08.706408                       |
+| frequency                       | scpufreq(current=3800.0, min=2300.0, max=3800.0) |
+| mem.active                      | 14.6 GiB                                         |
+| mem.available                   | 558.5 GiB                                        |
+| mem.free                        | 545.0 GiB                                        |
+| mem.inactive                    | 14.5 GiB                                         |
+| mem.percent                     | 7.2 %                                            |
+| mem.total                       | 601.7 GiB                                        |
+| mem.used                        | 33.2 GiB                                         |
+| platform.version                | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| python                          | 3.7.7 (default, May 28 2021, 19:38:18)           |
+|                                 | [GCC 8.3.1 20191121 (Red Hat 8.3.1-5)]           |
+| python.pip                      | 22.2.2                                           |
+| python.version                  | 3.7.7                                            |
+| sys.platform                    | linux                                            |
+| uname.machine                   | ppc64le                                          |
+| uname.node                      | d30n06                                           |
+| uname.processor                 | ppc64le                                          |
+| uname.release                   | 4.18.0-193.46.1.el8_2.ppc64le                    |
+| uname.system                    | Linux                                            |
+| uname.version                   | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| user                            | None                                             |
++---------------------------------+--------------------------------------------------+
+
++------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+| Name                         | Status   |   Time |   Sum | Start               | tag                                        | msg   | Node   | User   | OS    | Version                             |
+|------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------|
+| join_total_summit_1000000_10 | ok       |  5.809 | 5.809 | 2022-10-06 16:00:02 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_0_summit_1000000_10     | ok       |  0.577 | 0.577 | 2022-10-06 16:00:02 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_1_summit_1000000_10     | ok       |  0.566 | 0.566 | 2022-10-06 16:00:03 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_2_summit_1000000_10     | ok       |  0.579 | 0.579 | 2022-10-06 16:00:04 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_3_summit_1000000_10     | ok       |  0.578 | 0.578 | 2022-10-06 16:00:04 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_4_summit_1000000_10     | ok       |  0.577 | 0.577 | 2022-10-06 16:00:05 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_5_summit_1000000_10     | ok       |  0.574 | 0.574 | 2022-10-06 16:00:05 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_6_summit_1000000_10     | ok       |  0.575 | 0.575 | 2022-10-06 16:00:06 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_7_summit_1000000_10     | ok       |  0.582 | 0.582 | 2022-10-06 16:00:06 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_8_summit_1000000_10     | ok       |  0.576 | 0.576 | 2022-10-06 16:00:07 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_9_summit_1000000_10     | ok       |  0.573 | 0.573 | 2022-10-06 16:00:08 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
++------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+# csv,timer,status,time,sum,start,tag,msg,uname.node,user,uname.system,platform.version
+# csv,join_total_summit_1000000_10,ok,5.809,5.809,2022-10-06 16:00:02,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_0_summit_1000000_10,ok,0.577,0.577,2022-10-06 16:00:02,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_1_summit_1000000_10,ok,0.566,0.566,2022-10-06 16:00:03,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_2_summit_1000000_10,ok,0.579,0.579,2022-10-06 16:00:04,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_3_summit_1000000_10,ok,0.578,0.578,2022-10-06 16:00:04,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_4_summit_1000000_10,ok,0.577,0.577,2022-10-06 16:00:05,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_5_summit_1000000_10,ok,0.574,0.574,2022-10-06 16:00:05,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_6_summit_1000000_10,ok,0.575,0.575,2022-10-06 16:00:06,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_7_summit_1000000_10,ok,0.582,0.582,2022-10-06 16:00:06,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_8_summit_1000000_10,ok,0.576,0.576,2022-10-06 16:00:07,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_9_summit_1000000_10,ok,0.573,0.573,2022-10-06 16:00:08,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+
+w 10 r 1000000 it 0 t 579.0966749191284 l 11106291
+w 10 r 1000000 it 1 t 572.6823806762695 l 11106291
+w 10 r 1000000 it 2 t 577.0152807235718 l 11106291
+w 10 r 1000000 it 3 t 586.4791870117188 l 11106291
+w 10 r 1000000 it 4 t 583.0090284347534 l 11106291
+w 10 r 1000000 it 5 t 586.2013101577759 l 11106291
+w 10 r 1000000 it 6 t 585.2657556533813 l 11106291
+w 10 r 1000000 it 7 t 581.6948413848877 l 11106291
+w 10 r 1000000 it 8 t 586.4319801330566 l 11106291
+w 10 r 1000000 it 9 t 585.706090927124 l 11106291
+
++---------------------------------+--------------------------------------------------+
+| Attribute                       | Value                                            |
+|---------------------------------+--------------------------------------------------|
+| ANSI_COLOR                      | "0;31"                                           |
+| BUG_REPORT_URL                  | "https://bugzilla.redhat.com/"                   |
+| CPE_NAME                        | "cpe:/o:redhat:enterprise_linux:8.2:GA"          |
+| HOME_URL                        | "https://www.redhat.com/"                        |
+| ID                              | "rhel"                                           |
+| ID_LIKE                         | "fedora"                                         |
+| NAME                            | "Red Hat Enterprise Linux"                       |
+| PLATFORM_ID                     | "platform:el8"                                   |
+| PRETTY_NAME                     | "Red Hat Enterprise Linux 8.2 (Ootpa)"           |
+| REDHAT_BUGZILLA_PRODUCT         | "Red Hat Enterprise Linux 8"                     |
+| REDHAT_BUGZILLA_PRODUCT_VERSION | 8.2                                              |
+| REDHAT_SUPPORT_PRODUCT          | "Red Hat Enterprise Linux"                       |
+| REDHAT_SUPPORT_PRODUCT_VERSION  | "8.2"                                            |
+| VERSION                         | "8.2 (Ootpa)"                                    |
+| VERSION_ID                      | "8.2"                                            |
+| cpu                             |                                                  |
+| cpu_cores                       | 44                                               |
+| cpu_count                       | 176                                              |
+| cpu_threads                     | 176                                              |
+| date                            | 2022-10-06 16:00:18.122113                       |
+| frequency                       | scpufreq(current=3800.0, min=2300.0, max=3800.0) |
+| mem.active                      | 15.5 GiB                                         |
+| mem.available                   | 557.5 GiB                                        |
+| mem.free                        | 544.0 GiB                                        |
+| mem.inactive                    | 14.5 GiB                                         |
+| mem.percent                     | 7.3 %                                            |
+| mem.total                       | 601.7 GiB                                        |
+| mem.used                        | 34.2 GiB                                         |
+| platform.version                | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| python                          | 3.7.7 (default, May 28 2021, 19:38:18)           |
+|                                 | [GCC 8.3.1 20191121 (Red Hat 8.3.1-5)]           |
+| python.pip                      | 22.2.2                                           |
+| python.version                  | 3.7.7                                            |
+| sys.platform                    | linux                                            |
+| uname.machine                   | ppc64le                                          |
+| uname.node                      | d30n06                                           |
+| uname.processor                 | ppc64le                                          |
+| uname.release                   | 4.18.0-193.46.1.el8_2.ppc64le                    |
+| uname.system                    | Linux                                            |
+| uname.version                   | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| user                            | None                                             |
++---------------------------------+--------------------------------------------------+
+
++------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+| Name                         | Status   |   Time |   Sum | Start               | tag                                        | msg   | Node   | User   | OS    | Version                             |
+|------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------|
+| join_total_summit_1000000_10 | ok       |  5.874 | 5.874 | 2022-10-06 16:00:12 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_0_summit_1000000_10     | ok       |  0.581 | 0.581 | 2022-10-06 16:00:12 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_1_summit_1000000_10     | ok       |  0.573 | 0.573 | 2022-10-06 16:00:12 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_2_summit_1000000_10     | ok       |  0.578 | 0.578 | 2022-10-06 16:00:13 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_3_summit_1000000_10     | ok       |  0.587 | 0.587 | 2022-10-06 16:00:13 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_4_summit_1000000_10     | ok       |  0.584 | 0.584 | 2022-10-06 16:00:14 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_5_summit_1000000_10     | ok       |  0.587 | 0.587 | 2022-10-06 16:00:15 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_6_summit_1000000_10     | ok       |  0.586 | 0.586 | 2022-10-06 16:00:15 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_7_summit_1000000_10     | ok       |  0.582 | 0.582 | 2022-10-06 16:00:16 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_8_summit_1000000_10     | ok       |  0.587 | 0.587 | 2022-10-06 16:00:16 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_9_summit_1000000_10     | ok       |  0.586 | 0.586 | 2022-10-06 16:00:17 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
++------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+# csv,timer,status,time,sum,start,tag,msg,uname.node,user,uname.system,platform.version
+# csv,join_total_summit_1000000_10,ok,5.874,5.874,2022-10-06 16:00:12,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_0_summit_1000000_10,ok,0.581,0.581,2022-10-06 16:00:12,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_1_summit_1000000_10,ok,0.573,0.573,2022-10-06 16:00:12,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_2_summit_1000000_10,ok,0.578,0.578,2022-10-06 16:00:13,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_3_summit_1000000_10,ok,0.587,0.587,2022-10-06 16:00:13,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_4_summit_1000000_10,ok,0.584,0.584,2022-10-06 16:00:14,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_5_summit_1000000_10,ok,0.587,0.587,2022-10-06 16:00:15,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_6_summit_1000000_10,ok,0.586,0.586,2022-10-06 16:00:15,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_7_summit_1000000_10,ok,0.582,0.582,2022-10-06 16:00:16,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_8_summit_1000000_10,ok,0.587,0.587,2022-10-06 16:00:16,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_9_summit_1000000_10,ok,0.586,0.586,2022-10-06 16:00:17,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+
+w 16 r 1000000 it 0 t 576.8426656723022 l 17773117
+w 16 r 1000000 it 1 t 569.5550739765167 l 17773117
+w 16 r 1000000 it 2 t 579.3663859367371 l 17773117
+w 16 r 1000000 it 3 t 587.8543108701706 l 17773117
+w 16 r 1000000 it 4 t 583.7567299604416 l 17773117
+w 16 r 1000000 it 5 t 588.1344079971313 l 17773117
+w 16 r 1000000 it 6 t 586.2242430448532 l 17773117
+w 16 r 1000000 it 7 t 589.2495661973953 l 17773117
+w 16 r 1000000 it 8 t 589.890867471695 l 17773117
+w 16 r 1000000 it 9 t 592.0008420944214 l 17773117
+
++---------------------------------+--------------------------------------------------+
+| Attribute                       | Value                                            |
+|---------------------------------+--------------------------------------------------|
+| ANSI_COLOR                      | "0;31"                                           |
+| BUG_REPORT_URL                  | "https://bugzilla.redhat.com/"                   |
+| CPE_NAME                        | "cpe:/o:redhat:enterprise_linux:8.2:GA"          |
+| HOME_URL                        | "https://www.redhat.com/"                        |
+| ID                              | "rhel"                                           |
+| ID_LIKE                         | "fedora"                                         |
+| NAME                            | "Red Hat Enterprise Linux"                       |
+| PLATFORM_ID                     | "platform:el8"                                   |
+| PRETTY_NAME                     | "Red Hat Enterprise Linux 8.2 (Ootpa)"           |
+| REDHAT_BUGZILLA_PRODUCT         | "Red Hat Enterprise Linux 8"                     |
+| REDHAT_BUGZILLA_PRODUCT_VERSION | 8.2                                              |
+| REDHAT_SUPPORT_PRODUCT          | "Red Hat Enterprise Linux"                       |
+| REDHAT_SUPPORT_PRODUCT_VERSION  | "8.2"                                            |
+| VERSION                         | "8.2 (Ootpa)"                                    |
+| VERSION_ID                      | "8.2"                                            |
+| cpu                             |                                                  |
+| cpu_cores                       | 44                                               |
+| cpu_count                       | 176                                              |
+| cpu_threads                     | 176                                              |
+| date                            | 2022-10-06 16:00:27.880908                       |
+| frequency                       | scpufreq(current=3800.0, min=2300.0, max=3800.0) |
+| mem.active                      | 18.0 GiB                                         |
+| mem.available                   | 554.8 GiB                                        |
+| mem.free                        | 541.3 GiB                                        |
+| mem.inactive                    | 14.5 GiB                                         |
+| mem.percent                     | 7.8 %                                            |
+| mem.total                       | 601.7 GiB                                        |
+| mem.used                        | 36.9 GiB                                         |
+| platform.version                | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| python                          | 3.7.7 (default, May 28 2021, 19:38:18)           |
+|                                 | [GCC 8.3.1 20191121 (Red Hat 8.3.1-5)]           |
+| python.pip                      | 22.2.2                                           |
+| python.version                  | 3.7.7                                            |
+| sys.platform                    | linux                                            |
+| uname.machine                   | ppc64le                                          |
+| uname.node                      | d30n06                                           |
+| uname.processor                 | ppc64le                                          |
+| uname.release                   | 4.18.0-193.46.1.el8_2.ppc64le                    |
+| uname.system                    | Linux                                            |
+| uname.version                   | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| user                            | None                                             |
++---------------------------------+--------------------------------------------------+
+
++------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+| Name                         | Status   |   Time |   Sum | Start               | tag                                        | msg   | Node   | User   | OS    | Version                             |
+|------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------|
+| join_total_summit_1000000_10 | ok       |  5.944 | 5.944 | 2022-10-06 16:00:21 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_0_summit_1000000_10     | ok       |  0.578 | 0.578 | 2022-10-06 16:00:21 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_1_summit_1000000_10     | ok       |  0.57  | 0.57  | 2022-10-06 16:00:22 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_2_summit_1000000_10     | ok       |  0.58  | 0.58  | 2022-10-06 16:00:23 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_3_summit_1000000_10     | ok       |  0.589 | 0.589 | 2022-10-06 16:00:23 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_4_summit_1000000_10     | ok       |  0.584 | 0.584 | 2022-10-06 16:00:24 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_5_summit_1000000_10     | ok       |  0.589 | 0.589 | 2022-10-06 16:00:24 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_6_summit_1000000_10     | ok       |  0.587 | 0.587 | 2022-10-06 16:00:25 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_7_summit_1000000_10     | ok       |  0.59  | 0.59  | 2022-10-06 16:00:26 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_8_summit_1000000_10     | ok       |  0.591 | 0.591 | 2022-10-06 16:00:26 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_9_summit_1000000_10     | ok       |  0.593 | 0.593 | 2022-10-06 16:00:27 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
++------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+# csv,timer,status,time,sum,start,tag,msg,uname.node,user,uname.system,platform.version
+# csv,join_total_summit_1000000_10,ok,5.944,5.944,2022-10-06 16:00:21,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_0_summit_1000000_10,ok,0.578,0.578,2022-10-06 16:00:21,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_1_summit_1000000_10,ok,0.57,0.57,2022-10-06 16:00:22,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_2_summit_1000000_10,ok,0.58,0.58,2022-10-06 16:00:23,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_3_summit_1000000_10,ok,0.589,0.589,2022-10-06 16:00:23,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_4_summit_1000000_10,ok,0.584,0.584,2022-10-06 16:00:24,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_5_summit_1000000_10,ok,0.589,0.589,2022-10-06 16:00:24,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_6_summit_1000000_10,ok,0.587,0.587,2022-10-06 16:00:25,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_7_summit_1000000_10,ok,0.59,0.59,2022-10-06 16:00:26,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_8_summit_1000000_10,ok,0.591,0.591,2022-10-06 16:00:26,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_9_summit_1000000_10,ok,0.593,0.593,2022-10-06 16:00:27,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+
+w 32 r 1000000 it 0 t 603.1030714511871 l 35561230
+w 32 r 1000000 it 1 t 590.6629711389542 l 35561230
+w 32 r 1000000 it 2 t 599.0113914012909 l 35561230
+w 32 r 1000000 it 3 t 609.1539040207863 l 35561230
+w 32 r 1000000 it 4 t 603.3577397465706 l 35561230
+w 32 r 1000000 it 5 t 607.9522296786308 l 35561230
+w 32 r 1000000 it 6 t 645.3275680541992 l 35561230
+w 32 r 1000000 it 7 t 605.0286218523979 l 35561230
+w 32 r 1000000 it 8 t 605.9910953044891 l 35561230
+w 32 r 1000000 it 9 t 604.8020422458649 l 35561230
+
++---------------------------------+--------------------------------------------------+
+| Attribute                       | Value                                            |
+|---------------------------------+--------------------------------------------------|
+| ANSI_COLOR                      | "0;31"                                           |
+| BUG_REPORT_URL                  | "https://bugzilla.redhat.com/"                   |
+| CPE_NAME                        | "cpe:/o:redhat:enterprise_linux:8.2:GA"          |
+| HOME_URL                        | "https://www.redhat.com/"                        |
+| ID                              | "rhel"                                           |
+| ID_LIKE                         | "fedora"                                         |
+| NAME                            | "Red Hat Enterprise Linux"                       |
+| PLATFORM_ID                     | "platform:el8"                                   |
+| PRETTY_NAME                     | "Red Hat Enterprise Linux 8.2 (Ootpa)"           |
+| REDHAT_BUGZILLA_PRODUCT         | "Red Hat Enterprise Linux 8"                     |
+| REDHAT_BUGZILLA_PRODUCT_VERSION | 8.2                                              |
+| REDHAT_SUPPORT_PRODUCT          | "Red Hat Enterprise Linux"                       |
+| REDHAT_SUPPORT_PRODUCT_VERSION  | "8.2"                                            |
+| VERSION                         | "8.2 (Ootpa)"                                    |
+| VERSION_ID                      | "8.2"                                            |
+| cpu                             |                                                  |
+| cpu_cores                       | 44                                               |
+| cpu_count                       | 176                                              |
+| cpu_threads                     | 176                                              |
+| date                            | 2022-10-06 16:00:38.123884                       |
+| frequency                       | scpufreq(current=3800.0, min=2300.0, max=3800.0) |
+| mem.active                      | 24.7 GiB                                         |
+| mem.available                   | 547.7 GiB                                        |
+| mem.free                        | 534.1 GiB                                        |
+| mem.inactive                    | 14.6 GiB                                         |
+| mem.percent                     | 9.0 %                                            |
+| mem.total                       | 601.7 GiB                                        |
+| mem.used                        | 43.9 GiB                                         |
+| platform.version                | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| python                          | 3.7.7 (default, May 28 2021, 19:38:18)           |
+|                                 | [GCC 8.3.1 20191121 (Red Hat 8.3.1-5)]           |
+| python.pip                      | 22.2.2                                           |
+| python.version                  | 3.7.7                                            |
+| sys.platform                    | linux                                            |
+| uname.machine                   | ppc64le                                          |
+| uname.node                      | d30n06                                           |
+| uname.processor                 | ppc64le                                          |
+| uname.release                   | 4.18.0-193.46.1.el8_2.ppc64le                    |
+| uname.system                    | Linux                                            |
+| uname.version                   | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| user                            | None                                             |
++---------------------------------+--------------------------------------------------+
+
++------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+| Name                         | Status   |   Time |   Sum | Start               | tag                                        | msg   | Node   | User   | OS    | Version                             |
+|------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------|
+| join_total_summit_1000000_10 | ok       |  6.162 | 6.162 | 2022-10-06 16:00:31 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_0_summit_1000000_10     | ok       |  0.605 | 0.605 | 2022-10-06 16:00:32 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_1_summit_1000000_10     | ok       |  0.591 | 0.591 | 2022-10-06 16:00:32 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_2_summit_1000000_10     | ok       |  0.6   | 0.6   | 2022-10-06 16:00:33 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_3_summit_1000000_10     | ok       |  0.61  | 0.61  | 2022-10-06 16:00:33 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_4_summit_1000000_10     | ok       |  0.604 | 0.604 | 2022-10-06 16:00:34 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_5_summit_1000000_10     | ok       |  0.609 | 0.609 | 2022-10-06 16:00:35 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_6_summit_1000000_10     | ok       |  0.646 | 0.646 | 2022-10-06 16:00:35 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_7_summit_1000000_10     | ok       |  0.606 | 0.606 | 2022-10-06 16:00:36 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_8_summit_1000000_10     | ok       |  0.607 | 0.607 | 2022-10-06 16:00:36 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_9_summit_1000000_10     | ok       |  0.606 | 0.606 | 2022-10-06 16:00:37 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
++------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+# csv,timer,status,time,sum,start,tag,msg,uname.node,user,uname.system,platform.version
+# csv,join_total_summit_1000000_10,ok,6.162,6.162,2022-10-06 16:00:31,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_0_summit_1000000_10,ok,0.605,0.605,2022-10-06 16:00:32,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_1_summit_1000000_10,ok,0.591,0.591,2022-10-06 16:00:32,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_2_summit_1000000_10,ok,0.6,0.6,2022-10-06 16:00:33,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_3_summit_1000000_10,ok,0.61,0.61,2022-10-06 16:00:33,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_4_summit_1000000_10,ok,0.604,0.604,2022-10-06 16:00:34,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_5_summit_1000000_10,ok,0.609,0.609,2022-10-06 16:00:35,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_6_summit_1000000_10,ok,0.646,0.646,2022-10-06 16:00:35,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_7_summit_1000000_10,ok,0.606,0.606,2022-10-06 16:00:36,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_8_summit_1000000_10,ok,0.607,0.607,2022-10-06 16:00:36,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_9_summit_1000000_10,ok,0.606,0.606,2022-10-06 16:00:37,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+
+w 64 r 1000000 it 0 t 651.8560498952866 l 71116457
+w 64 r 1000000 it 1 t 624.3283301591873 l 71116457
+w 64 r 1000000 it 2 t 627.7508810162544 l 71116457
+w 64 r 1000000 it 3 t 636.601947247982 l 71116457
+w 64 r 1000000 it 4 t 636.8299126625061 l 71116457
+w 64 r 1000000 it 5 t 635.7975155115128 l 71116457
+w 64 r 1000000 it 6 t 636.6333588957787 l 71116457
+w 64 r 1000000 it 7 t 639.0283107757568 l 71116457
+w 64 r 1000000 it 8 t 638.3462734520435 l 71116457
+w 64 r 1000000 it 9 t 639.2662674188614 l 71116457
+
++---------------------------------+--------------------------------------------------+
+| Attribute                       | Value                                            |
+|---------------------------------+--------------------------------------------------|
+| ANSI_COLOR                      | "0;31"                                           |
+| BUG_REPORT_URL                  | "https://bugzilla.redhat.com/"                   |
+| CPE_NAME                        | "cpe:/o:redhat:enterprise_linux:8.2:GA"          |
+| HOME_URL                        | "https://www.redhat.com/"                        |
+| ID                              | "rhel"                                           |
+| ID_LIKE                         | "fedora"                                         |
+| NAME                            | "Red Hat Enterprise Linux"                       |
+| PLATFORM_ID                     | "platform:el8"                                   |
+| PRETTY_NAME                     | "Red Hat Enterprise Linux 8.2 (Ootpa)"           |
+| REDHAT_BUGZILLA_PRODUCT         | "Red Hat Enterprise Linux 8"                     |
+| REDHAT_BUGZILLA_PRODUCT_VERSION | 8.2                                              |
+| REDHAT_SUPPORT_PRODUCT          | "Red Hat Enterprise Linux"                       |
+| REDHAT_SUPPORT_PRODUCT_VERSION  | "8.2"                                            |
+| VERSION                         | "8.2 (Ootpa)"                                    |
+| VERSION_ID                      | "8.2"                                            |
+| cpu                             |                                                  |
+| cpu_cores                       | 44                                               |
+| cpu_count                       | 176                                              |
+| cpu_threads                     | 176                                              |
+| date                            | 2022-10-06 16:00:52.759026                       |
+| frequency                       | scpufreq(current=3800.0, min=2300.0, max=3800.0) |
+| mem.active                      | 29.2 GiB                                         |
+| mem.available                   | 542.7 GiB                                        |
+| mem.free                        | 529.1 GiB                                        |
+| mem.inactive                    | 14.7 GiB                                         |
+| mem.percent                     | 9.8 %                                            |
+| mem.total                       | 601.7 GiB                                        |
+| mem.used                        | 48.9 GiB                                         |
+| platform.version                | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| python                          | 3.7.7 (default, May 28 2021, 19:38:18)           |
+|                                 | [GCC 8.3.1 20191121 (Red Hat 8.3.1-5)]           |
+| python.pip                      | 22.2.2                                           |
+| python.version                  | 3.7.7                                            |
+| sys.platform                    | linux                                            |
+| uname.machine                   | ppc64le                                          |
+| uname.node                      | d30n06                                           |
+| uname.processor                 | ppc64le                                          |
+| uname.release                   | 4.18.0-193.46.1.el8_2.ppc64le                    |
+| uname.system                    | Linux                                            |
+| uname.version                   | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| user                            | None                                             |
++---------------------------------+--------------------------------------------------+
+
++------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+| Name                         | Status   |   Time |   Sum | Start               | tag                                        | msg   | Node   | User   | OS    | Version                             |
+|------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------|
+| join_total_summit_1000000_10 | ok       |  6.988 | 6.988 | 2022-10-06 16:00:45 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_0_summit_1000000_10     | ok       |  0.654 | 0.654 | 2022-10-06 16:00:46 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_1_summit_1000000_10     | ok       |  0.625 | 0.625 | 2022-10-06 16:00:47 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_2_summit_1000000_10     | ok       |  0.629 | 0.629 | 2022-10-06 16:00:47 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_3_summit_1000000_10     | ok       |  0.637 | 0.637 | 2022-10-06 16:00:48 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_4_summit_1000000_10     | ok       |  0.638 | 0.638 | 2022-10-06 16:00:48 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_5_summit_1000000_10     | ok       |  0.637 | 0.637 | 2022-10-06 16:00:49 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_6_summit_1000000_10     | ok       |  0.638 | 0.638 | 2022-10-06 16:00:50 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_7_summit_1000000_10     | ok       |  0.64  | 0.64  | 2022-10-06 16:00:50 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_8_summit_1000000_10     | ok       |  0.639 | 0.639 | 2022-10-06 16:00:51 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_9_summit_1000000_10     | ok       |  0.64  | 0.64  | 2022-10-06 16:00:52 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
++------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+# csv,timer,status,time,sum,start,tag,msg,uname.node,user,uname.system,platform.version
+# csv,join_total_summit_1000000_10,ok,6.988,6.988,2022-10-06 16:00:45,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_0_summit_1000000_10,ok,0.654,0.654,2022-10-06 16:00:46,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_1_summit_1000000_10,ok,0.625,0.625,2022-10-06 16:00:47,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_2_summit_1000000_10,ok,0.629,0.629,2022-10-06 16:00:47,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_3_summit_1000000_10,ok,0.637,0.637,2022-10-06 16:00:48,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_4_summit_1000000_10,ok,0.638,0.638,2022-10-06 16:00:48,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_5_summit_1000000_10,ok,0.637,0.637,2022-10-06 16:00:49,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_6_summit_1000000_10,ok,0.638,0.638,2022-10-06 16:00:50,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_7_summit_1000000_10,ok,0.64,0.64,2022-10-06 16:00:50,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_8_summit_1000000_10,ok,0.639,0.639,2022-10-06 16:00:51,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_9_summit_1000000_10,ok,0.64,0.64,2022-10-06 16:00:52,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+
+w 72 r 1000000 it 0 t 666.2295824951595 l 80014306
+w 72 r 1000000 it 1 t 628.431518872579 l 80014306
+w 72 r 1000000 it 2 t 639.044569598304 l 80014306
+w 72 r 1000000 it 3 t 648.3561628394657 l 80014306
+w 72 r 1000000 it 4 t 647.154602739546 l 80014306
+w 72 r 1000000 it 5 t 644.6950799889034 l 80014306
+w 72 r 1000000 it 6 t 648.9602327346802 l 80014306
+w 72 r 1000000 it 7 t 648.5167079501682 l 80014306
+w 72 r 1000000 it 8 t 649.7987376319038 l 80014306
+w 72 r 1000000 it 9 t 646.1448901229435 l 80014306
+
++---------------------------------+--------------------------------------------------+
+| Attribute                       | Value                                            |
+|---------------------------------+--------------------------------------------------|
+| ANSI_COLOR                      | "0;31"                                           |
+| BUG_REPORT_URL                  | "https://bugzilla.redhat.com/"                   |
+| CPE_NAME                        | "cpe:/o:redhat:enterprise_linux:8.2:GA"          |
+| HOME_URL                        | "https://www.redhat.com/"                        |
+| ID                              | "rhel"                                           |
+| ID_LIKE                         | "fedora"                                         |
+| NAME                            | "Red Hat Enterprise Linux"                       |
+| PLATFORM_ID                     | "platform:el8"                                   |
+| PRETTY_NAME                     | "Red Hat Enterprise Linux 8.2 (Ootpa)"           |
+| REDHAT_BUGZILLA_PRODUCT         | "Red Hat Enterprise Linux 8"                     |
+| REDHAT_BUGZILLA_PRODUCT_VERSION | 8.2                                              |
+| REDHAT_SUPPORT_PRODUCT          | "Red Hat Enterprise Linux"                       |
+| REDHAT_SUPPORT_PRODUCT_VERSION  | "8.2"                                            |
+| VERSION                         | "8.2 (Ootpa)"                                    |
+| VERSION_ID                      | "8.2"                                            |
+| cpu                             |                                                  |
+| cpu_cores                       | 44                                               |
+| cpu_count                       | 176                                              |
+| cpu_threads                     | 176                                              |
+| date                            | 2022-10-06 16:01:03.682324                       |
+| frequency                       | scpufreq(current=3800.0, min=2300.0, max=3800.0) |
+| mem.active                      | 29.6 GiB                                         |
+| mem.available                   | 542.4 GiB                                        |
+| mem.free                        | 528.8 GiB                                        |
+| mem.inactive                    | 14.7 GiB                                         |
+| mem.percent                     | 9.9 %                                            |
+| mem.total                       | 601.7 GiB                                        |
+| mem.used                        | 49.1 GiB                                         |
+| platform.version                | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| python                          | 3.7.7 (default, May 28 2021, 19:38:18)           |
+|                                 | [GCC 8.3.1 20191121 (Red Hat 8.3.1-5)]           |
+| python.pip                      | 22.2.2                                           |
+| python.version                  | 3.7.7                                            |
+| sys.platform                    | linux                                            |
+| uname.machine                   | ppc64le                                          |
+| uname.node                      | d30n06                                           |
+| uname.processor                 | ppc64le                                          |
+| uname.release                   | 4.18.0-193.46.1.el8_2.ppc64le                    |
+| uname.system                    | Linux                                            |
+| uname.version                   | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| user                            | None                                             |
++---------------------------------+--------------------------------------------------+
+
++------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+| Name                         | Status   |   Time |   Sum | Start               | tag                                        | msg   | Node   | User   | OS    | Version                             |
+|------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------|
+| join_total_summit_1000000_10 | ok       |  6.538 | 6.538 | 2022-10-06 16:00:57 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_0_summit_1000000_10     | ok       |  0.669 | 0.669 | 2022-10-06 16:00:57 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_1_summit_1000000_10     | ok       |  0.629 | 0.629 | 2022-10-06 16:00:57 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_2_summit_1000000_10     | ok       |  0.64  | 0.64  | 2022-10-06 16:00:58 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_3_summit_1000000_10     | ok       |  0.649 | 0.649 | 2022-10-06 16:00:59 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_4_summit_1000000_10     | ok       |  0.648 | 0.648 | 2022-10-06 16:00:59 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_5_summit_1000000_10     | ok       |  0.645 | 0.645 | 2022-10-06 16:01:00 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_6_summit_1000000_10     | ok       |  0.65  | 0.65  | 2022-10-06 16:01:01 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_7_summit_1000000_10     | ok       |  0.649 | 0.649 | 2022-10-06 16:01:01 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_8_summit_1000000_10     | ok       |  0.651 | 0.651 | 2022-10-06 16:01:02 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_9_summit_1000000_10     | ok       |  0.647 | 0.647 | 2022-10-06 16:01:03 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
++------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+# csv,timer,status,time,sum,start,tag,msg,uname.node,user,uname.system,platform.version
+# csv,join_total_summit_1000000_10,ok,6.538,6.538,2022-10-06 16:00:57,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_0_summit_1000000_10,ok,0.669,0.669,2022-10-06 16:00:57,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_1_summit_1000000_10,ok,0.629,0.629,2022-10-06 16:00:57,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_2_summit_1000000_10,ok,0.64,0.64,2022-10-06 16:00:58,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_3_summit_1000000_10,ok,0.649,0.649,2022-10-06 16:00:59,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_4_summit_1000000_10,ok,0.648,0.648,2022-10-06 16:00:59,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_5_summit_1000000_10,ok,0.645,0.645,2022-10-06 16:01:00,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_6_summit_1000000_10,ok,0.65,0.65,2022-10-06 16:01:01,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_7_summit_1000000_10,ok,0.649,0.649,2022-10-06 16:01:01,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_8_summit_1000000_10,ok,0.651,0.651,2022-10-06 16:01:02,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_9_summit_1000000_10,ok,0.647,0.647,2022-10-06 16:01:03,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+
+w 84 r 1000000 it 0 t 680.6376661573138 l 93345657
+w 84 r 1000000 it 1 t 647.7446187110174 l 93345657
+w 84 r 1000000 it 2 t 657.6554008892605 l 93345657
+w 84 r 1000000 it 3 t 662.3049094563439 l 93345657
+w 84 r 1000000 it 4 t 666.8332304273333 l 93345657
+w 84 r 1000000 it 5 t 666.5727212315514 l 93345657
+w 84 r 1000000 it 6 t 668.3703802880786 l 93345657
+w 84 r 1000000 it 7 t 662.9425741377331 l 93345657
+w 84 r 1000000 it 8 t 667.5085198311579 l 93345657
+w 84 r 1000000 it 9 t 664.1446380388169 l 93345657
+
++---------------------------------+--------------------------------------------------+
+| Attribute                       | Value                                            |
+|---------------------------------+--------------------------------------------------|
+| ANSI_COLOR                      | "0;31"                                           |
+| BUG_REPORT_URL                  | "https://bugzilla.redhat.com/"                   |
+| CPE_NAME                        | "cpe:/o:redhat:enterprise_linux:8.2:GA"          |
+| HOME_URL                        | "https://www.redhat.com/"                        |
+| ID                              | "rhel"                                           |
+| ID_LIKE                         | "fedora"                                         |
+| NAME                            | "Red Hat Enterprise Linux"                       |
+| PLATFORM_ID                     | "platform:el8"                                   |
+| PRETTY_NAME                     | "Red Hat Enterprise Linux 8.2 (Ootpa)"           |
+| REDHAT_BUGZILLA_PRODUCT         | "Red Hat Enterprise Linux 8"                     |
+| REDHAT_BUGZILLA_PRODUCT_VERSION | 8.2                                              |
+| REDHAT_SUPPORT_PRODUCT          | "Red Hat Enterprise Linux"                       |
+| REDHAT_SUPPORT_PRODUCT_VERSION  | "8.2"                                            |
+| VERSION                         | "8.2 (Ootpa)"                                    |
+| VERSION_ID                      | "8.2"                                            |
+| cpu                             |                                                  |
+| cpu_cores                       | 44                                               |
+| cpu_count                       | 176                                              |
+| cpu_threads                     | 176                                              |
+| date                            | 2022-10-06 16:01:14.104437                       |
+| frequency                       | scpufreq(current=3800.0, min=2300.0, max=3800.0) |
+| mem.active                      | 29.5 GiB                                         |
+| mem.available                   | 542.5 GiB                                        |
+| mem.free                        | 528.9 GiB                                        |
+| mem.inactive                    | 14.7 GiB                                         |
+| mem.percent                     | 9.9 %                                            |
+| mem.total                       | 601.7 GiB                                        |
+| mem.used                        | 49.1 GiB                                         |
+| platform.version                | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| python                          | 3.7.7 (default, May 28 2021, 19:38:18)           |
+|                                 | [GCC 8.3.1 20191121 (Red Hat 8.3.1-5)]           |
+| python.pip                      | 22.2.2                                           |
+| python.version                  | 3.7.7                                            |
+| sys.platform                    | linux                                            |
+| uname.machine                   | ppc64le                                          |
+| uname.node                      | d30n06                                           |
+| uname.processor                 | ppc64le                                          |
+| uname.release                   | 4.18.0-193.46.1.el8_2.ppc64le                    |
+| uname.system                    | Linux                                            |
+| uname.version                   | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| user                            | None                                             |
++---------------------------------+--------------------------------------------------+
+
++------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+| Name                         | Status   |   Time |   Sum | Start               | tag                                        | msg   | Node   | User   | OS    | Version                             |
+|------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------|
+| join_total_summit_1000000_10 | ok       |  6.753 | 6.753 | 2022-10-06 16:01:07 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_0_summit_1000000_10     | ok       |  0.683 | 0.683 | 2022-10-06 16:01:07 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_1_summit_1000000_10     | ok       |  0.649 | 0.649 | 2022-10-06 16:01:08 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_2_summit_1000000_10     | ok       |  0.658 | 0.658 | 2022-10-06 16:01:08 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_3_summit_1000000_10     | ok       |  0.663 | 0.663 | 2022-10-06 16:01:09 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_4_summit_1000000_10     | ok       |  0.668 | 0.668 | 2022-10-06 16:01:10 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_5_summit_1000000_10     | ok       |  0.667 | 0.667 | 2022-10-06 16:01:10 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_6_summit_1000000_10     | ok       |  0.669 | 0.669 | 2022-10-06 16:01:11 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_7_summit_1000000_10     | ok       |  0.664 | 0.664 | 2022-10-06 16:01:12 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_8_summit_1000000_10     | ok       |  0.668 | 0.668 | 2022-10-06 16:01:12 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_9_summit_1000000_10     | ok       |  0.665 | 0.665 | 2022-10-06 16:01:13 | {'n': 1000000, 'it': 10, 'host': 'summit'} |       | d30n06 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
++------------------------------+----------+--------+-------+---------------------+--------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+# csv,timer,status,time,sum,start,tag,msg,uname.node,user,uname.system,platform.version
+# csv,join_total_summit_1000000_10,ok,6.753,6.753,2022-10-06 16:01:07,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_0_summit_1000000_10,ok,0.683,0.683,2022-10-06 16:01:07,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_1_summit_1000000_10,ok,0.649,0.649,2022-10-06 16:01:08,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_2_summit_1000000_10,ok,0.658,0.658,2022-10-06 16:01:08,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_3_summit_1000000_10,ok,0.663,0.663,2022-10-06 16:01:09,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_4_summit_1000000_10,ok,0.668,0.668,2022-10-06 16:01:10,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_5_summit_1000000_10,ok,0.667,0.667,2022-10-06 16:01:10,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_6_summit_1000000_10,ok,0.669,0.669,2022-10-06 16:01:11,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_7_summit_1000000_10,ok,0.664,0.664,2022-10-06 16:01:12,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_8_summit_1000000_10,ok,0.668,0.668,2022-10-06 16:01:12,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_9_summit_1000000_10,ok,0.665,0.665,2022-10-06 16:01:13,{'n': 1000000, 'it': 10, 'host': 'summit'},None,d30n06,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+
