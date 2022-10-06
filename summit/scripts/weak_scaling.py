@@ -9,7 +9,7 @@ from cloudmesh.common.StopWatch import StopWatch
 from cloudmesh.common.dotdict import dotdict
 from cloudmesh.common.Shell import Shell
 
-
+git = "/usr/bin/git"
 
 def join(r, it=4, u=0.9, data=None):
     comm = MPI.COMM_WORLD
@@ -47,7 +47,7 @@ def join(r, it=4, u=0.9, data=None):
 if __name__ == "__main__":
 
     data = dotdict()
-    data.branch = Shell.run("git branch | fgrep '*' ")
+    data.branch = Shell.run(f"{git} branch | fgrep '*' ")
     data.n = 1000000
     data.it = 10
     data.host = "summit"
