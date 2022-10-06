@@ -8,6 +8,7 @@ from pycylon.net import MPIConfig
 from cloudmesh.common.StopWatch import StopWatch
 from cloudmesh.common.dotdict import dotdict
 from cloudmesh.common.Shell import Shell
+import os
 
 git = "/usr/bin/git"
 
@@ -47,12 +48,14 @@ def join(r, it=4, u=0.9, data=None):
 if __name__ == "__main__":
 
     data = dotdict()
-    data.branch = Shell.run(f"{git} branch | fgrep '*' ")
     data.n = 1000000
     data.it = 10
     data.host = "summit"
-    StopWatch.start(f"join_{data.branch}_total_{data.host}_{data.n}_{data.it}")
+    StopWatch.start(f"join_total_{data.host}_{data.n}_{data.it}")
     join(data.n, it=data.it, data=data)
-    StopWatch.stop(f"join_{data.branch}_total_{data.host}_{data.n}_{data.it}")
+    StopWatch.stop(f"join_total_{data.host}_{data.n}_{data.it}")
     StopWatch.benchmark(tag=str(data))
+
+    os.system(f"{git} branch | fgrep '*' ")
+    os.system("git rev-parse HEAD")
 
