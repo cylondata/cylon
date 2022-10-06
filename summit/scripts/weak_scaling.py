@@ -9,7 +9,7 @@ from cloudmesh.common.StopWatch import StopWatch
 from cloudmesh.common.dotdict import dotdict
 
 
-def join(r, it=4, u=0.9):
+def join(r, it=4, u=0.9, data=None):
     comm = MPI.COMM_WORLD
 
     config = MPIConfig(comm)
@@ -24,8 +24,9 @@ def join(r, it=4, u=0.9):
     df1 = DataFrame(pd.DataFrame(data1).add_prefix("col"))
     df2 = DataFrame(pd.DataFrame(data2).add_prefix("col"))
 
-    for i in range(it):
+    for i in range(data.it):
         env.barrier()
+        StopWatch.start(f"join_{i}_{data.host}_{data.n}_{data.it}")
         t1 = time.time()
         df3 = df1.merge(df2, on=[0], algorithm='sort', env=env)
         env.barrier()
@@ -36,6 +37,7 @@ def join(r, it=4, u=0.9):
 
         if env.rank == 0:
             print("w", env.world_size, "r", r, "it", i, "t", sum_t / env.world_size, "l", tot_l)
+            StopWatch.stop(f"join_{i}_{data.host}_{data.n}_{data.it}")
 
     env.finalize()
 
@@ -45,8 +47,8 @@ if __name__ == "__main__":
     data.n = 1000000
     data.it = 10
     data.host = "summit"
-    StopWatch.start(f"join_{data.host}_{data.n}_{data.it}")
-    join(data.n, it=data.it)
-    StopWatch.stop(f"join_{data.host}_{data.n}_{data.it}")
+    StopWatch.start(f"join_total_{data.host}_{data.n}_{data.it}")
+    join(data.n, it=data.it, data=data)
+    StopWatch.stop(f"join_total_{data.host}_{data.n}_{data.it}")
     StopWatch.benchmark(tag=str(data))
 
