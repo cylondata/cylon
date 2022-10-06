@@ -121,5 +121,43 @@ TEST_CASE("Join testing chunks", "[join]") {
   }
 }
 
+TEST_CASE("Join testing list type", "[join]") {
+  // todo: list types don't work in a dist env
+  if (ctx->GetWorldSize() > 1) {
+    return;
+  }
+
+  auto schema = arrow::schema({{arrow::field("a", arrow::int64())},
+                               {arrow::field("b", arrow::list(arrow::float32()))}});
+  auto t0 = TableFromJSON(schema, {R"([{"a":  3, "b":[0.025, 1.0]},
+                                         {"a": 26, "b":[0.394]},
+                                         {"a": 51, "b":[0.755, 1.0]},
+                                         {"a": 20, "b":[0.030, 1.0]},
+                                         {"a": 33, "b":[0.318]}])"});
+  auto t1 = TableFromJSON(schema, {R"([{"a":  3, "b":[0.025, 1.0]},
+                                         {"a": 26, "b":[0.394]},
+                                         {"a": 51, "b":[0.755, 1.0]},
+                                         {"a": 20, "b":[0.030, 1.0]},
+                                         {"a": 33, "b":[0.318]}])"});
+  auto exp_schema = arrow::schema({{arrow::field("l_a", arrow::int64())},
+                                   {arrow::field("l_b", arrow::list(arrow::float32()))},
+                                   {arrow::field("r_a", arrow::int64())},
+                                   {arrow::field("r_b", arrow::list(arrow::float32()))}});
+  auto exp_inner = TableFromJSON(exp_schema, {R"([{"l_a":  3, "l_b":[0.025, 1.0], "r_a":  3, "r_b":[0.025, 1.0]},
+                                        {"l_a": 26, "l_b":[0.394], "r_a":  26, "r_b":[0.394]},
+                                        {"l_a": 51, "l_b":[0.755, 1.0], "r_a":  51, "r_b":[0.755, 1.0]},
+                                        {"l_a": 20, "l_b":[0.030, 1.0], "r_a":  20, "r_b":[0.030, 1.0]},
+                                        {"l_a": 33, "l_b":[0.318], "r_a":  33, "r_b":[0.318]}])"});
+
+  auto config = cylon::join::config::JoinConfig(cylon::join::config::JoinType::INNER,
+                                                0, 0,
+                                                cylon::join::config::JoinAlgorithm::HASH,
+                                                "l_",
+                                                "r_");
+  std::shared_ptr<arrow::Table> res;
+  CHECK_CYLON_STATUS(cylon::join::JoinTables(t0, t1, config, &res));
+  CHECK_ARROW_EQUAL(exp_inner, res);
+}
+
 }
 }

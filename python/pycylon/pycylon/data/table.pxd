@@ -125,6 +125,19 @@ cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
     CStatus Repartition(const shared_ptr[CTable] & table, shared_ptr[CTable] * output)
 
+    CStatus Slice(shared_ptr[CTable] & table,
+                        int64_t offset, int64_t length, shared_ptr[CTable] *out)
+    CStatus DistributedSlice(shared_ptr[CTable] & table,
+                        int64_t offset, int64_t length, shared_ptr[CTable] *out)
+    CStatus Head(shared_ptr[CTable] & table,
+                        int64_t num_rows, shared_ptr[CTable] *out)
+    CStatus DistributedHead(shared_ptr[CTable] & table,
+                        int64_t num_rows, shared_ptr[CTable] *out)
+    CStatus Tail(shared_ptr[CTable] & table,
+                        int64_t num_rows, shared_ptr[CTable] *out)
+    CStatus DistributedTail(shared_ptr[CTable] & table,
+                        int64_t num_rows, shared_ptr[CTable] *out)
+
 cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":
     cdef cppclass CSortOptions "cylon::SortOptions":
         enum CSortMethod:
@@ -154,5 +167,5 @@ cdef class Table:
         void init(self, const shared_ptr[CTable]& table)
 
         _get_join_ra_response(self, op_name, shared_ptr[CTable] output, CStatus status)
-
         _get_ra_response(self, table, ra_op_name)
+        _get_slice_ra_response(self, offset, length, ra_op_name)

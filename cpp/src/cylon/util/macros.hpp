@@ -31,7 +31,8 @@
   do{                               \
     const auto& _st = (expr);       \
     if (!_st.ok()) {                \
-      return cylon::Status(static_cast<int>(_st.code()), _st.message()); \
+      return cylon::Status(static_cast<int>(_st.code()), _st.message() \
+      + "\n" + __FILE__ + ":" + std::to_string(__LINE__) ); \
     };                              \
   } while (0)
 
@@ -43,7 +44,8 @@
       int _err_str_len = 0;                 \
       MPI_Error_string(_st, _err_str, &_err_str_len); \
       return cylon::Status(cylon::Code::ExecutionError,      \
-                           std::string(_err_str, _err_str_len)); \
+                           std::string(_err_str, _err_str_len)\
+                           + "\n" + __FILE__ + ":" + std::to_string(__LINE__)); \
     };                              \
   } while (0)
 
@@ -53,7 +55,8 @@
     if (_st < 0) {                                         \
       return cylon::Status(                                      \
           cylon::Code::ExecutionError,                           \
-          "UCC Failed: " + std::string(ucc_status_string(_st))); \
+          "UCC Failed: " + std::string(ucc_status_string(_st))\
+          + "\n" + __FILE__ + ":" + std::to_string(__LINE__)); \
     };                                                           \
   } while (0)
 
@@ -95,5 +98,22 @@
   } while (0)
 
 #define CYLON_UNUSED(expr) do { (void)(expr); } while (0)
+
+#ifdef _CYLON_BENCH
+#define CYLON_BENCH_TIMER(ctx, tag, ...)                \
+  do{                                                   \
+  auto t1 = std::chrono::high_resolution_clock::now();  \
+  __VA_ARGS__;                                          \
+  auto t2 = std::chrono::high_resolution_clock::now();  \
+  if ((ctx)->GetRank() == 0) {                          \
+    std::cout << "[BENCH] " << (tag) << " "             \
+      << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() \
+      << " ms\n";                                         \
+      }                                                 \
+}while(0)
+#else
+#define CYLON_BENCH_TIMER(ctx, tag, ...)     \
+  __VA_ARGS__;
+#endif
 
 #endif //CYLON_CPP_SRC_CYLON_UTIL_MACROS_HPP_
