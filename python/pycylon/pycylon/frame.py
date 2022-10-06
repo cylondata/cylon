@@ -774,6 +774,10 @@ class DataFrame(object):
         if isinstance(item, slice) or isinstance(item, int) or isinstance(item, str) or \
                 isinstance(item, List):
             return DataFrame(self._table.__getitem__(item))
+        elif isinstance(item, tuple):
+            key, obj = item
+            self._change_context(env=obj)
+            return DataFrame(self._table.__getitem__(item))
         elif isinstance(item, DataFrame):
             return DataFrame(self._table.__getitem__(item.to_table()))
 
