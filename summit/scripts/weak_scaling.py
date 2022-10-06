@@ -8,9 +8,9 @@ from pycylon.net import MPIConfig
 from cloudmesh.common.StopWatch import StopWatch
 from cloudmesh.common.dotdict import dotdict
 from cloudmesh.common.Shell import Shell
-import os
+# import os
 
-git = "/usr/bin/git"
+# git = "/usr/bin/git"
 
 def join(r, it=4, u=0.9, data=None):
     comm = MPI.COMM_WORLD
@@ -56,6 +56,6 @@ if __name__ == "__main__":
     StopWatch.stop(f"join_total_{data.host}_{data.n}_{data.it}")
     StopWatch.benchmark(tag=str(data))
 
-    os.system(f"{git} branch | fgrep '*' ")
-    os.system(f"{git} rev-parse HEAD")
+    # os.system(f"{git} branch | fgrep '*' ")
+    # os.system(f"{git} rev-parse HEAD")
 
