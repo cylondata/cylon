@@ -29,29 +29,31 @@ fi
 
 # generate weak scaling
 num_rows = 50_000_000
-base_time = 10
+base_time = 15
 scaling = 'w'
-for i in [1, 2, 4, 8, 16, 32, 64, 128, 256]:
-    tm = min(base_time * i, 24 * 60)
+tm = base_time
+for p in [1, 2, 4, 8, 16, 32, 64, 128, 256]:
+    # tm = min(base_time * p, 24 * 60)
+    tm += base_time
     duration = f'{int(tm / 60)}:{tm % 60}'
-    with open(f'weak_scaling/cylon_{scaling}_{i}.lsf', 'w') as f:
+    with open(f'weak_scaling/cylon_{scaling}_{p}.lsf', 'w') as f:
         f.write(template.format(duration=duration,
-                                nodes=i,
+                                nodes=p,
                                 scaling=scaling,
                                 num_rows=num_rows,
-                                run_serial=1 if i == 1 else 0))
+                                run_serial=1 if p == 1 else 0))
 
 # generate strong scaling
 num_rows = 10_000_000_000
 num_rows = num_rows - (num_rows % (256 * 42))  # adjust num_row to be a multiple of 256*42
-base_time = 60
+base_time = 90
 scaling = 's'
-for i in [1, 2, 4, 8, 16, 32, 64, 128, 256]:
+for p in [1, 2, 4, 8, 16, 32, 64, 128, 256]:
     tm = base_time
     duration = f'{int(tm / 60)}:{tm % 60}'
-    with open(f'strong_scaling/cylon_{scaling}_{i}.lsf', 'w') as f:
+    with open(f'strong_scaling/cylon_{scaling}_{p}.lsf', 'w') as f:
         f.write(template.format(duration=duration,
-                                nodes=i,
+                                nodes=p,
                                 scaling=scaling,
                                 num_rows=num_rows,
-                                run_serial=1 if i == 1 else 0))
+                                run_serial=1 if p == 1 else 0))
