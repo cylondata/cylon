@@ -8,6 +8,8 @@
 #BSUB -o cylonrun-1.%J
 #BSUB -e cylonrun-1.%J
 
+num_rows=50000000
+
 module load python/3.7.7
 source $HOME/CYLON/bin/activate
 
@@ -20,8 +22,8 @@ export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/
 for i in 1
 do
   echo ################## $(($i*42)) case
-  time jsrun -n $(($i*42)) -c 1 python $HOME/cylon/summit/scripts/weak_scaling.py
+  time jsrun -n $(($i*42)) -c 1 python $HOME/cylon/summit/scripts/weak_scaling.py -n $num_rows
 done
 
-time jsrun -n 1 -c 1 python $HOME/cylon/summit/scripts/weak_scaling.py
+time jsrun -n 1 -c 1 python $HOME/cylon/summit/scripts/weak_scaling.py -n $num_rows
 

@@ -1,4 +1,5 @@
 import time
+import argparse
 
 import pandas as pd
 from mpi4py import MPI
@@ -8,12 +9,13 @@ from pycylon.net import MPIConfig
 from cloudmesh.common.StopWatch import StopWatch
 from cloudmesh.common.dotdict import dotdict
 from cloudmesh.common.Shell import Shell
+
+
 # import os
 
 # git = "/usr/bin/git"
 
-def join(r, it=4, u=0.9, data=None):
-
+def join(data=None):
     StopWatch.start(f"join_total_{data.host}_{data.n}_{data.it}")
 
     comm = MPI.COMM_WORLD
@@ -21,6 +23,8 @@ def join(r, it=4, u=0.9, data=None):
     config = MPIConfig(comm)
     env = CylonEnv(config=config, distributed=True)
 
+    r = data.n
+    u = data.u
     total_r = r * env.world_size
 
     rng = default_rng(seed=env.rank)
@@ -50,18 +54,22 @@ def join(r, it=4, u=0.9, data=None):
     if env.rank == 0:
         StopWatch.benchmark(tag=str(data))
 
-
     env.finalize()
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="weak scaling")
+    parser.add_argument('-n', dest='rows', type=int, required=True)
+    parser.add_argument('-i', dest='it', type=int, default=10)
+    parser.add_argument('-u', dest='unique', type=float, default=0.9, help="unique factor")
+    args = vars(parser.parse_args())
 
     data = dotdict()
-    data.n = 1000000
-    data.it = 10
+    data.n = args['rows']
+    data.it = args['it']
+    data.u = args['unique']
     data.host = "summit"
-    join(data.n, it=data.it, data=data)
+    join(data)
 
     # os.system(f"{git} branch | fgrep '*' ")
     # os.system(f"{git} rev-parse HEAD")
-
