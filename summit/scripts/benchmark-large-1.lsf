@@ -17,7 +17,7 @@ BUILD_PATH=$HOME/cylon/build
 export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/lib64:$BUILD_PATH/lib64:$BUILD_PATH/lib:$LD_LIBRARY_PATH
 
 
-for i in 256 128 64 32 16 8 4 2 1
+for i in 1
 do
   echo ################## $(($i*42)) case
   time jsrun -n $(($i*42)) -c 1 python $HOME/cylon/summit/scripts/weak_scaling.py
