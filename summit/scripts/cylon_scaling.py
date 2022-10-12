@@ -11,32 +11,33 @@ from cloudmesh.common.dotdict import dotdict
 from cloudmesh.common.Shell import Shell
 
 
-# import os
-
-# git = "/usr/bin/git"
-
 def join(data=None):
-    StopWatch.start(f"join_total_{data.host}_{data.n}_{data.it}")
+    StopWatch.start(f"join_total_{data['host']}_{data['rows']}_{data['it']}")
 
     comm = MPI.COMM_WORLD
 
     config = MPIConfig(comm)
     env = CylonEnv(config=config, distributed=True)
 
-    r = data.n
-    u = data.u
-    total_r = r * env.world_size
+    u = data['unique']
+
+    if data['scaling'] == 'w':  # weak
+        num_rows = data['rows']
+        max_val = num_rows * env.world_size
+    else:  # 's' strong
+        max_val = data['rows']
+        num_rows = int(data['rows'] / env.world_size)
 
     rng = default_rng(seed=env.rank)
-    data1 = rng.integers(0, int(total_r * u), size=(r, 2))
-    data2 = rng.integers(0, int(total_r * u), size=(r, 2))
+    data1 = rng.integers(0, int(max_val * u), size=(num_rows, 2))
+    data2 = rng.integers(0, int(max_val * u), size=(num_rows, 2))
 
     df1 = DataFrame(pd.DataFrame(data1).add_prefix("col"))
     df2 = DataFrame(pd.DataFrame(data2).add_prefix("col"))
 
-    for i in range(data.it):
+    for i in range(data['it']):
         env.barrier()
-        StopWatch.start(f"join_{i}_{data.host}_{data.n}_{data.it}")
+        StopWatch.start(f"join_{i}_{data['host']}_{data['rows']}_{data['it']}")
         t1 = time.time()
         df3 = df1.merge(df2, on=[0], algorithm='sort', env=env)
         env.barrier()
@@ -46,10 +47,11 @@ def join(data=None):
         tot_l = comm.reduce(len(df3))
 
         if env.rank == 0:
-            print("w", env.world_size, "r", r, "it", i, "t", sum_t / env.world_size, "l", tot_l)
-            StopWatch.stop(f"join_{i}_{data.host}_{data.n}_{data.it}")
+            avg_t = sum_t / env.world_size
+            print("### ", data['scaling'], env.world_size, num_rows, max_val, i, avg_t, tot_l)
+            StopWatch.stop(f"join_{i}_{data['host']}_{data['rows']}_{data['it']}")
 
-    StopWatch.stop(f"join_total_{data.host}_{data.n}_{data.it}")
+    StopWatch.stop(f"join_total_{data['host']}_{data['rows']}_{data['it']}")
 
     if env.rank == 0:
         StopWatch.benchmark(tag=str(data))
@@ -62,14 +64,12 @@ if __name__ == "__main__":
     parser.add_argument('-n', dest='rows', type=int, required=True)
     parser.add_argument('-i', dest='it', type=int, default=10)
     parser.add_argument('-u', dest='unique', type=float, default=0.9, help="unique factor")
-    args = vars(parser.parse_args())
+    parser.add_argument('-s', dest='scaling', type=str, default='w', choices=['s', 'w'],
+                        help="s=strong w=weak")
 
-    data = dotdict()
-    data.n = args['rows']
-    data.it = args['it']
-    data.u = args['unique']
-    data.host = "summit"
-    join(data)
+    args = vars(parser.parse_args())
+    args['host'] = "summit"
+    join(args)
 
     # os.system(f"{git} branch | fgrep '*' ")
     # os.system(f"{git} rev-parse HEAD")
