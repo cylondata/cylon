@@ -152,7 +152,7 @@ BUILD_PATH=$HOME/cylon/build
 export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/lib64:$BUILD_PATH/lib64:$BUILD_PATH/lib:$LD_LIBRARY_PATH
 
 cd ~/cylon/summit/scripts
-time jsrun -n <parallelism> python weak_scaling.py
+time jsrun -n <parallelism> python cylon_scaling.py
 ```
 
 The approximate time for running it is less than 15 seconds
