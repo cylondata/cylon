@@ -177,4 +177,5 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 ### Running batch scripts
 
-Please note that the module load and the source of the CYLON venv must be at the beginning of each batsch script you want to use cylon in.
+Please note that the module load and the source of the CYLON venv must be at the 
+beginning of each batsch script you want to use cylon in.
