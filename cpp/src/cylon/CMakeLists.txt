@@ -14,6 +14,8 @@
 
 find_package(Threads REQUIRED)
 
+option(CYLON_DEBUG "Enable Cylon Debug")
+
 if (CYLON_BENCH)
     message("Benchmark timings enabled")
     add_definitions(-D_CYLON_BENCH)
@@ -250,6 +252,10 @@ if (PYCYLON_BUILD)
 endif (PYCYLON_BUILD)
 
 target_compile_options(cylon PRIVATE)
+
+if (CYLON_DEBUG)
+    target_compile_definitions(cylon PRIVATE CYLON_DEBUG)
+endif()
 # target_compile_options(cylon PRIVATE -Werror -Wall -Wextra -Wno-unused-parameter)
 
 cylon_install_all_headers("cylon")
