@@ -266,8 +266,8 @@ if (CYLON_UCX)
     cylon_run_test(sync_comms_test 1 ucx)
     cylon_run_test(sync_comms_test 4 ucx)
 
-#    cylon_run_test(dist_sort_test 1 ucx)
-#    cylon_run_test(dist_sort_test 4 ucx)
+    cylon_run_test(dist_sort_test 1 ucx)
+    cylon_run_test(dist_sort_test 4 ucx)
 
   endif (CYLON_UCC)
 endif (CYLON_UCX)
