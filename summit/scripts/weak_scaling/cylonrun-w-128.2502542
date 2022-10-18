@@ -1,0 +1,143 @@
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@batch3>
+Subject: Job 2502542: <cylonrun-w-128> in cluster <summit> Done
+
+Job <cylonrun-w-128> was submitted from host <login4> by user <gregorvl> in cluster <summit> at Wed Oct 12 16:00:42 2022
+Job was executed on host(s) <1*batch3>, in queue <batch>, as user <gregorvl> in cluster <summit> at Sun Oct 16 09:23:02 2022
+                            <42*e06n07>
+                            <42*e06n08>
+                            <42*e06n09>
+                            <42*e06n10>
+                            <42*e06n11>
+                            <42*e06n12>
+                            <42*e06n13>
+                            <42*e06n14>
+                            <42*e06n15>
+                            <42*e06n16>
+                            <42*e06n17>
+                            <42*e06n18>
+                            <42*e07n01>
+                            <42*e07n02>
+                            <42*e07n03>
+                            <42*e07n04>
+                            <42*e07n05>
+                            <42*e07n06>
+                            <42*e07n07>
+                            <42*e07n08>
+                            <42*e07n09>
+                            <42*e07n10>
+                            <42*e07n11>
+                            <42*e07n12>
+                            <42*e07n13>
+                            <42*e07n14>
+                            <42*e07n15>
+                            <42*e07n16>
+                            <42*e07n17>
+                            <42*e07n18>
+                            <42*e08n01>
+                            <42*e08n02>
+                            <42*e08n03>
+                            <42*e08n04>
+                            <42*e08n05>
+                            <42*e08n06>
+                            <42*e08n07>
+                            <42*e08n08>
+                            <42*e08n09>
+                            <42*e08n10>
+                            <42*e08n11>
+                            <42*e08n12>
+                            <42*e08n13>
+                            <42*e08n14>
+                            <42*e08n15>
+                            <42*e08n16>
+                            <42*e08n17>
+                            <42*e08n18>
+                            <42*e09n01>
+                            <42*e09n02>
+                            <42*e09n03>
+                            <42*e09n04>
+                            <42*e09n05>
+                            <42*e09n06>
+                            <42*e09n07>
+                            <42*e09n08>
+                            <42*e09n09>
+                            <42*e13n05>
+                            <42*e13n06>
+                            <42*e13n07>
+                            <42*e13n08>
+                            <42*e13n09>
+                            <42*e13n10>
+                            <42*e13n11>
+                            <42*e13n12>
+                            <42*e13n13>
+                            <42*e13n14>
+                            <42*e13n15>
+                            <42*e13n16>
+                            <42*e13n17>
+                            <42*f11n18>
+                            <42*f12n01>
+                            <42*f12n02>
+                            <42*f12n03>
+                            <42*f12n04>
+                            <42*f12n05>
+                            <42*f12n06>
+                            <42*f12n07>
+                            <42*f12n08>
+                            <42*f12n09>
+                            <42*f12n10>
+                            <42*f12n11>
+                            <42*f12n12>
+                            <42*f12n13>
+                            <42*f12n14>
+                            <42*f12n15>
+                            <42*f12n16>
+                            <42*f12n17>
+                            <42*f12n18>
+                            <42*f13n01>
+                            <42*f13n02>
+                            <42*f13n03>
+                            <42*f13n04>
+                            <42*f13n05>
+                            <42*f13n06>
+                            <42*f13n07>
+                            <42*f13n08>
+                            <42*f13n09>
+                            <42*f13n10>
+                            <42*f13n11>
+                            <42*f13n12>
+                            <42*f13n13>
+                            <42*f13n14>
+                            <42*f13n15>
+                            <42*f13n16>
+                            <42*f13n17>
+                            <42*f13n18>
+                            <42*f14n01>
+                            <42*f14n06>
+                            <42*f14n07>
+                            <42*f14n08>
+                            <42*f14n09>
+                            <42*f16n18>
+                            <42*f17n01>
+                            <42*f17n02>
+                            <42*f17n03>
+                            <42*f17n04>
+                            <42*f17n05>
+                            <42*f17n06>
+                            <42*f17n07>
+                            <42*f17n08>
+                            <42*f17n09>
+                            <42*f17n10>
+                            <42*f17n11>
+                            <42*f17n12>
+                            <42*f17n13>
+                            <42*f17n14>
+                            <42*f17n15>
+</ccs/home/gregorvl> was used as the home directory.
+</ccs/home/gregorvl/cylon/summit/scripts/weak_scaling> was used as the working directory.
+Started at Sun Oct 16 09:23:02 2022
+Terminated at Sun Oct 16 09:23:27 2022
+Results reported at Sun Oct 16 09:23:27 2022
+
+The output (if any) is above this job summary.
+
