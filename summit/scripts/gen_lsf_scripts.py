@@ -57,3 +57,19 @@ for p in [1, 2, 4, 8, 16, 32, 64, 128, 256]:
                                 scaling=scaling,
                                 num_rows=num_rows,
                                 run_serial=1 if p == 1 else 0))
+
+num_rows = 50_000_000_000
+num_rows = num_rows - (num_rows % (256 * 42))  # adjust num_row to be a multiple of 256*42
+base_time = 360 + 30
+diff = 30
+scaling = 's'
+tm = base_time
+for p in [8, 16, 32, 64, 128, 256]:
+    tm = tm - diff
+    duration = f'{int(tm / 60)}:{tm % 60}'
+    with open(f'strong_scaling_big/cylon_{scaling}_{p}.lsf', 'w') as f:
+        f.write(template.format(duration=duration,
+                                nodes=p,
+                                scaling=scaling,
+                                num_rows=num_rows,
+                                run_serial=1 if p == 1 else 0))
