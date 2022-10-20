@@ -2,7 +2,7 @@
 #!/bin/bash
 
 #BSUB -P gen150_bench
-#BSUB -W 6:0
+#BSUB -W 2:0
 #BSUB -nnodes 8
 #BSUB -alloc_flags smt1
 #BSUB -J cylonrun-s-8

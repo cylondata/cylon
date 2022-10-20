@@ -65,7 +65,8 @@ diff = 30
 scaling = 's'
 tm = base_time
 for p in [8, 16, 32, 64, 128, 256]:
-    tm = tm - diff
+    # tm = tm - diff
+    tm = 120
     duration = f'{int(tm / 60)}:{tm % 60}'
     with open(f'strong_scaling_big/cylon_{scaling}_{p}.lsf', 'w') as f:
         f.write(template.format(duration=duration,
