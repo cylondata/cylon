@@ -345,6 +345,9 @@ if (${ARROW_BUILD_TYPE} STREQUAL "SYSTEM")
     find_library(ARROW_LIB arrow ${CYLON_ARROW_VERSION} REQUIRED)
     message(STATUS "Arrow lib: ${ARROW_LIB}")
 
+    find_library(ARROW_DATASET_LIB arrow_dataset ${CYLON_ARROW_VERSION} REQUIRED)
+    message(STATUS "Arrow dataset lib: ${ARROW_DATASET_LIB}")
+
     if (PYCYLON_BUILD)
         find_library(ARROW_PY_LIB arrow_python ${CYLON_ARROW_VERSION} REQUIRED)
         message(STATUS "Arrow py lib: ${ARROW_PY_LIB}")
