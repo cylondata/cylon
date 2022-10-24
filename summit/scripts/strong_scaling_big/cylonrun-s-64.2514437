@@ -1,0 +1,173 @@
+
+The following have been reloaded with a version change:
+  1) python/3.8-anaconda3 => python/3.7.7
+
+
+###  s 2688 18601188 49999993344 0 20404.43483420781 55555473452
+###  s 2688 18601188 49999993344 1 20364.701059868647 55555473452
+###  s 2688 18601188 49999993344 2 20692.579976238667 55555473452
+###  s 2688 18601188 49999993344 3 19957.01819064007 55555473452
+###  s 2688 18601188 49999993344 4 19795.665421212714 55555473452
+###  s 2688 18601188 49999993344 5 19819.2359162938 55555473452
+###  s 2688 18601188 49999993344 6 19957.09376684612 55555473452
+###  s 2688 18601188 49999993344 7 19929.637574812485 55555473452
+###  s 2688 18601188 49999993344 8 19666.202342847275 55555473452
+###  s 2688 18601188 49999993344 9 20539.4706291457 55555473452
+
++---------------------------------+--------------------------------------------------+
+| Attribute                       | Value                                            |
+|---------------------------------+--------------------------------------------------|
+| ANSI_COLOR                      | "0;31"                                           |
+| BUG_REPORT_URL                  | "https://bugzilla.redhat.com/"                   |
+| CPE_NAME                        | "cpe:/o:redhat:enterprise_linux:8.2:GA"          |
+| HOME_URL                        | "https://www.redhat.com/"                        |
+| ID                              | "rhel"                                           |
+| ID_LIKE                         | "fedora"                                         |
+| NAME                            | "Red Hat Enterprise Linux"                       |
+| PLATFORM_ID                     | "platform:el8"                                   |
+| PRETTY_NAME                     | "Red Hat Enterprise Linux 8.2 (Ootpa)"           |
+| REDHAT_BUGZILLA_PRODUCT         | "Red Hat Enterprise Linux 8"                     |
+| REDHAT_BUGZILLA_PRODUCT_VERSION | 8.2                                              |
+| REDHAT_SUPPORT_PRODUCT          | "Red Hat Enterprise Linux"                       |
+| REDHAT_SUPPORT_PRODUCT_VERSION  | "8.2"                                            |
+| VERSION                         | "8.2 (Ootpa)"                                    |
+| VERSION_ID                      | "8.2"                                            |
+| cpu                             |                                                  |
+| cpu_cores                       | 44                                               |
+| cpu_count                       | 50                                               |
+| cpu_threads                     | 50                                               |
+| date                            | 2022-10-21 13:20:01.292815                       |
+| frequency                       | scpufreq(current=3800.0, min=2300.0, max=3800.0) |
+| mem.active                      | 134.0 GiB                                        |
+| mem.available                   | 437.8 GiB                                        |
+| mem.free                        | 403.4 GiB                                        |
+| mem.inactive                    | 34.4 GiB                                         |
+| mem.percent                     | 27.2 %                                           |
+| mem.total                       | 601.7 GiB                                        |
+| mem.used                        | 153.1 GiB                                        |
+| platform.version                | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| python                          | 3.7.7 (default, May 28 2021, 19:38:18)           |
+|                                 | [GCC 8.3.1 20191121 (Red Hat 8.3.1-5)]           |
+| python.pip                      | 22.2.2                                           |
+| python.version                  | 3.7.7                                            |
+| sys.platform                    | linux                                            |
+| uname.machine                   | ppc64le                                          |
+| uname.node                      | b16n10                                           |
+| uname.processor                 | ppc64le                                          |
+| uname.release                   | 4.18.0-193.46.1.el8_2.ppc64le                    |
+| uname.system                    | Linux                                            |
+| uname.version                   | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| user                            | None                                             |
++---------------------------------+--------------------------------------------------+
+
++----------------------------------+----------+---------+---------+---------------------+----------------------------------------------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+| Name                             | Status   |    Time |     Sum | Start               | tag                                                                              | msg   | Node   | User   | OS    | Version                             |
+|----------------------------------+----------+---------+---------+---------------------+----------------------------------------------------------------------------------+-------+--------+--------+-------+-------------------------------------|
+| join_total_summit_49999993344_10 | ok       | 205.084 | 205.084 | 2022-10-21 13:16:36 | {'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'} |       | b16n10 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_0_summit_49999993344_10     | ok       |  20.411 |  20.411 | 2022-10-21 13:16:40 | {'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'} |       | b16n10 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_1_summit_49999993344_10     | ok       |  20.366 |  20.366 | 2022-10-21 13:17:00 | {'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'} |       | b16n10 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_2_summit_49999993344_10     | ok       |  20.694 |  20.694 | 2022-10-21 13:17:20 | {'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'} |       | b16n10 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_3_summit_49999993344_10     | ok       |  19.959 |  19.959 | 2022-10-21 13:17:41 | {'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'} |       | b16n10 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_4_summit_49999993344_10     | ok       |  19.798 |  19.798 | 2022-10-21 13:18:01 | {'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'} |       | b16n10 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_5_summit_49999993344_10     | ok       |  19.821 |  19.821 | 2022-10-21 13:18:21 | {'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'} |       | b16n10 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_6_summit_49999993344_10     | ok       |  19.959 |  19.959 | 2022-10-21 13:18:41 | {'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'} |       | b16n10 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_7_summit_49999993344_10     | ok       |  19.932 |  19.932 | 2022-10-21 13:19:01 | {'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'} |       | b16n10 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_8_summit_49999993344_10     | ok       |  19.668 |  19.668 | 2022-10-21 13:19:21 | {'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'} |       | b16n10 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_9_summit_49999993344_10     | ok       |  20.541 |  20.541 | 2022-10-21 13:19:40 | {'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'} |       | b16n10 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
++----------------------------------+----------+---------+---------+---------------------+----------------------------------------------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+# csv,timer,status,time,sum,start,tag,msg,uname.node,user,uname.system,platform.version
+# csv,join_total_summit_49999993344_10,ok,205.084,205.084,2022-10-21 13:16:36,{'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'},None,b16n10,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_0_summit_49999993344_10,ok,20.411,20.411,2022-10-21 13:16:40,{'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'},None,b16n10,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_1_summit_49999993344_10,ok,20.366,20.366,2022-10-21 13:17:00,{'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'},None,b16n10,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_2_summit_49999993344_10,ok,20.694,20.694,2022-10-21 13:17:20,{'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'},None,b16n10,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_3_summit_49999993344_10,ok,19.959,19.959,2022-10-21 13:17:41,{'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'},None,b16n10,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_4_summit_49999993344_10,ok,19.798,19.798,2022-10-21 13:18:01,{'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'},None,b16n10,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_5_summit_49999993344_10,ok,19.821,19.821,2022-10-21 13:18:21,{'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'},None,b16n10,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_6_summit_49999993344_10,ok,19.959,19.959,2022-10-21 13:18:41,{'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'},None,b16n10,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_7_summit_49999993344_10,ok,19.932,19.932,2022-10-21 13:19:01,{'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'},None,b16n10,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_8_summit_49999993344_10,ok,19.668,19.668,2022-10-21 13:19:21,{'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'},None,b16n10,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_9_summit_49999993344_10,ok,20.541,20.541,2022-10-21 13:19:40,{'rows': 49999993344, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'summit'},None,b16n10,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+
+
+real	3m51.343s
+user	0m0.565s
+sys	0m0.099s
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@batch4>
+Subject: Job 2514437: <cylonrun-s-64> in cluster <summit> Done
+
+Job <cylonrun-s-64> was submitted from host <login1> by user <gregorvl> in cluster <summit> at Thu Oct 20 14:47:23 2022
+Job was executed on host(s) <1*batch4>, in queue <batch>, as user <gregorvl> in cluster <summit> at Fri Oct 21 09:15:38 2022
+                            <42*b16n10>
+                            <42*b16n12>
+                            <42*b16n13>
+                            <42*b16n14>
+                            <42*d21n02>
+                            <42*d31n07>
+                            <42*d31n08>
+                            <42*d31n09>
+                            <42*d31n10>
+                            <42*d31n11>
+                            <42*d31n12>
+                            <42*d31n13>
+                            <42*d35n14>
+                            <42*d35n15>
+                            <42*d35n16>
+                            <42*d35n17>
+                            <42*d35n18>
+                            <42*d36n01>
+                            <42*d36n02>
+                            <42*d36n03>
+                            <42*d36n04>
+                            <42*d36n07>
+                            <42*d36n08>
+                            <42*d36n09>
+                            <42*d36n14>
+                            <42*d36n15>
+                            <42*d36n16>
+                            <42*d36n17>
+                            <42*d36n18>
+                            <42*e01n01>
+                            <42*e01n02>
+                            <42*e01n03>
+                            <42*e01n04>
+                            <42*e01n05>
+                            <42*e01n06>
+                            <42*e01n07>
+                            <42*e01n12>
+                            <42*e01n13>
+                            <42*e01n14>
+                            <42*e01n15>
+                            <42*e01n16>
+                            <42*e01n17>
+                            <42*e05n18>
+                            <42*e06n01>
+                            <42*e06n02>
+                            <42*e06n03>
+                            <42*e06n04>
+                            <42*e06n05>
+                            <42*e09n08>
+                            <42*e09n09>
+                            <42*e10n05>
+                            <42*e10n06>
+                            <42*e10n07>
+                            <42*e10n08>
+                            <42*e10n09>
+                            <42*e10n10>
+                            <42*e10n11>
+                            <42*e10n12>
+                            <42*e10n13>
+                            <42*e10n14>
+                            <42*h31n03>
+                            <42*h31n04>
+                            <42*h31n05>
+                            <42*h31n06>
+</ccs/home/gregorvl> was used as the home directory.
+</ccs/home/gregorvl/cylon/summit/scripts/strong_scaling_big> was used as the working directory.
+Started at Fri Oct 21 09:15:38 2022
+Terminated at Fri Oct 21 09:20:05 2022
+Results reported at Fri Oct 21 09:20:05 2022
+
+The output (if any) is above this job summary.
+
