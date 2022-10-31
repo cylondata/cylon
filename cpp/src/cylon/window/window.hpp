@@ -17,17 +17,29 @@
 #include <cylon/table.hpp>
 #include <cylon/compute/aggregate_kernels.hpp>
 
+#include <cylon/window/window_config.hpp>
+
 namespace cylon {
+namespace windowing {
 
 class window {
 
-  Status DistributedHashWindow(std::shared_ptr<Table> &table,
-                                const std::vector<int32_t> &index_cols,
-                                const std::vector<int32_t> &aggregate_cols,
-                                const std::vector<compute::AggregationOpId> &aggregate_ops,
-                                std::shared_ptr<Table> &output);
+  Status DistributedHashWindow(const config::WindowConfig &window_config,
+                               std::shared_ptr<Table> &table,
+                               const std::vector<int32_t> &index_cols,
+                               const std::vector<int32_t> &aggregate_cols,
+                               const std::vector<compute::AggregationOpId> &aggregate_ops,
+                               std::shared_ptr<Table> &output);
+
+  Status DistributedHashWindow(const config::WindowConfig &window_config,
+                               std::shared_ptr<Table> &table,
+                               int32_t index_col,
+                               const std::vector<int32_t> &aggregate_cols,
+                               const std::vector<compute::AggregationOpId> &aggregate_ops,
+                               std::shared_ptr<Table> &output);
 
 };
+}
 }
 
 #endif //CYLON_SRC_CYLON_WINDOW_WINDOW_HPP_

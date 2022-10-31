@@ -13,12 +13,77 @@
  */
 
 #ifndef CYLON_SRC_CYLON_WINDOW_HASH_WINDOW_HPP_
-#define CYLON_SRC_CYLON_WINDOW_HASH_WINDOW_HPP_
 
-class hash_window {
+#include <cylon/table.hpp>
+#include <cylon/compute/aggregate_kernels.hpp>
+#include "window_config.hpp"
 
 
+namespace cylon {
+namespace windowing {
 
-};
+/**
+ * Hash group-by operation by using <col_index, AggregationOpId> pairs
+ * NOTE: Nulls in the value columns will be ignored!
+ * @param table
+ * @param idx_cols
+ * @param aggregate_cols
+ * @param output
+ * @return
+ */
+Status HashWindow(const config::WindowConfig &window_config,
+                  const std::shared_ptr<Table> &table,
+                  const std::vector<int32_t> &idx_cols,
+                  const std::vector<std::pair<int32_t, compute::AggregationOpId>> &aggregate_cols,
+                  std::shared_ptr<Table> &output);
+
+/**
+ * Hash group-by operation by using <col_index, AggregationOp> pairs
+ * NOTE: Nulls in the value columns will be ignored!
+ * @param table
+ * @param idx_cols
+ * @param aggregations
+ * @param output
+ * @return
+ */
+Status HashWindow(const config::WindowConfig &window_config,
+                  const std::shared_ptr<Table> &table,
+                  const std::vector<int32_t> &idx_cols,
+                  const std::vector<std::pair<int32_t, std::shared_ptr<compute::AggregationOp>>> &aggregations,
+                  std::shared_ptr<Table> &output);
+
+Status SlicesByObservations(const config::WindowConfig &window_config,
+                        const std::shared_ptr<Table> &table,
+                        std::vector<Table> &output);
+
+Status SlicesByOffset(const config::WindowConfig &window_config,
+                            const std::shared_ptr<Table> &table,
+                            std::vector<Table> &output);
+/**
+ * Hash group-by operation by using AggregationOpId vector
+ * NOTE: Nulls in the value columns will be ignored!
+ * @param table
+ * @param idx_cols
+ * @param aggregate_cols
+ * @param aggregate_ops
+ * @param output
+ * @return
+ */
+Status HashWindow(const config::WindowConfig &window_config,
+                  std::shared_ptr<Table> &table,
+                  const std::vector<int32_t> &idx_cols,
+                  const std::vector<int32_t> &aggregate_cols,
+                  const std::vector<compute::AggregationOpId> &aggregate_ops,
+                  std::shared_ptr<Table> &output);
+
+Status HashWindow(const config::WindowConfig &window_config,
+                  std::shared_ptr<Table> &table,
+                  int32_t idx_col,
+                  const std::vector<int32_t> &aggregate_cols,
+                  const std::vector<compute::AggregationOpId> &aggregate_ops,
+                  std::shared_ptr<Table> &output);
+
+}
+}
 
 #endif //CYLON_SRC_CYLON_WINDOW_HASH_WINDOW_HPP_

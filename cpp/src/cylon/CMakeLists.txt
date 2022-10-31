@@ -103,6 +103,11 @@ add_library(cylon SHARED
         groupby/hash_groupby.hpp
         groupby/pipeline_groupby.cpp
         groupby/pipeline_groupby.hpp
+        window/window.hpp
+        window/window.cpp
+        window/window_config.hpp
+        window/hash_window.hpp
+        window/hash_window.cpp
         indexing/index.cpp
         indexing/index.hpp
         indexing/index_utils.cpp
