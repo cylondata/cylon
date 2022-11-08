@@ -213,9 +213,9 @@ arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &arr,
   std::sort(vector_indices.begin(), vector_indices.end());
   auto arrow_array = WrapNumericVector(vector_indices);
 
-  const arrow::compute::TakeOptions &take_options = arrow::compute::TakeOptions::NoBoundsCheck();
-  ARROW_ASSIGN_OR_RAISE(auto sample_array, arrow::compute::Take(out, arrow_array, take_options));
-  out = sample_array.make_array();
+  const arrow::compute::TakeOptions &take_options = arrow::compute::TakeOptions::BoundsCheck();
+  ARROW_ASSIGN_OR_RAISE(auto sample_array, arrow::compute::Take(arr, arrow_array, take_options));
+  out = sample_array.chunked_array()->chunk(0);
 
   return arrow::Status::OK();
 }
