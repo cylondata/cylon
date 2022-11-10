@@ -52,12 +52,26 @@ Status HashWindow(const config::WindowConfig &window_config,
                   const std::vector<std::pair<int32_t, std::shared_ptr<compute::AggregationOp>>> &aggregations,
                   std::shared_ptr<Table> &output);
 
+/**
+ * Returns a vector of windows sliced by observation size
+ * @param window_config
+ * @param table
+ * @param output
+ * @param pool
+ * @return
+ */
 Status SlicesByObservations(const config::WindowConfig &window_config,
                         const std::shared_ptr<Table> &table,
-                        std::vector<Table> &output);
+                        std::vector<std::shared_ptr<Table>> &output,
+                            arrow::MemoryPool *pool);
+
+Status CreateEmptyTableAndMerge(const std::shared_ptr<Table> *sliced_table,
+                               const std::shared_ptr<arrow::Schema> &schema,
+                               std::shared_ptr<Table> &output,
+                               arrow::MemoryPool *pool, int64_t num_rows);
 
 Status SlicesByOffset(const config::WindowConfig &window_config,
-                            const std::shared_ptr<Table> &table,
+                            const std::shared_ptr<arrow::Table> &table,
                             std::vector<Table> &output);
 /**
  * Hash group-by operation by using AggregationOpId vector
