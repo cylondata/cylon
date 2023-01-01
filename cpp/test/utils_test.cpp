@@ -30,8 +30,34 @@ Status TestUtils() {
   return Status::OK();
 }
 
-TEST_CASE("Test Utils"){
+TEST_CASE("Test Utils") {
   CHECK_CYLON_STATUS(TestUtils());
+}
+
+TEST_CASE("Sample test") {
+  int rows = 1000;
+  std::shared_ptr<Table> table;
+  CHECK_CYLON_STATUS(CreateTable(ctx, rows, table));
+
+  uint64_t count = 128;
+  const auto &in_array = table->get_table()->column(0);
+  std::shared_ptr<arrow::Array> out;
+  CHECK_ARROW_STATUS(util::SampleArray(in_array, count, out));
+  REQUIRE(in_array->type() == out->type());
+  REQUIRE(out->length() == (int64_t) count);
+}
+
+TEMPLATE_LIST_TEST_CASE("Wrap numeric vector", "[utils]", ArrowNumericTypes) {
+  using T = typename TestType::c_type;
+  std::vector<T> data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+
+  std::shared_ptr<arrow::Array> arr = util::WrapNumericVector(data);
+
+  const T *data_ptr = std::static_pointer_cast<arrow::NumericArray<TestType>>(arr)->raw_values();
+  REQUIRE(data_ptr == data.data());
+  for (size_t i = 0; i < data.size(); i++) {
+    REQUIRE(data[i] == *(data_ptr + i));
+  }
 }
 
 } // namespace test
