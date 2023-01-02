@@ -1,0 +1,9 @@
+bsub cylon_w_1.lsf
+bsub cylon_w_128.lsf
+bsub cylon_w_16.lsf
+bsub cylon_w_2.lsf
+bsub cylon_w_256.lsf
+bsub cylon_w_32.lsf
+bsub cylon_w_4.lsf
+bsub cylon_w_64.lsf
+bsub cylon_w_8.lsf
