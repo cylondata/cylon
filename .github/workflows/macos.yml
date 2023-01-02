@@ -27,7 +27,7 @@ jobs:
       - name: Remove link for preventing an error
         run: rm /usr/local/bin/2to3* && rm /usr/local/bin/idle3 && rm /usr/local/bin/pydoc3
       - name: Install dependencies
-        run: brew update --preinstall && brew install -f --overwrite re2 automake boost brotli c-ares ccache flatbuffers grpc llvm llvm@8 lz4 minio ninja openssl@1.1 protobuf rapidjson snappy thrift wget zstd
+        run: brew update --preinstall && brew install -f --overwrite re2 automake boost brotli c-ares ccache flatbuffers grpc llvm lz4 minio ninja openssl@1.1 protobuf rapidjson snappy thrift wget zstd
 
       - uses: conda-incubator/setup-miniconda@v2
         with:
