@@ -195,21 +195,14 @@ export_library_path() {
   fi
 }
 
-INSTALL_CMD=
 if [ -z "$INSTALL_PATH" ]; then
-  echo "\-ipath|--install_path is NOT set default to cmake"
+  echo "\-ipath|--install_path is NOT set default to $BUILD_PATH"
+  CYLON_PREFIX=$BUILD_PATH/install
 else
-  INSTALL_CMD="-DCMAKE_INSTALL_PREFIX=${INSTALL_PATH}"
   echo "Install location set to: ${INSTALL_PATH}"
+  CYLON_PREFIX=$INSTALL_PATH
 fi
-
-install_libs() {
-  if [ -z "$INSTALL_PATH" ]; then
-    echo "\-ipath|--install_path is NOT set. we are not trying to install"
-  else
-    make install
-  fi
-}
+INSTALL_CMD="-DCMAKE_INSTALL_PREFIX=${CYLON_PREFIX}"
 
 build_cpp() {
   print_line
@@ -237,8 +230,7 @@ build_cpp() {
   cmake_cmd="cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DCMAKE_BUILD_TYPE=${BUILD_MODE} \
   -DCYLON_WITH_TEST=${RUN_CPP_TESTS} $CPPLINT_CMD $INSTALL_CMD $CMAKE_FLAGS ${SOURCE_DIR}"
   bash -c "$cmake_cmd" || exit 1
-  make -j "${MAKE_JOBS}" || exit 1
-  install_libs
+  make -j "${MAKE_JOBS}" install || exit 1
   printf "ARROW HOME SET :%s \n" "${ARROW_HOME}"
   printf "Cylon CPP Built Successfully!"
   popd || exit 1
@@ -279,8 +271,7 @@ build_cpp_with_custom_arrow() {
     ${CMAKE_FLAGS} \
     ${SOURCE_DIR}"
   bash -c "$cmake_cmd" || exit 1
-  make -j ${MAKE_JOBS} || exit 1
-  install_libs
+  make -j ${MAKE_JOBS} install|| exit 1
   printf "Cylon CPP Built Successfully!"
   popd || exit 1
   print_line
@@ -380,7 +371,7 @@ build_python_pyarrow() {
   pushd python/pycylon || exit 1
   pip3 uninstall -y pycylon
   make clean
-  CYLON_PREFIX=${BUILD_PATH} python3 setup.py install || exit 1
+  CYLON_PREFIX=${CYLON_PREFIX} python3 setup.py install || exit 1
   popd || exit 1
   print_line
 }
@@ -394,7 +385,7 @@ build_python_conda() {
 
   pushd python/pycylon || exit 1
   make clean
-  CYLON_PREFIX=${BUILD_PATH} ARROW_PREFIX=${BUILD_PREFIX:=${CONDA_PREFIX}} python3 -m pip install -v . || exit 1
+  CYLON_PREFIX=${CYLON_PREFIX} ARROW_PREFIX=${BUILD_PREFIX:=${CONDA_PREFIX}} python3 setup.py install || exit 1
   popd || exit 1
   print_line
 }
@@ -423,7 +414,7 @@ build_python() {
   pushd python/pycylon || exit 1
   pip3 uninstall -y pycylon
   make clean
-  CYLON_PREFIX=${BUILD_PATH} ARROW_PREFIX=${BUILD_PATH}/arrow/install python3 setup.py install || exit 1
+  CYLON_PREFIX=${CYLON_PREFIX} ARROW_PREFIX=${BUILD_PATH}/arrow/install python3 setup.py install || exit 1
   popd || exit 1
   print_line
 }

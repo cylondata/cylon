@@ -14,11 +14,16 @@
 
 find_package(Threads REQUIRED)
 
-IF(WIN32)
+if (CYLON_BENCH)
+    message("Benchmark timings enabled")
+    add_definitions(-D_CYLON_BENCH)
+endif ()
+
+if (WIN32)
     set_source_files_properties(util/murmur3.cpp util/murmur3.hpp PROPERTIES)
-ELSE()
+else ()
     set_source_files_properties(util/murmur3.cpp util/murmur3.hpp PROPERTIES COMPILE_FLAGS -Wno-implicit-fallthrough)
-ENDIF()
+endif (WIN32)
 
 if (CYLON_UCX)
     set(UCX_CYLON_FILES

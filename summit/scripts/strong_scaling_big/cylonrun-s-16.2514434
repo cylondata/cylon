@@ -1,0 +1,41 @@
+
+The following have been reloaded with a version change:
+  1) python/3.8-anaconda3 => python/3.7.7
+
+
+ERROR:  One or more process (first noticed rank 345) terminated with signal 9
+
+real	1m42.363s
+user	0m0.505s
+sys	0m0.141s
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@batch3>
+Subject: Job 2514434: <cylonrun-s-16> in cluster <summit> Done
+
+Job <cylonrun-s-16> was submitted from host <login1> by user <gregorvl> in cluster <summit> at Thu Oct 20 14:47:22 2022
+Job was executed on host(s) <1*batch3>, in queue <batch>, as user <gregorvl> in cluster <summit> at Fri Oct 21 02:58:08 2022
+                            <42*d05n12>
+                            <42*d05n13>
+                            <42*d05n14>
+                            <42*d05n15>
+                            <42*d05n16>
+                            <42*d05n17>
+                            <42*d05n18>
+                            <42*d06n01>
+                            <42*d06n02>
+                            <42*d06n03>
+                            <42*d06n04>
+                            <42*d06n05>
+                            <42*d06n06>
+                            <42*d06n07>
+                            <42*d06n08>
+                            <42*d06n09>
+</ccs/home/gregorvl> was used as the home directory.
+</ccs/home/gregorvl/cylon/summit/scripts/strong_scaling_big> was used as the working directory.
+Started at Fri Oct 21 02:58:08 2022
+Terminated at Fri Oct 21 03:00:22 2022
+Results reported at Fri Oct 21 03:00:22 2022
+
+The output (if any) is above this job summary.
+

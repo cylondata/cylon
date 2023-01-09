@@ -69,7 +69,7 @@ cdef class TxRequest:
                 self.thisptr = new CTxRequest(tgt, &self.buf_val_float[0], len, &head[0], hLength)
                 self.thisptr.buffer = &self.buf_val_float[0]
 
-            if self.buf_val_type == np.float:
+            if self.buf_val_type == float:
                 self.buf_val_double = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
                 self.thisptr = new CTxRequest(tgt, &self.buf_val_double[0], len, &head[0], hLength)
                 self.thisptr.buffer = &self.buf_val_double[0]
@@ -84,10 +84,10 @@ cdef class TxRequest:
                 self.thisptr = new CTxRequest(tgt, &self.buf_val_double[0], len, &head[0], hLength)
                 self.thisptr.buffer = &self.buf_val_double[0]
 
-            if self.buf_val_type == np.long:
-                self.buf_val_long = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
-                self.thisptr = new CTxRequest(tgt, &self.buf_val_long[0], len, &head[0], hLength)
-                self.thisptr.buffer = &self.buf_val_long[0]
+            # if self.buf_val_type == np.long:
+            #     self.buf_val_long = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
+            #     self.thisptr = new CTxRequest(tgt, &self.buf_val_long[0], len, &head[0], hLength)
+            #     self.thisptr.buffer = &self.buf_val_long[0]
 
             # if self.buf_val_type == np.char:
             #     self.buf_val_char = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
@@ -134,7 +134,7 @@ cdef class TxRequest:
                 self.thisptr = new CTxRequest(tgt, &self.buf_val_float[0], len)
                 self.thisptr.buffer = &self.buf_val_float[0]
 
-            if self.buf_val_type == np.float:
+            if self.buf_val_type == float:
                 self.buf_val_double = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
                 self.thisptr = new CTxRequest(tgt, &self.buf_val_double[0], len)
                 self.thisptr.buffer = &self.buf_val_double[0]
@@ -149,10 +149,10 @@ cdef class TxRequest:
                 self.thisptr = new CTxRequest(tgt, &self.buf_val_double[0], len)
                 self.thisptr.buffer = &self.buf_val_double[0]
 
-            if self.buf_val_type == np.long:
-                self.buf_val_long = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
-                self.thisptr = new CTxRequest(tgt, &self.buf_val_long[0], len)
-                self.thisptr.buffer = &self.buf_val_long[0]
+            # if self.buf_val_type == np.long:
+            #     self.buf_val_long = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
+            #     self.thisptr = new CTxRequest(tgt, &self.buf_val_long[0], len)
+            #     self.thisptr.buffer = &self.buf_val_long[0]
 
             # if self.buf_val_type == np.char:
             #     self.buf_val_char = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)

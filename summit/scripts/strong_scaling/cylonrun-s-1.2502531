@@ -1,0 +1,136 @@
+
+The following have been reloaded with a version change:
+  1) python/3.8-anaconda3 => python/3.7.7
+
+
+[h36n04:796290] *** Process received signal ***
+[h36n04:796290] Signal: Segmentation fault (11)
+[h36n04:796290] Signal code: Address not mapped (1)
+[h36n04:796290] Failing at address: 0x505a10a0
+[h36n04:796290] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h36n04:796290] [ 1] /lib64/power9/libc.so.6(__libc_fork+0x21c)[0x2000008ba3ac]
+[h36n04:796290] [ 2] /lib64/power9/libpthread.so.0(__fork+0x18)[0x200000607158]
+[h36n04:796290] [ 3] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/python3.7/lib-dynload/_posixsubprocess.cpython-37m-powerpc64le-linux-gnu.so(+0x25ec)[0x20000f3925ec]
+[h36n04:796290] [ 4] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x3e4)[0x2000001b7f84]
+[h36n04:796290] [ 5] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h36n04:796290] [ 6] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0xbc44)[0x2000001837d4]
+[h36n04:796290] [ 7] [h36n04:796281] *** Process received signal ***
+[h36n04:796281] Signal: Segmentation fault (11)
+[h36n04:796281] Signal code: Address not mapped (1)
+[h36n04:796281] Failing at address: 0x2a431310
+[h36n04:796281] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h36n04:796281] [ 1] /lib64/power9/libc.so.6(__libc_fork+0x21c)[0x2000008ba3ac]
+[h36n04:796281] [ 2] /lib64/power9/libpthread.so.0(__fork+0x18)[0x200000607158]
+[h36n04:796281] [ 3] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/python3.7/lib-dynload/_posixsubprocess.cpython-37m-powerpc64le-linux-gnu.so(+0x25ec)[0x20000f3925ec]
+[h36n04:796281] [ 4] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x3e4)[0x2000001b7f84]
+[h36n04:796281] [ 5] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h36n04:796281] [ 6] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0xbc44)[0x2000001837d4]
+[h36n04:796281] [ 7] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h36n04:796281] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h36n04:796281] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h36n04:796281] [10] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0xa014)[0x200000181ba4]
+[h36n04:796281] [11] [h36n04:796301] *** Process received signal ***
+[h36n04:796301] Signal: Segmentation fault (11)
+[h36n04:796301] Signal code: Address not mapped (1)
+[h36n04:796301] Failing at address: 0x212e12e0
+[h36n04:796301] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h36n04:796301] [ 1] /lib64/power9/libc.so.6(__libc_fork+0x21c)[0x2000008ba3ac]
+[h36n04:796301] [ 2] /lib64/power9/libpthread.so.0(__fork+0x18)[0x200000607158]
+[h36n04:796301] [ 3] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/python3.7/lib-dynload/_posixsubprocess.cpython-37m-powerpc64le-linux-gnu.so(+0x25ec)[0x20000f3925ec]
+[h36n04:796301] [ 4] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x3e4)[0x2000001b7f84]
+[h36n04:796301] [ 5] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h36n04:796301] [ 6] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0xbc44)[0x2000001837d4]
+[h36n04:796301] [ 7] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h36n04:796301] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h36n04:796301] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h36n04:796301] [10] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0xa014)[0x200000181ba4]
+[h36n04:796301] [11] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h36n04:796301] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h36n04:796301] [13] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallDict+0x16c)[0x2000001b73cc]
+[h36n04:796301] [14] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_FastCallDict+0x204)[0x2000001b8ea4]
+[h36n04:796301] [15] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_Call_Prepend+0x11c)[0x2000001b91cc]
+[h36n04:796301] [16] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x144680)[0x200000244680]
+[h36n04:796301] [17] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h36n04:796290] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h36n04:796290] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h36n04:796290] [10] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0xa014)[0x200000181ba4]
+[h36n04:796290] [11] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h36n04:796290] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h36n04:796290] [13] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallDict+0x16c)[0x2000001b73cc]
+[h36n04:796290] [14] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_FastCallDict+0x204)[0x2000001b8ea4]
+[h36n04:796290] [15] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_Call_Prepend+0x11c)[0x2000001b91cc]
+[h36n04:796290] [16] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x144680)[0x200000244680]
+[h36n04:796290] [17] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x13f9fc)[0x20000023f9fc]
+[h36n04:796290] [18] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_FastCallKeywords+0x128)[0x2000001b8278]
+[h36n04:796290] [19] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x5888)[0x20000017d418]
+[h36n04:796290] [20] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h36n04:796290] [21] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h36n04:796290] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h36n04:796290] [23] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h36n04:796290] [24] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h36n04:796290] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h36n04:796290] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h36n04:796290] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h36n04:796281] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h36n04:796281] [13] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallDict+0x16c)[0x2000001b73cc]
+[h36n04:796281] [14] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_FastCallDict+0x204)[0x2000001b8ea4]
+[h36n04:796281] [15] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_Call_Prepend+0x11c)[0x2000001b91cc]
+[h36n04:796281] [16] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x144680)[0x200000244680]
+[h36n04:796281] [17] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x13f9fc)[0x20000023f9fc]
+[h36n04:796281] [18] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_FastCallKeywords+0x128)[0x2000001b8278]
+[h36n04:796281] [19] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x5888)[0x20000017d418]
+[h36n04:796281] [20] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h36n04:796281] [21] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h36n04:796281] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h36n04:796281] [23] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h36n04:796281] [24] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h36n04:796281] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h36n04:796281] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h36n04:796281] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x7dfc)[0x20000017f98c]
+[h36n04:796281] [28] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h36n04:796281] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x76604)[0x200000176604]
+[h36n04:796281] *** End of error message ***
+/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x13f9fc)[0x20000023f9fc]
+[h36n04:796301] [18] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_FastCallKeywords+0x128)[0x2000001b8278]
+[h36n04:796301] [19] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x5888)[0x20000017d418]
+[h36n04:796301] [20] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h36n04:796301] [21] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h36n04:796301] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h36n04:796301] [23] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h36n04:796301] [24] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h36n04:796301] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h36n04:796301] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h36n04:796301] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x7dfc)[0x20000017f98c]
+[h36n04:796301] [28] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h36n04:796301] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x76604)[0x200000176604]
+[h36n04:796301] *** End of error message ***
+/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x7dfc)[0x20000017f98c]
+[h36n04:796290] [28] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h36n04:796290] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x76604)[0x200000176604]
+[h36n04:796290] *** End of error message ***
+ERROR:  One or more process (first noticed rank 41) terminated with signal 9
+
+real	0m27.498s
+user	0m0.549s
+sys	0m0.121s
+ERROR:  One or more process (first noticed rank 0) terminated with signal 9
+
+real	5m5.295s
+user	0m0.481s
+sys	0m0.158s
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@batch5>
+Subject: Job 2502531: <cylonrun-s-1> in cluster <summit> Exited
+
+Job <cylonrun-s-1> was submitted from host <login4> by user <gregorvl> in cluster <summit> at Wed Oct 12 15:59:59 2022
+Job was executed on host(s) <1*batch5>, in queue <batch>, as user <gregorvl> in cluster <summit> at Wed Oct 12 16:01:15 2022
+                            <42*h36n04>
+</ccs/home/gregorvl> was used as the home directory.
+</ccs/home/gregorvl/cylon/summit/scripts/strong_scaling> was used as the working directory.
+Started at Wed Oct 12 16:01:15 2022
+Terminated at Wed Oct 12 16:07:17 2022
+Results reported at Wed Oct 12 16:07:17 2022
+
+The output (if any) is above this job summary.
+

@@ -192,6 +192,9 @@ else ()
     include(ConfigureGlog)
     include_directories(SYSTEM "${GLOG_INCLUDE_DIR}")
     message(STATUS "Glog include dir: ${GLOG_INCLUDE_DIR}")
+
+    install(FILES ${GLOG_LIBRARIES} DESTINATION lib)
+    install(DIRECTORY ${GLOG_INCLUDE_DIR}/glog DESTINATION include)
 endif (CYLON_CONDA_BUILD)
 message(STATUS "Glog libs: ${GLOG_LIBRARIES}")
 
@@ -408,8 +411,7 @@ if (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
     install(DIRECTORY ${ARROW_INCLUDE_DIR}/arrow DESTINATION include)
     install(DIRECTORY ${CMAKE_BINARY_DIR}/arrow/install/${CMAKE_INSTALL_LIBDIR}/ DESTINATION lib
             PATTERN ${ARROW_INCLUDE_DIR}/cmake EXCLUDE
-            PATTERN ${ARROW_INCLUDE_DIR}/pkgconfig EXCLUDE
-            )
+            PATTERN ${ARROW_INCLUDE_DIR}/pkgconfig EXCLUDE)
 
     # glog.a file
     install(FILES ${GLOG_LIBRARIES} DESTINATION lib)

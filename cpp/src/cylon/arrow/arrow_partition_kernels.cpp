@@ -482,7 +482,8 @@ class RangePartitionKernel : public PartitionKernel {
         idx_col,
         [&](uint64_t global_idx, ValueT val) {
           uint32_t p = ascending ?
-                       bin_to_partition[get_bin_pos(val)] : num_partitions - 1 - bin_to_partition[get_bin_pos(val)];
+                       bin_to_partition[get_bin_pos(val)] : num_partitions - 1
+                           - bin_to_partition[get_bin_pos(val)];
           target_partitions[global_idx] = p;
           partition_histogram[p]++;
         },
@@ -492,69 +493,95 @@ class RangePartitionKernel : public PartitionKernel {
   }
 
  private:
-  inline Status build_bin_to_partition(const std::shared_ptr<arrow::ChunkedArray> &idx_col, uint32_t num_partitions) {
+  inline Status build_bin_to_partition(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
+                                       uint32_t num_partitions) {
     const std::shared_ptr<DataType> &data_type = tarrow::ToCylonType(idx_col->type());
     std::shared_ptr<arrow::ChunkedArray> sampled_array;
 
-    if ((uint64_t) idx_col->length()
-        == num_samples) { // if len == num_samples, dont sample, just use idx col as it is!
+    // if len == num_samples, dont sample, just use idx col as it is!
+    if ((uint64_t) idx_col->length() == num_samples) {
       sampled_array = std::make_shared<arrow::ChunkedArray>(idx_col->chunks());
     } else { // else, sample idx_col for num_samples
       std::shared_ptr<arrow::Array> samples;
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::SampleArray(idx_col, num_samples, samples, ToArrowPool(ctx)));
-      sampled_array = std::make_shared<arrow::ChunkedArray>(samples);
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::SampleArray(idx_col,
+                                                            num_samples,
+                                                            samples,
+                                                            ToArrowPool(ctx)));
+      sampled_array = std::make_shared<arrow::ChunkedArray>(std::move(samples));
     }
 
-    // calculate minmax of the sample
-    std::shared_ptr<compute::Result> minmax;
-    RETURN_CYLON_STATUS_IF_FAILED(compute::MinMax(ctx, sampled_array, data_type, minmax));
+    const auto &comm = ctx->GetCommunicator();
 
-    const auto &struct_scalar = minmax->GetResult().scalar_as<arrow::StructScalar>();
-    min = std::static_pointer_cast<ScalarT>(struct_scalar.value[0])->value;
-    max = std::static_pointer_cast<ScalarT>(struct_scalar.value[1])->value;
+    // calculate minmax of the sample
+    // todo: Allreduce MIN {min, -max} array as an optimization. Bool could be a problem.
+    //   might need some template tricks
+
+    std::shared_ptr<Scalar> min_scalar, max_scalar;
+    if (sampled_array->length() == 0) {
+      // if no samples present, set min and max to opposite ends so that Allreduce will determine the
+      // correct value
+      min_scalar = Scalar::Make(arrow::MakeScalar(std::numeric_limits<ValueT>::max()));
+      max_scalar = Scalar::Make(arrow::MakeScalar(std::numeric_limits<ValueT>::min()));;
+    } else {
+      arrow::compute::ScalarAggregateOptions opts(true, 0);
+      CYLON_ASSIGN_OR_RAISE(const auto &min_max, arrow::compute::MinMax(sampled_array, opts))
+      const auto &min_max_v = min_max.scalar_as<arrow::StructScalar>().value;
+      min_scalar = Scalar::Make(min_max_v[0]);
+      max_scalar = Scalar::Make(min_max_v[1]);
+    }
+
+    std::shared_ptr<Scalar> global_min_scalar, global_max_scalar;
+    RETURN_CYLON_STATUS_IF_FAILED(comm->AllReduce(min_scalar, net::MIN, &global_min_scalar));
+    RETURN_CYLON_STATUS_IF_FAILED(comm->AllReduce(max_scalar, net::MAX, &global_max_scalar));
+
+    min = std::static_pointer_cast<ScalarT>(global_min_scalar->data())->value;
+    max = std::static_pointer_cast<ScalarT>(global_max_scalar->data())->value;
     range = max - min;
 
     // create sample histogram
     std::vector<uint64_t> local_counts(num_bins + 2, 0);
     for (const auto &arr: sampled_array->chunks()) {
-      const std::shared_ptr<ArrayT> &casted_arr = std::static_pointer_cast<ArrayT>(arr);
-      for (int64_t i = 0; i < casted_arr->length(); i++) {
-        ValueT val = casted_arr->Value(i);
-        local_counts[get_bin_pos(val)]++;
-      }
+      arrow::VisitArrayDataInline<ARROW_T>(*arr->data(),
+                                           [&](ValueT val) {
+                                             local_counts[get_bin_pos(val)]++;
+                                           },
+                                           []() {
+                                             // idx_col is guaranteed to be non-null
+                                           });
     }
 
     // all reduce local sample histograms
-    std::vector<uint64_t> global_counts, *global_counts_ptr;
+    const uint64_t *global_counts_ptr;
+    std::shared_ptr<Column> global_counts;
     if (ctx->GetWorldSize() > 1) { // if distributed, all-reduce all local bin counts
-      global_counts.resize(num_bins + 2, 0);
-      RETURN_CYLON_STATUS_IF_FAILED(cylon::mpi::AllReduce(ctx,
-                                                          local_counts.data(),
-                                                          global_counts.data(),
-                                                          num_bins + 2,
-                                                          cylon::UInt64(),
-                                                          cylon::net::SUM));
-      global_counts_ptr = &global_counts;
-      local_counts.clear();
+      arrow::BufferVector buf{nullptr, arrow::Buffer::Wrap(local_counts)};
+      const auto
+          &array_data = arrow::ArrayData::Make(arrow::uint64(), num_bins + 2, std::move(buf), 0);
+      auto local_counts_col = Column::Make(arrow::MakeArray(array_data));
+
+      RETURN_CYLON_STATUS_IF_FAILED(comm->AllReduce(local_counts_col, net::SUM, &global_counts));
+      global_counts_ptr =
+          std::static_pointer_cast<arrow::UInt64Array>(global_counts->data())->raw_values();
     } else { // else, just use local bin counts
-      global_counts_ptr = &local_counts;
+      global_counts_ptr = local_counts.data();
     }
 
     float_t quantile = float(1.0 / num_partitions), prefix_sum = 0;
 
-    LOG(INFO) << "len=" << idx_col->length() << " min=" << min << " max=" << max << " range=" <<
-              range << " num bins=" << num_bins << " quantile=" << quantile;
+//    LOG(INFO) << "len=" << idx_col->length() << " min=" << min << " max=" << max << " range=" <<
+//              range << " num bins=" << num_bins << " quantile=" << quantile;
 
     // divide global histogram into quantiles
     const uint64_t total_samples = ctx->GetWorldSize() * num_samples;
     uint32_t curr_partition = 0;
     float_t target_quantile = quantile;
-    for (const auto &c: *global_counts_ptr) {
+    for (uint32_t i = 0; i < num_bins + 2; i++) {
       bin_to_partition.push_back(curr_partition);
-      float_t freq = (float_t) c / total_samples;
+      float_t freq = (float_t) global_counts_ptr[i] / total_samples;
       prefix_sum += freq;
       if (prefix_sum > target_quantile) {
-        curr_partition += (curr_partition < num_partitions - 1); // if curr_partition < numpartition: curr_partition++
+        curr_partition += (curr_partition
+            < num_partitions - 1); // if curr_partition < numpartition: curr_partition++
         target_quantile += quantile;
       }
     }

@@ -1,0 +1,674 @@
+
+The following have been reloaded with a version change:
+  1) python/3.8-anaconda3 => python/3.7.7
+
+
+[h15n03:2188138] *** Process received signal ***
+[h15n03:2188138] Signal: Segmentation fault (11)
+[h15n03:2188138] Signal code: Address not mapped (1)
+[h15n03:2188138] Failing at address: 0x189e2a90
+[h15n03:2188138] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h15n03:2188138] [ 1] /lib64/power9/libc.so.6(__libc_fork+0x21c)[0x2000008ba3ac]
+[h15n03:2188138] [ 2] /lib64/power9/libpthread.so.0(__fork+0x18)[0x200000607158]
+[h15n03:2188138] [ 3] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/python3.7/lib-dynload/_posixsubprocess.cpython-37m-powerpc64le-linux-gnu.so(+0x25ec)[0x20000f3925ec]
+[h15n03:2188138] [ 4] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x3e4)[0x2000001b7f84]
+[h15n03:2188138] [ 5] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h15n03:2188138] [ 6] [h15n03:2188137] *** Process received signal ***
+[h15n03:2188137] Signal: Segmentation fault (11)
+[h15n03:2188137] Signal code: Address not mapped (1)
+[h15n03:2188137] Failing at address: 0x2e9b2c90
+[h15n03:2188137] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h15n03:2188137] [ 1] [h15n03:2188144] *** Process received signal ***
+[h15n03:2188144] Signal: Segmentation fault (11)
+[h15n03:2188144] Signal code: Address not mapped (1)
+[h15n03:2188144] Failing at address: 0x45802a90
+[h15n03:2188144] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h15n03:2188144] [ 1] /lib64/power9/libc.so.6(__libc_fork+0x21c)[0x2000008ba3ac]
+[h15n03:2188144] [ 2] /lib64/power9/libpthread.so.0(__fork+0x18)[0x200000607158]
+[h15n03:2188144] [ 3] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/python3.7/lib-dynload/_posixsubprocess.cpython-37m-powerpc64le-linux-gnu.so(+0x25ec)[0x20000f3925ec]
+[h15n03:2188144] [ 4] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x3e4)[0x2000001b7f84]
+[h15n03:2188144] [ 5] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h15n03:2188144] [ 6] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0xbc44)[0x2000001837d4]
+[h15n03:2188144] [ 7] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n03:2188144] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n03:2188144] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h15n03:2188144] [10] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0xa014)[0x200000181ba4]
+[h15n03:2188144] [11] [h15n03:2188145] *** Process received signal ***
+[h15n03:2188145] Signal: Segmentation fault (11)
+[h15n03:2188145] Signal code: Address not mapped (1)
+[h15n03:2188145] Failing at address: 0x2bb92a90
+[h15n03:2188145] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h15n03:2188145] [ 1] /lib64/power9/libc.so.6(__libc_fork+0x21c)[0x2000008ba3ac]
+[h15n03:2188145] [ 2] /lib64/power9/libpthread.so.0(__fork+0x18)[0x200000607158]
+[h15n03:2188145] [ 3] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/python3.7/lib-dynload/_posixsubprocess.cpython-37m-powerpc64le-linux-gnu.so(+0x25ec)[0x20000f3925ec]
+[h15n03:2188145] [ 4] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x3e4)[0x2000001b7f84]
+[h15n03:2188145] [ 5] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h15n03:2188145] [ 6] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0xbc44)[0x2000001837d4]
+[h15n03:2188145] [ 7] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n03:2188145] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n03:2188145] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h15n03:2188145] [10] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0xa014)[0x200000181ba4]
+[h15n03:2188145] [11] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n03:2188145] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n03:2188145] [13] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallDict+0x16c)[0x2000001b73cc]
+[h15n03:2188145] [14] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_FastCallDict+0x204)[0x2000001b8ea4]
+[h15n03:2188145] [15] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_Call_Prepend+0x11c)[0x2000001b91cc]
+[h15n03:2188145] [16] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x144680)[0x200000244680]
+[h15n03:2188145] [17] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x13f9fc)[0x20000023f9fc]
+[h15n03:2188145] [18] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_FastCallKeywords+0x128)[0x2000001b8278]
+[h15n03:2188145] [19] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x5888)[0x20000017d418]
+[h15n03:2188145] [20] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n03:2188145] [21] /sw/summ/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n03:2188144] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n03:2188144] [13] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallDict+0x16c)[0x2000001b73cc]
+[h15n03:2188144] [14] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_FastCallDict+0x204)[0x2000001b8ea4]
+[h15n03:2188144] [15] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_Call_Prepend+0x11c)[0x2000001b91cc]
+[h15n03:2188144] [16] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x144680)[0x200000244680]
+[h15n03:2188144] [17] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x13f9fc)[0x20000023f9fc]
+[h15n03:2188144] [18] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_FastCallKeywords+0x128)[0x2000001b8278]
+[h15n03:2188144] [19] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x5888)[0x20000017d418]
+[h15n03:2188144] [20] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n03:2188144] [21] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n03:2188144] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h15n03:2188144] [23] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h15n03:2188144] [24] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n03:2188144] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n03:2188144] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h15n03:2188144] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x7dfc)[0x20000017f98c]
+[h15n03:2188144] [28] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n03:2188144] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x76604)[0x200000176604]
+[h15n03:2188144] *** End of error message ***
+/lib64/power9/libc.so.6(__libc_fork+0x21c)[0x2000008ba3ac]
+[h15n03:2188137] [ 2] /lib64/power9/libpthread.so.0(__fork+0x18)[0x200000607158]
+[h15n03:2188137] [ 3] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/python3.7/lib-dynload/_posixsubprocess.cpython-37m-powerpc64le-linux-gnu.so(+0x25ec)[0x20000f3925ec]
+[h15n03:2188137] [ 4] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x3e4)[0x2000001b7f84]
+[h15n03:2188137] [ 5] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h15n03:2188137] [ 6] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0xbc44)[0x2000001837d4]
+[h15n03:2188137] [ 7] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n03:2188137] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n03:2188137] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h15n03:2188137] [10] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0xa014)[0x200000181ba4]
+[h15n03:2188137] [11] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n03:2188137] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n03:2188137] [13] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallDict+0x16c)[0x2000001b73cc]
+[h15n03:2188137] [14] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_FastCallDict+0x204)[0x2000001b8ea4]
+[h15n03:2188137] [15] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_Call_Prepend+0x11c)[0x2000001b91cc]
+[h15n03:2188137] [16] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x144680)[0x200000244680]
+[h15n03:2188137] [17] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x13f9fc)[0x20000023f9fc]
+[h15n03:2188137] [18] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_FastCallKeywords+0x128)[0x2000001b8278]
+[h15n03:2188137] [19] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x5888)[0x20000017d418]
+[h15n03:2188137] [20] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n03:2188137] [21] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n03:2188137] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib//sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0xbc44)[0x2000001837d4]
+[h15n03:2188138] [ 7] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n03:2188138] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n03:2188138] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h15n03:2188138] [10] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0xa014)[0x200000181ba4]
+[h15n03:2188138] [11] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n03:2188138] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n03:2188138] [13] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallDict+0x16c)[0x2000001b73cc]
+[h15n03:2188138] [14] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_FastCallDict+0x204)[0x2000001b8ea4]
+[h15n03:2188138] [15] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_Call_Prepend+0x11c)[0x2000001b91cc]
+[h15n03:2188138] [16] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x144680)[0x200000244680]
+[h15n03:2188138] [17] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x13f9fc)[0x20000023f9fc]
+[h15n03:2188138] [18] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_FastCallKeywords+0x128)[0x2000001b8278]
+[h15n03:2188138] [19] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x5888)[0x20000017d418]
+[h15n03:2188138] [20] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n03:2188138] [21] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n03:2188138] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h15n03:2188138] [23] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h15n03:2188138] [24] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n03:2188138] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n03:2188138] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpythlibpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h15n03:2188137] [23] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h15n03:2188137] [24] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n03:2188137] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n03:2188137] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h15n03:2188137] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x7dfc)[0x20000017f98c]
+[h15n03:2188137] [28] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n03:2188137] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x76604)[0x200000176604]
+[h15n03:2188137] *** End of error message ***
+it/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n03:2188145] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h15n03:2188145] [23] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h15n03:2188145] [24] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n03:2188145] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n03:2188145] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h15n03:2188145] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x7dfc)[0x20000017f98c]
+[h15n03:2188145] [28] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n03:2188145] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x76604)[0x200000176604]
+[h15n03:2188145] *** End of error message ***
+on3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h15n03:2188138] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x7dfc)[0x20000017f98c]
+[h15n03:2188138] [28] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n03:2188138] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x76604)[0x200000176604]
+[h15n03:2188138] *** End of error message ***
+[h15n02:1961191] *** Process received signal ***
+[h15n02:1961191] Signal: Segmentation fault (11)
+[h15n02:1961191] Signal code: Address not mapped (1)
+[h15n02:1961191] Failing at address: 0x3e4429f0
+[h15n02:1961191] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h15n02:1961191] [ 1] /lib64/power9/libc.so.6(__libc_fork+0x21c)[0x2000008ba3ac]
+[h15n02:1961191] [ 2] /lib64/power9/libpthread.so.0(__fork+0x18)[0x200000607158]
+[h15n02:1961191] [ 3] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/python3.7/lib-dynload/_posixsubprocess.cpython-37m-powerpc64le-linux-gnu.so(+0x25ec)[0x20000f3925ec]
+[h15n02:1961191] [ 4] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x3e4)[0x2000001b7f84]
+[h15n02:1961191] [ 5] [h15n02:1961189] *** Process received signal ***
+[h15n02:1961189] Signal: Segmentation fault (11)
+[h15n02:1961189] Signal code: Address not mapped (1)
+[h15n02:1961189] Failing at address: 0x213829f0
+[h15n02:1961189] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h15n02:1961189] [ 1] /lib64/power9/libc.so.6(__libc_fork+0x21c)[0x2000008ba3ac]
+[h15n02:1961189] [ 2] /lib64/power9/libpthread.so.0(__fork+0x18)[0x200000607158]
+[h15n02:1961189] [ 3] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/python3.7/lib-dynload/_posixsubprocess.cpython-37m-powerpc64le-linux-gnu.so(+0x25ec)[0x20000f3925ec]
+[h15n02:1961189] [ 4] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x3e4)[0x2000001b7f84]
+[h15n02:1961189] [ 5] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h15n02:1961191] [ 6] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0xbc44)[0x2000001837d4]
+[h15n02:1961191] [ 7] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n02:1961191] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n02:1961191] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h15n02:1961191] [10] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0xa014)[0x200000181ba4]
+[h15n02:1961191] [11] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n02:1961191] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n02:1961191] [13] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h15n02:1961189] [ 6] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0xbc44)[0x2000001837d4]
+[h15n02:1961189] [ 7] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n02:1961189] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n02:1961189] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h15n02:1961189] [10] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0xa014)[0x200000181ba4]
+[h15n02:1961189] [11] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n02:1961189] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n02:1961189] [13] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallDict+0x16c)[0x2000001b73cc]
+[h15n02:1961189] [14] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_FastCallDict+0x204)[0x2000001b8ea4]
+[h15n02:1961189] [15] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallDict+0x16c)[0x2000001b73cc]
+[h15n02:1961191] [14] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_FastCallDict+0x204)[0x2000001b8ea4]
+[h15n02:1961191] [15] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_Call_Prepend+0x11c)[0x2000001b91cc]
+[h15n02:1961191] [16] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x144680)[0x200000244680]
+[h15n02:1961191] [17] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x13f9fc)[0x20000023f9fc]
+[h15n02:1961191] [18] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_FastCallKeywords+0x128)[0x2000001b8278]
+[h15n02:1961191] [19] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x5888)[0x20000017d418]
+[h15n02:1961191] [20] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n02:1961191] [21] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n02:1961191] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h15n02:1961191] [23] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h15n02:1961191] [24] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n02:1961191] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n02:1961191] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h15n02:1961191] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x7dfc)[0x20000017f98c]
+[h15n02:1961191] [28] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_Call_Prepend+0x11c)[0x2000001b91cc]
+[h15n02:1961189] [16] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x144680)[0x200000244680]
+[h15n02:1961189] [17] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x13f9fc)[0x20000023f9fc]
+[h15n02:1961189] [18] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyObject_FastCallKeywords+0x128)[0x2000001b8278]
+[h15n02:1961189] [19] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x5888)[0x20000017d418]
+[h15n02:1961189] [20] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n02:1961189] [21] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n02:1961189] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h15n02:1961189] [23] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h15n02:1961189] [24] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n02:1961189] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h15n02:1961189] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h15n02:1961189] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x7dfc)[0x20000017f98c]
+[h15n02:1961189] [28] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n02:1961189] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x76604)[0x200000176604]
+[h15n02:1961189] *** End of error message ***
+/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h15n02:1961191] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(+0x76604)[0x200000176604]
+[h15n02:1961191] *** End of error message ***
+errno 3 pid 1810838
+python: /__SMPI_build_dir__________________________/ibmsrc/pami/ibm-pami/buildtools/pami_build_port/../pami/components/devices/shmem/shaddr/CMAShaddr.h:164: size_t PAMI::Device::Shmem::CMAShaddr::read_impl(PAMI::Memregion*, size_t, PAMI::Memregion*, size_t, size_t, bool*): Assertion `cbytes > 0' failed.
+[h30n11:1810817] *** Process received signal ***
+[h30n11:1810817] Signal: Aborted (6)
+[h30n11:1810817] Signal code:  (-6)
+[h30n11:1810817] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h30n11:1810817] [ 1] /lib64/power9/libc.so.6(gsignal+0xd8)[0x200000813618]
+[h30n11:1810817] [ 2] /lib64/power9/libc.so.6(abort+0x164)[0x2000007f3a2c]
+[h30n11:1810817] [ 3] /lib64/power9/libc.so.6(+0x36f70)[0x200000806f70]
+[h30n11:1810817] [ 4] /lib64/power9/libc.so.6(__assert_fail+0x64)[0x200000807014]
+[h30n11:1810817] [ 5] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get7GetRdmaINS_6Device5Shmem8DmaModelINS3_11ShmemDeviceINS_4Fifo8WrapFifoINS7_10FifoPacketILj64ELj4096EEENS_7Counter15IndirectBoundedINS_6Atomic12NativeAtomicEEELj256EEENSB_8IndirectINSB_6NativeEEENS4_9CMAShaddrELj256ELj512EEELb0EEESL_E6simpleEP18pami_rget_simple_t+0x1d8)[0x2000171f60b8]
+[h30n11:1810817] [ 6] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get13CompositeRGetINS1_4RGetES3_E6simpleEP18pami_rget_simple_t+0x40)[0x20001714c590]
+[h30n11:1810817] [ 7] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI7Context9rget_implEP18pami_rget_simple_t+0x28c)[0x20001717a05c]
+[h30n11:1810817] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(PAMI_Rget+0x18)[0x200017138e38]
+[h30n11:1810817] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(process_rndv_msg+0x46c)[0x200015f759ec]
+[h30n11:1810817] [10] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_recv_req_start+0x200)[0x200015f7f840]
+[h30n11:1810817] [11] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_irecv+0x200)[0x200015f7a520]
+[h30n11:1810817] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/spectrum-mpi-10.4.0.3-20210112-vgx3y6jjgccqihabnuasprb6pyqqfmal/lib/libmpi_ibm.so.3(MPI_Irecv+0x19c)[0x200000b3531c]
+[h30n11:1810817] [13] errno 3 pid 1810838
+python: /__SMPI_build_dir__________________________/ibmsrc/pami/ibm-pami/buildtools/pami_build_port/../pami/components/devices/shmem/shaddr/CMAShaddr.h:164: size_t PAMI::Device::Shmem::CMAShaddr::read_impl(PAMI::Memregion*, size_t, PAMI::Memregion*, size_t, size_t, bool*): Assertion `cbytes > 0' failed.
+[h30n11:1810835] *** Process received signal ***
+[h30n11:1810835] Signal: Aborted (6)
+[h30n11:1810835] Signal code:  (-6)
+[h30n11:1810835] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h30n11:1810835] [ 1] /lib64/power9/libc.so.6(gsignal+0xd8)[0x200000813618]
+[h30n11:1810835] [ 2] /lib64/power9/libc.so.6(abort+0x164)[0x2000007f3a2c]
+[h30n11:1810835] [ 3] /lib64/power9/libc.so.6(+0x36f70)[0x200000806f70]
+[h30n11:1810835] [ 4] /lib64/power9/libc.so.6(__assert_fail+0x64)[0x200000807014]
+[h30n11:1810835] [ 5] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get7GetRdmaINS_6Device5Shmem8DmaModelINS3_11ShmemDeviceINS_4Fifo8WrapFifoINS7_10FifoPacketILj64ELj4096EEENS_7Counter15IndirectBoundedINS_6Atomic12NativeAtomicEEELj256EEENSB_8IndirectINSB_6NativeEEENS4_9CMAShaddrELj256ELj512EEELb0EEESL_E6simpleEP18pami_rget_simple_t+0x1d8)[0x2000171f60b8]
+[h30n11:1810835] [ 6] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get13CompositeRGetINS1_4RGetES3_E6simpleEP18pami_rget_simple_t+0x40)[0x20001714c590]
+[h30n11:1810835] [ 7] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI7Context9rget_implEP18pami_rget_simple_t+0x28c)[0x20001717a05c]
+[h30n11:1810835] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(PAMI_Rget+0x18)[0x200017138e38]
+[h30n11:1810835] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(process_rndv_msg+0x46c)[0x200015f759ec]
+[h30n11:1810835] [10] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_recv_req_start+0x200)[0x200015f7f840]
+[h30n11:1810835] [11] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_irecv+0x200)[0x200015f7a520]
+[h30n11:1810835] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/spectrum-mpi-10.4.0.3-20210112-vgx3y6jjgccqihabnuasprb6pyqqfmal/lib/libmpi_ibm.so.3(MPI_Irecv+0x19c)[0x200000b3531c]
+[h30n11:1810835] [13] errno 3 pid 1810838
+python: /__SMPI_build_dir__________________________/ibmsrc/pami/ibm-pami/buildtools/pami_build_port/../pami/components/devices/shmem/shaddr/CMAShaddr.h:164: size_t PAMI::Device::Shmem::CMAShaddr::read_impl(PAMI::Memregion*, size_t, PAMI::Memregion*, size_t, size_t, bool*): Assertion `cbytes > 0' failed.
+[h30n11:1810826] *** Process received signal ***
+[h30n11:1810826] Signal: Aborted (6)
+[h30n11:1810826] Signal code:  (-6)
+[h30n11:1810826] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h30n11:1810826] [ 1] /lib64/power9/libc.so.6(gsignal+0xd8)[0x200000813618]
+[h30n11:1810826] [ 2] /lib64/power9/libc.so.6(abort+0x164)[0x2000007f3a2c]
+[h30n11:1810826] [ 3] /lib64/power9/libc.so.6(+0x36f70)[0x200000806f70]
+[h30n11:1810826] [ 4] /lib64/power9/libc.so.6(__assert_fail+0x64)[0x200000807014]
+[h30n11:1810826] [ 5] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get7GetRdmaINS_6Device5Shmem8DmaModelINS3_11ShmemDeviceINS_4Fifo8WrapFifoINS7_10FifoPacketILj64ELj4096EEENS_7Counter15IndirectBoundedINS_6Atomic12NativeAtomicEEELj256EEENSB_8IndirectINSB_6NativeEEENS4_9CMAShaddrELj256ELj512EEELb0EEESL_E6simpleEP18pami_rget_simple_t+0x1d8)[0x2000171f60b8]
+[h30n11:1810826] [ 6] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get13CompositeRGetINS1_4RGetES3_E6simpleEP18pami_rget_simple_t+0x40)[0x20001714c590]
+[h30n11:1810826] [ 7] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI7Context9rget_implEP18pami_rget_simple_t+0x28c)[0x20001717a05c]
+[h30n11:1810826] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(PAMI_Rget+0x18)[0x200017138e38]
+[h30n11:1810826] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(process_rndv_msg+0x46c)[0x200015f759ec]
+[h30n11:1810826] [10] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_recv_req_start+0x200)[0x200015f7f840]
+[h30n11:1810826] [11] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_irecv+0x200)[0x200015f7a520]
+[h30n11:1810826] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/spectrum-mpi-10.4.0.3-20210112-vgx3y6jjgccqihabnuasprb6pyqqfmal/lib/libmpi_ibm.so.3(MPI_Irecv+0x19c)[0x200000b3531c]
+[h30n11:1810826] [13] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon10MPIChannel16progressReceivesEv+0x268)[0x20003c316138]
+[h30n11:1810835] [14] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon10MPIChannel16progressReceivesEv+0x268)[0x20003c316138]
+/ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon10MPIChannel16progressReceivesEv+0x268)[0x20003c316138]
+[h30n11:1810826] [14] [h30n11:1810817] [14] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon8AllToAll10isCompleteEv+0x34c)[0x20003c31ddec]
+[h30n11:1810817] [15] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon8AllToAll10isCompleteEv+0x34c)[0x20003c31ddec]
+[h30n11:1810826] [15] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon13ArrowAllToAll10isCompleteEv+0xa04)[0x20003bffe7a4]
+[h30n11:1810826] [16] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52ca28)[0x20003c36ca28]
+[h30n11:1810826] [17] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon8AllToAll10isCompleteEv+0x34c)[0x20003c31ddec]
+[h30n11:1810835] [15] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon13ArrowAllToAll10isCompleteEv+0xa04)[0x20003bffe7a4]
+[h30n11:1810835] [16] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52ca28)[0x20003c36ca28]
+[h30n11:1810835] [17] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon13ArrowAllToAll10isCompleteEv+0xa04)[0x20003bffe7a4]
+[h30n11:1810817] [16] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52d8b0)[0x20003c36d8b0]
+[h30n11:1810826] [18] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52df8c)[0x20003c36df8c]
+[h30n11:1810826] [19] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon15DistributedJoinERKSt10shared_ptrINS_5TableEES4_RKNS_4join6config10JoinConfigERS2_+0xb4)[0x20003c36ebe4]
+[h30n11:1810826] [20] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52d8b0)[0x20003c36d8b0]
+[h30n11:1810835] [18] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52df8c)[0x20003c36df8c]
+[h30n11:1810835] [19] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon15DistributedJoinERKSt10shared_ptrINS_5TableEES4_RKNS_4join6config10JoinConfigERS2_+0xb4)[0x20003c36ebe4]
+[h30n11:1810835] [20] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52ca28)[0x20003c36ca28]
+[h30n11:1810817] [17] /ccs/home/gregorvl/CYLON/lib/python3.7/site-packages/pycylon-0+untagged.1309.g742e030.dirty-py3.7-linux-ppc64le.egg/pycylon/data/table.cpython-37m-powerpc64le-linux-gnu.so(+0x8aac0)[0x20003bddaac0]
+[h30n11:1810826] [21] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x1d0)[0x2000001b7d70]
+[h30n11:1810826] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h30n11:1810826] [23] /ccs/home/gregorvl/CYLON/lib/python3.7/site-packages/pycylon-0+untagged.1309.g742e030.dirty-py3.7-linux-ppc64le.egg/pycylon/data/table.cpython-37m-powerpc64le-linux-gnu.so(+0x8aac0)[0x20003bddaac0]
+[h30n11:1810835] [21] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x1d0)[0x2000001b7d70]
+[h30n11:1810835] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h30n11:1810835] [23] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x9a44)[0x2000001815d4]
+[h30n11:1810835] [24] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x9a44)[0x2000001815d4]
+[h30n11:1810826] [24] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810826] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810826] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h30n11:1810826] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h30n11:1810826] [28] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810826] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810826] *** End of error message ***
+/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810835] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810835] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h30n11:1810835] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h30n11:1810835] [28] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810835] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810835] *** End of error message ***
+/ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52d8b0)[0x20003c36d8b0]
+[h30n11:1810817] [18] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52df8c)[0x20003c36df8c]
+[h30n11:1810817] [19] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon15DistributedJoinERKSt10shared_ptrINS_5TableEES4_RKNS_4join6config10JoinConfigERS2_+0xb4)[0x20003c36ebe4]
+[h30n11:1810817] [20] /ccs/home/gregorvl/CYLON/lib/python3.7/site-packages/pycylon-0+untagged.1309.g742e030.dirty-py3.7-linux-ppc64le.egg/pycylon/data/table.cpython-37m-powerpc64le-linux-gnu.so(+0x8aac0)[0x20003bddaac0]
+[h30n11:1810817] [21] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x1d0)[0x2000001b7d70]
+[h30n11:1810817] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h30n11:1810817] [23] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x9a44)[0x2000001815d4]
+[h30n11:1810817] [24] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810817] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810817] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h30n11:1810817] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h30n11:1810817] [28] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810817] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810817] *** End of error message ***
+errno 3 pid 1810838
+python: /__SMPI_build_dir__________________________/ibmsrc/pami/ibm-pami/buildtools/pami_build_port/../pami/components/devices/shmem/shaddr/CMAShaddr.h:164: size_t PAMI::Device::Shmem::CMAShaddr::read_impl(PAMI::Memregion*, size_t, PAMI::Memregion*, size_t, size_t, bool*): Assertion `cbytes > 0' failed.
+[h30n11:1810836] *** Process received signal ***
+[h30n11:1810836] Signal: Aborted (6)
+[h30n11:1810836] Signal code:  (-6)
+[h30n11:1810836] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h30n11:1810836] [ 1] /lib64/power9/libc.so.6(gsignal+0xd8)[0x200000813618]
+[h30n11:1810836] [ 2] /lib64/power9/libc.so.6(abort+0x164)[0x2000007f3a2c]
+[h30n11:1810836] [ 3] /lib64/power9/libc.so.6(+0x36f70)[0x200000806f70]
+[h30n11:1810836] [ 4] /lib64/power9/libc.so.6(__assert_fail+0x64)[0x200000807014]
+[h30n11:1810836] [ 5] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get7GetRdmaINS_6Device5Shmem8DmaModelINS3_11ShmemDeviceINS_4Fifo8WrapFifoINS7_10FifoPacketILj64ELj4096EEENS_7Counter15IndirectBoundedINS_6Atomic12NativeAtomicEEELj256EEENSB_8IndirectINSB_6NativeEEENS4_9CMAShaddrELj256ELj512EEELb0EEESL_E6simpleEP18pami_rget_simple_t+0x1d8)[0x2000171f60b8]
+[h30n11:1810836] [ 6] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get13CompositeRGetINS1_4RGetES3_E6simpleEP18pami_rget_simple_t+0x40)[0x20001714c590]
+[h30n11:1810836] [ 7] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI7Context9rget_implEP18pami_rget_simple_t+0x28c)[0x20001717a05c]
+[h30n11:1810836] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(PAMI_Rget+0x18)[0x200017138e38]
+[h30n11:1810836] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(process_rndv_msg+0x46c)[0x200015f759ec]
+[h30n11:1810836] [10] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_recv_req_start+0x200)[0x200015f7f840]
+[h30n11:1810836] [11] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_irecv+0x200)[0x200015f7a520]
+[h30n11:1810836] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/spectrum-mpi-10.4.0.3-20210112-vgx3y6jjgccqihabnuasprb6pyqqfmal/lib/libmpi_ibm.so.3(MPI_Irecv+0x19c)[0x200000b3531c]
+[h30n11:1810836] [13] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon10MPIChannel16progressReceivesEv+0x268)[0x20003c316138]
+[h30n11:1810836] [14] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon8AllToAll10isCompleteEv+0x34c)[0x20003c31ddec]
+[h30n11:1810836] [15] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon13ArrowAllToAll10isCompleteEv+0xa04)[0x20003bffe7a4]
+[h30n11:1810836] [16] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52ca28)[0x20003c36ca28]
+[h30n11:1810836] [17] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52d8b0)[0x20003c36d8b0]
+[h30n11:1810836] [18] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52df8c)[0x20003c36df8c]
+[h30n11:1810836] [19] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon15DistributedJoinERKSt10shared_ptrINS_5TableEES4_RKNS_4join6config10JoinConfigERS2_+0xb4)[0x20003c36ebe4]
+[h30n11:1810836] [20] /ccs/home/gregorvl/CYLON/lib/python3.7/site-packages/pycylon-0+untagged.1309.g742e030.dirty-py3.7-linux-ppc64le.egg/pycylon/data/table.cpython-37m-powerpc64le-linux-gnu.so(+0x8aac0)[0x20003bddaac0]
+[h30n11:1810836] [21] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x1d0)[0x2000001b7d70]
+[h30n11:1810836] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h30n11:1810836] [23] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x9a44)[0x2000001815d4]
+[h30n11:1810836] [24] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810836] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810836] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h30n11:1810836] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h30n11:1810836] [28] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810836] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810836] *** End of error message ***
+errno 3 pid 1810838
+python: /__SMPI_build_dir__________________________/ibmsrc/pami/ibm-pami/buildtools/pami_build_port/../pami/components/devices/shmem/shaddr/CMAShaddr.h:164: size_t PAMI::Device::Shmem::CMAShaddr::read_impl(PAMI::Memregion*, size_t, PAMI::Memregion*, size_t, size_t, bool*): Assertion `cbytes > 0' failed.
+[h30n11:1810834] *** Process received signal ***
+[h30n11:1810834] Signal: Aborted (6)
+[h30n11:1810834] Signal code:  (-6)
+[h30n11:1810834] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h30n11:1810834] [ 1] /lib64/power9/libc.so.6(gsignal+0xd8)[0x200000813618]
+[h30n11:1810834] [ 2] /lib64/power9/libc.so.6(abort+0x164)[0x2000007f3a2c]
+[h30n11:1810834] [ 3] /lib64/power9/libc.so.6(+0x36f70)[0x200000806f70]
+[h30n11:1810834] [ 4] /lib64/power9/libc.so.6(__assert_fail+0x64)[0x200000807014]
+[h30n11:1810834] [ 5] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get7GetRdmaINS_6Device5Shmem8DmaModelINS3_11ShmemDeviceINS_4Fifo8WrapFifoINS7_10FifoPacketILj64ELj4096EEENS_7Counter15IndirectBoundedINS_6Atomic12NativeAtomicEEELj256EEENSB_8IndirectINSB_6NativeEEENS4_9CMAShaddrELj256ELj512EEELb0EEESL_E6simpleEP18pami_rget_simple_t+0x1d8)[0x2000171f60b8]
+[h30n11:1810834] [ 6] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get13CompositeRGetINS1_4RGetES3_E6simpleEP18pami_rget_simple_t+0x40)[0x20001714c590]
+[h30n11:1810834] [ 7] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI7Context9rget_implEP18pami_rget_simple_t+0x28c)[0x20001717a05c]
+[h30n11:1810834] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(PAMI_Rget+0x18)[0x200017138e38]
+[h30n11:1810834] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(process_rndv_msg+0x46c)[0x200015f759ec]
+[h30n11:1810834] [10] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_recv_req_start+0x200)[0x200015f7f840]
+[h30n11:1810834] [11] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_irecv+0x200)[0x200015f7a520]
+[h30n11:1810834] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/spectrum-mpi-10.4.0.3-20210112-vgx3y6jjgccqihabnuasprb6pyqqfmal/lib/libmpi_ibm.so.3(MPI_Irecv+0x19c)[0x200000b3531c]
+[h30n11:1810834] [13] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon10MPIChannel16progressReceivesEv+0x268)[0x20003c316138]
+[h30n11:1810834] [14] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon8AllToAll10isCompleteEv+0x34c)[0x20003c31ddec]
+[h30n11:1810834] [15] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon13ArrowAllToAll10isCompleteEv+0xa04)[0x20003bffe7a4]
+[h30n11:1810834] [16] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52ca28)[0x20003c36ca28]
+[h30n11:1810834] [17] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52d8b0)[0x20003c36d8b0]
+[h30n11:1810834] [18] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52df8c)[0x20003c36df8c]
+[h30n11:1810834] [19] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon15DistributedJoinERKSt10shared_ptrINS_5TableEES4_RKNS_4join6config10JoinConfigERS2_+0xb4)[0x20003c36ebe4]
+[h30n11:1810834] [20] /ccs/home/gregorvl/CYLON/lib/python3.7/site-packages/pycylon-0+untagged.1309.g742e030.dirty-py3.7-linux-ppc64le.egg/pycylon/data/table.cpython-37m-powerpc64le-linux-gnu.so(+0x8aac0)[0x20003bddaac0]
+[h30n11:1810834] [21] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x1d0)[0x2000001b7d70]
+[h30n11:1810834] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h30n11:1810834] [23] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x9a44)[0x2000001815d4]
+[h30n11:1810834] [24] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810834] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810834] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h30n11:1810834] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h30n11:1810834] [28] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810834] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810834] *** End of error message ***
+errno 3 pid 1810838
+python: /__SMPI_build_dir__________________________/ibmsrc/pami/ibm-pami/buildtools/pami_build_port/../pami/components/devices/shmem/shaddr/CMAShaddr.h:164: size_t PAMI::Device::Shmem::CMAShaddr::read_impl(PAMI::Memregion*, size_t, PAMI::Memregion*, size_t, size_t, bool*): Assertion `cbytes > 0' failed.
+[h30n11:1810833] *** Process received signal ***
+[h30n11:1810833] Signal: Aborted (6)
+[h30n11:1810833] Signal code:  (-6)
+[h30n11:1810833] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h30n11:1810833] [ 1] /lib64/power9/libc.so.6(gsignal+0xd8)[0x200000813618]
+[h30n11:1810833] [ 2] /lib64/power9/libc.so.6(abort+0x164)[0x2000007f3a2c]
+[h30n11:1810833] [ 3] /lib64/power9/libc.so.6(+0x36f70)[0x200000806f70]
+[h30n11:1810833] [ 4] /lib64/power9/libc.so.6(__assert_fail+0x64)[0x200000807014]
+[h30n11:1810833] [ 5] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get7GetRdmaINS_6Device5Shmem8DmaModelINS3_11ShmemDeviceINS_4Fifo8WrapFifoINS7_10FifoPacketILj64ELj4096EEENS_7Counter15IndirectBoundedINS_6Atomic12NativeAtomicEEELj256EEENSB_8IndirectINSB_6NativeEEENS4_9CMAShaddrELj256ELj512EEELb0EEESL_E6simpleEP18pami_rget_simple_t+0x1d8)[0x2000171f60b8]
+[h30n11:1810833] [ 6] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get13CompositeRGetINS1_4RGetES3_E6simpleEP18pami_rget_simple_t+0x40)[0x20001714c590]
+[h30n11:1810833] [ 7] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI7Context9rget_implEP18pami_rget_simple_t+0x28c)[0x20001717a05c]
+[h30n11:1810833] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(PAMI_Rget+0x18)[0x200017138e38]
+[h30n11:1810833] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(process_rndv_msg+0x46c)[0x200015f759ec]
+[h30n11:1810833] [10] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_recv_req_start+0x200)[0x200015f7f840]
+[h30n11:1810833] [11] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_irecv+0x200)[0x200015f7a520]
+[h30n11:1810833] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/spectrum-mpi-10.4.0.3-20210112-vgx3y6jjgccqihabnuasprb6pyqqfmal/lib/libmpi_ibm.so.3(MPI_Irecv+0x19c)[0x200000b3531c]
+[h30n11:1810833] [13] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon10MPIChannel16progressReceivesEv+0x268)[0x20003c316138]
+[h30n11:1810833] [14] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon8AllToAll10isCompleteEv+0x34c)[0x20003c31ddec]
+[h30n11:1810833] [15] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon13ArrowAllToAll10isCompleteEv+0xa04)[0x20003bffe7a4]
+[h30n11:1810833] [16] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52ca28)[0x20003c36ca28]
+[h30n11:1810833] [17] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52d8b0)[0x20003c36d8b0]
+[h30n11:1810833] [18] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52df8c)[0x20003c36df8c]
+[h30n11:1810833] [19] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon15DistributedJoinERKSt10shared_ptrINS_5TableEES4_RKNS_4join6config10JoinConfigERS2_+0xb4)[0x20003c36ebe4]
+[h30n11:1810833] [20] /ccs/home/gregorvl/CYLON/lib/python3.7/site-packages/pycylon-0+untagged.1309.g742e030.dirty-py3.7-linux-ppc64le.egg/pycylon/data/table.cpython-37m-powerpc64le-lerrno 3 pid 1810838
+python: /__SMPI_build_dir__________________________/ibmsrc/pami/ibm-pami/buildtools/pami_build_port/../pami/components/devices/shmem/shaddr/CMAShaddr.h:164: size_t PAMI::Device::Shmem::CMAShaddr::read_impl(PAMI::Memregion*, size_t, PAMI::Memregion*, size_t, size_t, bool*): Assertion `cbytes > 0' failed.
+[h30n11:1810822] *** Process received signal ***
+[h30n11:1810822] Signal: Aborted (6)
+[h30n11:1810822] Signal code:  (-6)
+[h30n11:1810822] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h30n11:1810822] [ 1] /lib64/power9/libc.so.6(gsignal+0xd8)[0x200000813618]
+[h30n11:1810822] [ 2] /lib64/power9/libc.so.6(abort+0x164)[0x2000007f3a2c]
+[h30n11:1810822] [ 3] /lib64/power9/libc.so.6(+0x36f70)[0x200000806f70]
+[h30n11:1810822] [ 4] /lib64/power9/libc.so.6(__assert_fail+0x64)[0x200000807014]
+[h30n11:1810822] [ 5] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get7GetRdmaINS_6Device5Shmem8DmaModelINS3_11ShmemDeviceINS_4Fifo8WrapFifoINS7_10FifoPacketILj64ELj4096EEENS_7Counter15IndirectBoundedINS_6Atomic12NativeAtomicEEELj256EEENSB_8IndirectINSB_6NativeEEENS4_9CMAShaddrELj256ELj512EEELb0EEESL_E6simpleEP18pami_rget_simple_t+0x1d8)[0x2000171f60b8]
+[h30n11:1810822] [ 6] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get13CompositeRGetINS1_4RGetES3_E6simpleEP18pami_rget_simple_t+0x40)[0x20001714c590]
+[h30n11:1810822] [ 7] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI7Context9rget_implEP18pami_rget_simple_t+0x28c)[0x20001717a05c]
+[h30n11:1810822] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(PAMI_Rget+0x18)[0x200017138e38]
+[h30n11:1810822] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(process_rndv_msg+0x46c)[0x200015f759ec]
+[h30n11:1810822] [10] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_recv_req_start+0x200)[0x200015f7f840]
+[h30n11:1810822] [11] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_irecv+0x200)[0x200015f7a520]
+[h30n11:1810822] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/spectrum-mpi-10.4.0.3-20210112-vgx3y6jjgccqihabnuasprb6pyqqfmal/lib/libmpi_ibm.so.3(MPI_Irecv+0x19c)[0x200000b3531c]
+[h30n11:1810822] [13] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon10MPIChannel16progressReceivesEv+0x268)[0x20003c316138]
+[h30n11:1810822] [14] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon8AllToAll10isCompleteEv+0x34c)[0x20003c31ddec]
+[h30n11:1810822] [15] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon13ArrowAllToAll10isCompleteEv+0xa04)[0x20003bffe7a4]
+[h30n11:1810822] [16] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52ca28)[0x20003c36ca28]
+[h30n11:1810822] [17] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52d8b0)[0x20003c36d8b0]
+[h30n11:1810822] [18] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52df8c)[0x20003c36df8c]
+[h30n11:1810822] [19] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon15DistributedJoinERKSt10shared_ptrINS_5TableEES4_RKNS_4join6config10JoinConfigERS2_+0xb4)[0x20003c36ebe4]
+[h30n11:1810822] [20] /ccs/home/gregorvl/CYLON/lib/python3.7/site-packages/pycylon-0+untagged.1309.g742e030.dirty-py3.7-linux-ppc64le.egg/pycylon/data/table.cpython-37m-powerpc64le-linux-gnu.so(+0x8aac0)[0x20003bddaac0]
+[h30n11:1810822] [21] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x1d0)[0x2000001b7d70]
+[h30n11:1810822] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h30n11:1810822] [23] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x9a44)[0x2000001815d4]
+[h30n11:1810822] [24] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810822] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810822] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h30n11:1810822] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h30n11:1810822] [28] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810822] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810822] *** End of error message ***
+inux-gnu.so(+0x8aac0)[0x20003bddaac0]
+[h30n11:1810833] [21] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x1d0)[0x2000001b7d70]
+[h30n11:1810833] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h30n11:1810833] [23] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x9a44)[0x2000001815d4]
+[h30n11:1810833] [24] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810833] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810833] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h30n11:1810833] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h30n11:1810833] [28] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810833] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810833] *** End of error message ***
+errno 3 pid 1810838
+python: /__SMPI_build_dir__________________________/ibmsrc/pami/ibm-pami/buildtools/pami_build_port/../pami/components/devices/shmem/shaddr/CMAShaddr.h:164: size_t PAMI::Device::Shmem::CMAShaddr::read_impl(PAMI::Memregion*, size_t, PAMI::Memregion*, size_t, size_t, bool*): Assertion `cbytes > 0' failed.
+[h30n11:1810820] *** Process received signal ***
+[h30n11:1810820] Signal: Aborted (6)
+[h30n11:1810820] Signal code:  (-6)
+[h30n11:1810820] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h30n11:1810820] [ 1] /lib64/power9/libc.so.6(gsignal+0xd8)[0x200000813618]
+[h30n11:1810820] [ 2] /lib64/power9/libc.so.6(abort+0x164)[0x2000007f3a2c]
+[h30n11:1810820] [ 3] /lib64/power9/libc.so.6(+0x36f70)[0x200000806f70]
+[h30n11:1810820] [ 4] /lib64/power9/libc.so.6(__assert_fail+0x64)[0x200000807014]
+[h30n11:1810820] [ 5] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get7GetRdmaINS_6Device5Shmem8DmaModelINS3_11ShmemDeviceINS_4Fifo8WrapFifoINS7_10FifoPacketILj64ELj4096EEENS_7Counter15IndirectBoundedINS_6Atomic12NativeAtomicEEELj256EEENSB_8IndirectINSB_6NativeEEENS4_9CMAShaddrELj256ELj512EEELb0EEESL_E6simpleEP18pami_rget_simple_t+0x1d8)[0x2000171f60b8]
+[h30n11:1810820] [ 6] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get13CompositeRGetINS1_4RGetES3_E6simpleEP18pami_rget_simple_t+0x40)[0x20001714c590]
+[h30n11:1810820] [ 7] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI7Context9rget_implEP18pami_rget_simple_t+0x28c)[0x20001717a05c]
+[h30n11:1810820] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(PAMI_Rget+0x18)[0x200017138e38]
+[h30n11:1810820] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(process_rndv_msg+0x46c)[0x200015f759ec]
+[h30n11:1810820] [10] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_recv_req_start+0x200)[0x200015f7f840]
+[h30n11:1810820] [11] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_irecv+0x200)[0x200015f7a520]
+[h30n11:1810820] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/spectrum-mpi-10.4.0.3-20210112-vgx3y6jjgccqihabnuasprb6pyqqfmal/lib/libmpi_ibm.so.3(MPI_Irecv+0x19c)[0x200000b3531c]
+[h30n11:1810820] [13] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon10MPIChannel16progressReceivesEv+0x268)[0x20003c316138]
+[h30n11:1810820] [14] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon8AllToAll10isCompleteEv+0x34c)[0x20003c31ddec]
+[h30n11:1810820] [15] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon13ArrowAllToAll10isCompleteEv+0xa04)[0x20003bffe7a4]
+[h30n11:1810820] [16] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52ca28)[0x20003c36ca28]
+[h30n11:1810820] [17] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52d8b0)[0x20003c36d8b0]
+[h30n11:1810820] [18] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52df8c)[0x20003c36df8c]
+[h30n11:1810820] [19] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon15DistributedJoinERKSt10shared_ptrINS_5TableEES4_RKNS_4join6config10JoinConfigERS2_+0xb4)[0x20003c36ebe4]
+[h30n11:1810820] [20] /ccs/home/gregorvl/CYLON/lib/python3.7/site-packages/pycylon-0+untagged.1309.g742e030.dirty-py3.7-linux-ppc64le.egg/pycylon/data/table.cpython-37m-powerpc64le-linux-gnu.so(+0x8aac0)[0x20003bddaac0]
+[h30n11:1810820] [21] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x1d0)[0x2000001b7d70]
+[h30n11:1810820] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h30n11:1810820] [23] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x9a44)[0x2000001815d4]
+[h30n11:1810820] [24] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810820] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810820] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h30n11:1810820] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h30n11:1810820] [28] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810820] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810820] *** End of error message ***
+errno 3 pid 1810838
+python: /__SMPI_build_dir__________________________/ibmsrc/pami/ibm-pami/buildtools/pami_build_port/../pami/components/devices/shmem/shaddr/CMAShaddr.h:164: size_t PAMI::Device::Shmem::CMAShaddr::read_impl(PAMI::Memregion*, size_t, PAMI::Memregion*, size_t, size_t, bool*): Assertion `cbytes > 0' failed.
+[h30n11:1810837] *** Process received signal ***
+[h30n11:1810837] Signal: Aborted (6)
+[h30n11:1810837] Signal code:  (-6)
+[h30n11:1810837] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h30n11:1810837] [ 1] /lib64/power9/libc.so.6(gsignal+0xd8)[0x200000813618]
+[h30n11:1810837] [ 2] /lib64/power9/libc.so.6(abort+0x164)[0x2000007f3a2c]
+[h30n11:1810837] [ 3] /lib64/power9/libc.so.6(+0x36f70)[0x200000806f70]
+[h30n11:1810837] [ 4] /lib64/power9/libc.so.6(__assert_fail+0x64)[0x200000807014]
+[h30n11:1810837] [ 5] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get7GetRdmaINS_6Device5Shmem8DmaModelINS3_11ShmemDeviceINS_4Fifo8WrapFifoINS7_10FifoPacketILj64ELj4096EEENS_7Counter15IndirectBoundedINS_6Atomic12NativeAtomicEEELj256EEENSB_8IndirectINSB_6NativeEEENS4_9CMAShaddrELj256ELj512EEELb0EEESL_E6simpleEP18pami_rget_simple_t+0x1d8)[0x2000171f60b8]
+[h30n11:1810837] [ 6] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get13CompositeRGetINS1_4RGetES3_E6simpleEP18pami_rget_simple_t+0x40)[0x20001714c590]
+[h30n11:1810837] [ 7] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI7Context9rget_implEP18pami_rget_simple_t+0x28c)[0x20001717a05c]
+[h30n11:1810837] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(PAMI_Rget+0x18)[0x200017138e38]
+[h30n11:1810837] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(process_rndv_msg+0x46c)[0x200015f759ec]
+[h30n11:1810837] [10] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_recv_req_start+0x200)[0x200015f7f840]
+[h30n11:1810837] [11] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_irecv+0x200)[0x200015f7a520]
+[h30n11:1810837] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/spectrum-mpi-10.4.0.3-20210112-vgx3y6jjgccqihabnuasprb6pyqqfmal/lib/libmpi_ibm.so.3(MPI_Irecv+0x19c)[0x200000b3531c]
+[h30n11:1810837] [13] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon10MPIChannel16progressReceivesEv+0x268)[0x20003c316138]
+[h30n11:1810837] [14] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon8AllToAll10isCompleteEv+0x34c)[0x20003c31ddec]
+[h30n11:1810837] [15] errno 3 pid 1810838
+python: /__SMPI_build_dir__________________________/ibmsrc/pami/ibm-pami/buildtools/pami_build_port/../pami/components/devices/shmem/shaddr/CMAShaddr.h:164: size_t PAMI::Device::Shmem::CMAShaddr::read_impl(PAMI::Memregion*, size_t, PAMI::Memregion*, size_t, size_t, bool*): Assertion `cbytes > 0' failed.
+[h30n11:1810830] *** Process received signal ***
+[h30n11:1810830] Signal: Aborted (6)
+[h30n11:1810830] Signal code:  (-6)
+[h30n11:1810830] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h30n11:1810830] [ 1] /lib64/power9/libc.so.6(gsignal+0xd8)[0x200000813618]
+[h30n11:1810830] [ 2] /lib64/power9/libc.so.6(abort+0x164)[0x2000007f3a2c]
+[h30n11:1810830] [ 3] /lib64/power9/libc.so.6(+0x36f70)[0x200000806f70]
+[h30n11:1810830] [ 4] /lib64/power9/libc.so.6(__assert_fail+0x64)[0x200000807014]
+[h30n11:1810830] [ 5] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon13ArrowAllToAll10isCompleteEv+0xa04)[0x20003bffe7a4]
+[h30n11:1810837] [16] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get7GetRdmaINS_6Device5Shmem8DmaModelINS3_11ShmemDeviceINS_4Fifo8WrapFifoINS7_10FifoPacketILj64ELj4096EEENS_7Counter15IndirectBoundedINS_6Atomic12NativeAtomicEEELj256EEENSB_8IndirectINSB_6NativeEEENS4_9CMAShaddrELj256ELj512EEELb0EEESL_E6simpleEP18pami_rget_simple_t+0x1d8)[0x2000171f60b8]
+[h30n11:1810830] [ 6] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get13CompositeRGetINS1_4RGetES3_E6simpleEP18pami_rget_simple_t+0x40)[0x20001714c590]
+[h30n11:1810830] [ 7] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI7Context9rget_implEP18pami_rget_simple_t+0x28c)[0x20001717a05c]
+[h30n11:1810830] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(PAMI_Rget+0x18)[0x200017138e38]
+[h30n11:1810830] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(process_rndv_msg+0x46c)[0x200015f759ec]
+[h30n11:1810830] [10] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_recv_req_start+0x200)[0x200015f7f840]
+[h30n11:1810830] [11] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_irecv+0x200)[0x200015f7a520]
+[h30n11:1810830] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/spectrum-mpi-10.4.0.3-20210112-vgx3y6jjgccqihabnuasprb6pyqqfmal/lib/libmpi_ibm.so.3(MPI_Irecv+0x19c)[0x200000b3531c]
+[h30n11:1810830] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52ca28)[0x20003c36ca28]
+[h30n11:1810837] [17] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52d8b0)[0x20003c36d8b0]
+[h30n11:1810837] [18] [13] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon10MPIChannel16progressReceivesEv+0x268)[0x20003c316138]
+[h30n11:1810830] [14] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52df8c)[0x20003c36df8c]
+[h30n11:1810837] [19] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon8AllToAll10isCompleteEv+0x34c)[0x20003c31ddec]
+[h30n11:1810830] [15] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon15DistributedJoinERKSt10shared_ptrINS_5TableEES4_RKNS_4join6config10JoinConfigERS2_+0xb4)[0x20003c36ebe4]
+[h30n11:1810837] [20] /ccs/home/gregorvl/CYLON/lib/python3.7/site-packages/pycylon-0+untagged.1309.g742e030.dirty-py3.7-linux-ppc64le.egg/pycylon/data/table.cpython-37m-powerpc64le-linux-gnu.so(+0x8aac0)[0x20003bddaac0]
+[h30n11:1810837] [21] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x1d0)[0x2000001b7d70]
+[h30n11:1810837] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h30n11:1810837] [23] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x9a44)[0x2000001815d4]
+[h30n11:1810837] [24] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon13ArrowAllToAll10isCompleteEv+0xa04)[0x20003bffe7a4]
+[h30n11:1810830] [16] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52ca28)[0x20003c36ca28]
+/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810837] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810837] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h30n11:1810837] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h30n11:1810837] [28] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810837] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810837] *** End of error message ***
+errno 3 pid 1810838
+python: /__SMPI_build_dir__________________________/ibmsrc/pami/ibm-pami/buildtools/pami_build_port/../pami/components/devices/shmem/shaddr/CMAShaddr.h:164: size_t PAMI::Device::Shmem::CMAShaddr::read_impl(PAMI::Memregion*, size_t, PAMI::Memregion*, size_t, size_t, bool*): Assertion `cbytes > 0' failed.
+[h30n11:1810823] *** Process received signal ***
+[h30n11:1810830] [17] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52d8b0)[0x20003c36d8b0]
+[h30n11:1810830] [18] [h30n11:1810823] Signal: Aborted (6)
+[h30n11:1810823] Signal code:  (-6)
+[h30n11:1810823] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h30n11:1810823] [ 1] /lib64/power9/libc.so.6(gsignal+0xd8)[0x200000813618]
+[h30n11:1810823] [ 2] /lib64/power9/libc.so.6(abort+0x164)[0x2000007f3a2c]
+[h30n11:1810823] [ 3] /lib64/power9/libc.so.6(+0x36f70)[0x200000806f70]
+[h30n11:1810823] [ 4] /lib64/power9/libc.so.6(__assert_fail+0x64)[0x200000807014]
+[h30n11:1810823] [ 5] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52df8c)[0x20003c36df8c]
+[h30n11:1810830] [19] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get7GetRdmaINS_6Device5Shmem8DmaModelINS3_11ShmemDeviceINS_4Fifo8WrapFifoINS7_10FifoPacketILj64ELj4096EEENS_7Counter15IndirectBoundedINS_6Atomic12NativeAtomicEEELj256EEENSB_8IndirectINSB_6NativeEEENS4_9CMAShaddrELj256ELj512EEELb0EEESL_E6simpleEP18pami_rget_simple_t+0x1d8)[0x2000171f60b8]
+[h30n11:1810823] [ 6] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get13CompositeRGetINS1_4RGetES3_E6simpleEP18pami_rget_simple_t+0x40)[0x20001714c590]
+[h30n11:1810823] [ 7] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI7Context9rget_implEP18pami_rget_simple_t+0x28c)[0x20001717a05c]
+[h30n11:1810823] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(PAMI_Rget+0x18)[0x200017138e38]
+[h30n11:1810823] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(process_rndv_msg+0x46c)[0x200015f759ec]
+[h30n11:1810823] [10] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon15DistributedJoinERKSt10shared_ptrINS_5TableEES4_RKNS_4join6config10JoinConfigERS2_+0xb4)[0x20003c36ebe4]
+[h30n11:1810830] [20] /ccs/home/gregorvl/CYLON/lib/python3.7/site-packages/pycylon-0+untagged.1309.g742e030.dirty-py3.7-linux-ppc64le.egg/pycylon/data/table.cpython-37m-powerpc64le-linux-gnu.so(+0x8aac0)[0x20003bddaac0]
+[h30n11:1810830] [21] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x1d0)[0x2000001b7d70]
+/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_recv_req_start+0x200)[0x200015f7f840]
+[h30n11:1810823] [11] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_irecv+0x200)[0x200015f7a520]
+[h30n11:1810823] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/spectrum-mpi-10.4.0.3-20210112-vgx3y6jjgccqihabnuasprb6pyqqfmal/lib/libmpi_ibm.so.3(MPI_Irecv+0x19c)[0x200000b3531c]
+[h30n11:1810823] [13] [h30n11:1810830] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h30n11:1810830] [23] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x9a44)[0x2000001815d4]
+[h30n11:1810830] [24] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810830] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810830] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h30n11:1810830] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h30n11:1810830] [28] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon10MPIChannel16progressReceivesEv+0x268)[0x20003c316138]
+[h30n11:1810823] [14] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810830] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810830] *** End of error message ***
+/ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon8AllToAll10isCompleteEv+0x34c)[0x20003c31ddec]
+[h30n11:1810823] [15] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon13ArrowAllToAll10isCompleteEv+0xa04)[0x20003bffe7a4]
+[h30n11:1810823] [16] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52ca28)[0x20003c36ca28]
+[h30n11:1810823] [17] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52d8b0)[0x20003c36d8b0]
+[h30n11:1810823] [18] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52df8c)[0x20003c36df8c]
+[h30n11:1810823] [19] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon15DistributedJoinERKSt10shared_ptrINS_5TableEES4_RKNS_4join6config10JoinConfigERS2_+0xb4)[0x20003c36ebe4]
+[h30n11:1810823] [20] /ccs/home/gregorvl/CYLON/lib/python3.7/site-packages/pycylon-0+untagged.1309.g742e030.dirty-py3.7-linux-ppc64le.egg/pycylon/data/table.cpython-37m-powerpc64le-linux-gnu.so(+0x8aac0)[0x20003bddaac0]
+[h30n11:1810823] [21] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x1d0)[0x2000001b7d70]
+[h30n11:1810823] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h30n11:1810823] [23] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x9a44)[0x2000001815d4]
+[h30n11:1810823] [24] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810823] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810823] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h30n11:1810823] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h30n11:1810823] [28] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810823] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810823] *** End of error message ***
+errno 3 pid 1810838
+python: /__SMPI_build_dir__________________________/ibmsrc/pami/ibm-pami/buildtools/pami_build_port/../pami/components/devices/shmem/shaddr/CMAShaddr.h:164: size_t PAMI::Device::Shmem::CMAShaddr::read_impl(PAMI::Memregion*, size_t, PAMI::Memregion*, size_t, size_t, bool*): Assertion `cbytes > 0' failed.
+[h30n11:1810819] *** Process received signal ***
+[h30n11:1810819] Signal: Aborted (6)
+[h30n11:1810819] Signal code:  (-6)
+[h30n11:1810819] [ 0] linux-vdso64.so.1(__kernel_sigtramp_rt64+0x0)[0x2000000504d8]
+[h30n11:1810819] [ 1] /lib64/power9/libc.so.6(gsignal+0xd8)[0x200000813618]
+[h30n11:1810819] [ 2] /lib64/power9/libc.so.6(abort+0x164)[0x2000007f3a2c]
+[h30n11:1810819] [ 3] /lib64/power9/libc.so.6(+0x36f70)[0x200000806f70]
+[h30n11:1810819] [ 4] /lib64/power9/libc.so.6(__assert_fail+0x64)[0x200000807014]
+[h30n11:1810819] [ 5] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get7GetRdmaINS_6Device5Shmem8DmaModelINS3_11ShmemDeviceINS_4Fifo8WrapFifoINS7_10FifoPacketILj64ELj4096EEENS_7Counter15IndirectBoundedINS_6Atomic12NativeAtomicEEELj256EEENSB_8IndirectINSB_6NativeEEENS4_9CMAShaddrELj256ELj512EEELb0EEESL_E6simpleEP18pami_rget_simple_t+0x1d8)[0x2000171f60b8]
+[h30n11:1810819] [ 6] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI8Protocol3Get13CompositeRGetINS1_4RGetES3_E6simpleEP18pami_rget_simple_t+0x40)[0x20001714c590]
+[h30n11:1810819] [ 7] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(_ZN4PAMI7Context9rget_implEP18pami_rget_simple_t+0x28c)[0x20001717a05c]
+[h30n11:1810819] [ 8] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/pami_port/libpami.so.3(PAMI_Rget+0x18)[0x200017138e38]
+[h30n11:1810819] [ 9] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(process_rndv_msg+0x46c)[0x200015f759ec]
+[h30n11:1810819] [10] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_recv_req_start+0x200)[0x200015f7f840]
+[h30n11:1810819] [11] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/container/../lib/spectrum_mpi/mca_pml_pami.so(mca_pml_pami_irecv+0x200)[0x200015f7a520]
+[h30n11:1810819] [12] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/spectrum-mpi-10.4.0.3-20210112-vgx3y6jjgccqihabnuasprb6pyqqfmal/lib/libmpi_ibm.so.3(MPI_Irecv+0x19c)[0x200000b3531c]
+[h30n11:1810819] [13] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon10MPIChannel16progressReceivesEv+0x268)[0x20003c316138]
+[h30n11:1810819] [14] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon8AllToAll10isCompleteEv+0x34c)[0x20003c31ddec]
+[h30n11:1810819] [15] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon13ArrowAllToAll10isCompleteEv+0xa04)[0x20003bffe7a4]
+[h30n11:1810819] [16] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52ca28)[0x20003c36ca28]
+[h30n11:1810819] [17] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52d8b0)[0x20003c36d8b0]
+[h30n11:1810819] [18] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(+0x52df8c)[0x20003c36df8c]
+[h30n11:1810819] [19] /ccs/home/gregorvl/cylon/build/lib/libcylon.so.0.5.0(_ZN5cylon15DistributedJoinERKSt10shared_ptrINS_5TableEES4_RKNS_4join6config10JoinConfigERS2_+0xb4)[0x20003c36ebe4]
+[h30n11:1810819] [20] /ccs/home/gregorvl/CYLON/lib/python3.7/site-packages/pycylon-0+untagged.1309.g742e030.dirty-py3.7-linux-ppc64le.egg/pycylon/data/table.cpython-37m-powerpc64le-linux-gnu.so(+0x8aac0)[0x20003bddaac0]
+[h30n11:1810819] [21] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyMethodDef_RawFastCallKeywords+0x1d0)[0x2000001b7d70]
+[h30n11:1810819] [22] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyCFunction_FastCallKeywords+0x44)[0x2000001b80d4]
+[h30n11:1810819] [23] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x9a44)[0x2000001815d4]
+[h30n11:1810819] [24] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810819] [25] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810819] [26] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyFunction_FastCallKeywords+0xbc)[0x2000001b773c]
+[h30n11:1810819] [27] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalFrameDefault+0x88c0)[0x200000180450]
+[h30n11:1810819] [28] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(PyEval_EvalFrameEx+0x34)[0x2000002f9124]
+[h30n11:1810819] [29] /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/libpython3.7m.so.1.0(_PyEval_EvalCodeWithName+0xe7c)[0x2000002fa00c]
+[h30n11:1810819] *** End of error message ***
+
+real	0m48.505s
+user	0m0.507s
+sys	0m0.171s
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@batch4>
+Subject: Job 2514438: <cylonrun-s-8> in cluster <summit> Done
+
+Job <cylonrun-s-8> was submitted from host <login1> by user <gregorvl> in cluster <summit> at Thu Oct 20 14:47:23 2022
+Job was executed on host(s) <1*batch4>, in queue <batch>, as user <gregorvl> in cluster <summit> at Fri Oct 21 09:09:29 2022
+                            <42*h15n02>
+                            <42*h15n03>
+                            <42*h30n06>
+                            <42*h30n07>
+                            <42*h30n08>
+                            <42*h30n09>
+                            <42*h30n10>
+                            <42*h30n11>
+</ccs/home/gregorvl> was used as the home directory.
+</ccs/home/gregorvl/cylon/summit/scripts/strong_scaling_big> was used as the working directory.
+Started at Fri Oct 21 09:09:29 2022
+Terminated at Fri Oct 21 09:10:50 2022
+Results reported at Fri Oct 21 09:10:50 2022
+
+The output (if any) is above this job summary.
+

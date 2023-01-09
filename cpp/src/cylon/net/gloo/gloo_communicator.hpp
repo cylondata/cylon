@@ -33,7 +33,7 @@ namespace net {
 
 class GlooCommunicator;
 
-static constexpr std::chrono::seconds kTimoutNotSet(0);
+static constexpr std::chrono::seconds kTimoutNotSet = std::chrono::seconds::zero();
 
 class GlooConfig : public CommConfig {
  public:

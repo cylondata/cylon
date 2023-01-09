@@ -305,7 +305,7 @@ def build_python():
     conda_prefix = check_conda_prefix()
 
     env = os.environ
-    env["CYLON_PREFIX"] = str(BUILD_DIR)
+    env["CYLON_PREFIX"] = str(INSTALL_DIR)
     if os.name == 'posix':
         env["ARROW_PREFIX"] = str(Path(conda_prefix))
     elif os.name == 'nt':

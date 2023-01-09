@@ -1,0 +1,157 @@
+
+The following have been reloaded with a version change:
+  1) python/3.8-anaconda3 => python/3.7.7
+
+
+w 5376 r 50000000 it 0 t 88844.46160464238 l 298667135765
+w 5376 r 50000000 it 1 t 70742.72181430743 l 298667135765
+w 5376 r 50000000 it 2 t 69377.93503036456 l 298667135765
+w 5376 r 50000000 it 3 t 69420.50167873857 l 298667135765
+w 5376 r 50000000 it 4 t 71637.24115202647 l 298667135765
+w 5376 r 50000000 it 5 t 69358.73030817935 l 298667135765
+w 5376 r 50000000 it 6 t 71236.26359525535 l 298667135765
+User defined signal 2
+ERROR:  One or more process (first noticed rank 3275) terminated with signal 12
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@batch4>
+Subject: Job 2502237: <cylonrun-128> in cluster <summit> Exited
+
+Job <cylonrun-128> was submitted from host <login4> by user <gregorvl> in cluster <summit> at Wed Oct 12 14:54:33 2022
+Job was executed on host(s) <1*batch4>, in queue <batch>, as user <gregorvl> in cluster <summit> at Wed Oct 12 14:55:51 2022
+                            <42*a25n12>
+                            <42*a25n13>
+                            <42*a25n14>
+                            <42*a25n15>
+                            <42*a25n16>
+                            <42*a25n17>
+                            <42*a25n18>
+                            <42*a26n01>
+                            <42*a26n02>
+                            <42*a26n03>
+                            <42*a26n04>
+                            <42*a26n05>
+                            <42*a26n06>
+                            <42*a26n07>
+                            <42*a26n08>
+                            <42*a26n09>
+                            <42*a26n10>
+                            <42*a26n11>
+                            <42*a26n12>
+                            <42*a26n13>
+                            <42*a26n14>
+                            <42*a26n15>
+                            <42*a26n16>
+                            <42*a26n17>
+                            <42*a26n18>
+                            <42*a27n01>
+                            <42*a27n02>
+                            <42*a27n03>
+                            <42*a27n04>
+                            <42*a27n05>
+                            <42*a27n06>
+                            <42*a27n07>
+                            <42*a27n08>
+                            <42*a27n09>
+                            <42*a27n10>
+                            <42*a27n11>
+                            <42*a27n12>
+                            <42*a27n13>
+                            <42*a27n14>
+                            <42*a27n15>
+                            <42*a27n16>
+                            <42*a27n17>
+                            <42*a27n18>
+                            <42*a28n01>
+                            <42*a28n02>
+                            <42*a28n03>
+                            <42*a28n04>
+                            <42*a28n05>
+                            <42*a28n06>
+                            <42*a28n07>
+                            <42*a28n08>
+                            <42*a28n09>
+                            <42*a28n10>
+                            <42*a28n11>
+                            <42*a28n12>
+                            <42*a28n13>
+                            <42*a28n14>
+                            <42*a28n15>
+                            <42*a28n16>
+                            <42*a28n17>
+                            <42*a28n18>
+                            <42*a29n01>
+                            <42*a29n02>
+                            <42*a29n03>
+                            <42*a29n04>
+                            <42*a29n05>
+                            <42*a29n06>
+                            <42*a29n07>
+                            <42*a29n08>
+                            <42*a29n09>
+                            <42*a29n10>
+                            <42*a29n11>
+                            <42*a29n12>
+                            <42*a29n13>
+                            <42*a29n14>
+                            <42*a29n15>
+                            <42*a29n16>
+                            <42*a29n17>
+                            <42*a29n18>
+                            <42*a30n18>
+                            <42*a30n17>
+                            <42*a30n16>
+                            <42*a30n15>
+                            <42*a30n14>
+                            <42*a30n13>
+                            <42*a30n12>
+                            <42*a30n11>
+                            <42*a30n10>
+                            <42*a30n09>
+                            <42*a30n08>
+                            <42*a30n07>
+                            <42*a30n06>
+                            <42*a30n05>
+                            <42*a30n04>
+                            <42*a30n03>
+                            <42*a30n02>
+                            <42*a30n01>
+                            <42*a31n01>
+                            <42*a31n02>
+                            <42*a31n03>
+                            <42*a31n04>
+                            <42*a31n05>
+                            <42*a31n06>
+                            <42*a31n07>
+                            <42*a31n08>
+                            <42*a31n09>
+                            <42*a31n10>
+                            <42*a31n11>
+                            <42*a31n12>
+                            <42*a31n13>
+                            <42*a31n14>
+                            <42*a31n15>
+                            <42*a31n16>
+                            <42*a31n17>
+                            <42*a31n18>
+                            <42*a32n01>
+                            <42*a32n02>
+                            <42*a32n03>
+                            <42*a32n04>
+                            <42*a32n05>
+                            <42*a32n06>
+                            <42*a32n07>
+                            <42*a32n08>
+                            <42*a32n09>
+                            <42*a32n10>
+                            <42*a32n11>
+                            <42*a32n12>
+                            <42*a32n13>
+</ccs/home/gregorvl> was used as the home directory.
+</ccs/home/gregorvl/cylon/summit/scripts> was used as the working directory.
+Started at Wed Oct 12 14:55:51 2022
+Terminated at Wed Oct 12 15:06:30 2022
+Results reported at Wed Oct 12 15:06:30 2022
+
+The output (if any) is above this job summary.
+
