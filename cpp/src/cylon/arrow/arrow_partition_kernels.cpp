@@ -52,7 +52,7 @@ inline Status visit_chunked_array(const std::shared_ptr<arrow::ChunkedArray> &id
   for (auto &&array: idx_col->chunks()) {
     const auto &arr_data = array->data();
 
-    arrow::VisitArrayDataInline<ArrowT>(*arr_data,
+    arrow::VisitArraySpanInline<ArrowT>(*arr_data,
                                         [&](ValueT val) {
                                           valid_fn(global_idx, val);
                                           global_idx++;
@@ -541,7 +541,7 @@ class RangePartitionKernel : public PartitionKernel {
     // create sample histogram
     std::vector<uint64_t> local_counts(num_bins + 2, 0);
     for (const auto &arr: sampled_array->chunks()) {
-      arrow::VisitArrayDataInline<ARROW_T>(*arr->data(),
+      arrow::VisitArraySpanInline<ARROW_T>(*arr->data(),
                                            [&](ValueT val) {
                                              local_counts[get_bin_pos(val)]++;
                                            },

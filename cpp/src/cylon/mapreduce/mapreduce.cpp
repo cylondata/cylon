@@ -27,7 +27,7 @@ void CombineVisit(const std::shared_ptr<arrow::Array> &value_col, const int64_t 
                   Visitor &&visitor) {
   using T = typename ArrowT::c_type;
   int64_t i = 0;
-  arrow::VisitArrayDataInline<ArrowT>(*value_col->data(),
+  arrow::VisitArraySpanInline<ArrowT>(*value_col->data(),
                                       [&](const T &val) {
                                         int64_t gid = local_group_ids[i];
                                         visitor(val, gid);

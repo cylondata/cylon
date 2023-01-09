@@ -67,7 +67,7 @@ struct NumericFlattenKernelImpl : public ColumnFlattenKernel {
                   const int32_t *offset_buff) const override {
     if (array_data->MayHaveNulls()) {
       int64_t i = 0;
-      arrow::VisitArrayDataInline<ArrowT>(*array_data,
+      arrow::VisitArraySpanInline<ArrowT>(*array_data,
                                           [&](const ValueT &val) {
                                             std::memcpy(data_buf + offset_buff[i] + row_offset[i],
                                                         &val, sizeof(ValueT));
@@ -126,7 +126,7 @@ struct BinaryColumnFlattenKernelImpl : public ColumnFlattenKernel {
                   const int32_t *offset_buff) const override {
     if (array_data->MayHaveNulls()) {
       int64_t i = 0;
-      arrow::VisitArrayDataInline<ArrowT>(*array_data,
+      arrow::VisitArraySpanInline<ArrowT>(*array_data,
                                           [&](const ValueT &val) {
                                             std::memcpy(data_buf + offset_buff[i] + row_offset[i],
                                                         val.data(), val.size());
@@ -165,7 +165,7 @@ struct BinaryColumnFlattenKernelImpl : public ColumnFlattenKernel {
       }
     } else {
       int64_t i = 1; // dont update offsets[0]
-      arrow::VisitArrayDataInline<ArrowT>(*array_data,
+      arrow::VisitArraySpanInline<ArrowT>(*array_data,
                                           [&](const arrow::util::string_view &val) {
                                             offsets[i] += static_cast<int32_t>(val.size());
                                             i++;
