@@ -58,7 +58,7 @@ bool table_equal(const cudf::table_view &tv1, const cudf::table_view &tv2) {
                                                        cudf::binary_operator::NULL_EQUALS,
                                                        bool_type);
     auto col_view = result_column->view();
-    std::unique_ptr<cudf::scalar> all = cudf::reduce(col_view, agg, bool_type);
+    std::unique_ptr<cudf::scalar> all = cudf::reduce(col_view, *agg, bool_type);
     std::unique_ptr<cudf::numeric_scalar<bool>> all_numeric(
         static_cast<cudf::numeric_scalar<bool> *>(all.release()));
     if (!all_numeric->value()) {

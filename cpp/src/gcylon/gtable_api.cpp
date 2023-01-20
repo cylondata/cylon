@@ -341,9 +341,8 @@ cylon::Status DistributedJoin(std::shared_ptr<GTable> &left,
 cylon::Status WriteToCsv(std::shared_ptr<GTable> &table, std::string output_file) {
   cudf::io::sink_info sink_info(output_file);
   cudf::io::csv_writer_options options =
-    cudf::io::csv_writer_options::builder(sink_info, table->GetCudfTable()->view())
-      .metadata(&(table->GetCudfMetadata()))
-      .include_header(true);
+      cudf::io::csv_writer_options::builder(sink_info, table->GetCudfTable()->view())
+          .names(table->GetCudfMetadata().column_names).include_header(true);
   cudf::io::write_csv(options);
   return cylon::Status::OK();
 }
