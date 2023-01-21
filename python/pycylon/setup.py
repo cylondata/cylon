@@ -33,9 +33,6 @@ from setuptools import Extension, find_packages, setup
 
 import versioneer
 
-version = versioneer.get_version(),
-cmdclass = versioneer.get_cmdclass(),
-
 pyarrow_location = os.path.dirname(pa.__file__)
 pyarrow_version = pa.__version__
 

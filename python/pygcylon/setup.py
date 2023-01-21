@@ -32,9 +32,6 @@ from setuptools.extension import Extension
 from setuptools.command.build_ext import build_ext
 from distutils.sysconfig import get_python_lib
 
-version = versioneer.get_version(),
-cmdclass = versioneer.get_cmdclass(),
-
 # make sure conda is activated or, conda-build is used
 if "CONDA_PREFIX" not in os.environ and "CONDA_BUILD" not in os.environ:
     print("Neither CONDA_PREFIX nor CONDA_BUILD is set. Activate conda environment or use conda-build")
@@ -167,7 +164,7 @@ compile_time_env = {'CYTHON_GLOO': False, 'CYTHON_UCC': False, 'CYTHON_UCX': Fal
 setup(
     name="pygcylon",
     packages=packages,
-    version=version,
+    version=versioneer.get_version(),
     setup_requires=["cython", "setuptools", "numpy"],
     ext_modules=cythonize(
         extensions,
@@ -184,3 +181,4 @@ setup(
     install_requires=["cython", "numpy", "cudf"],
     zip_safe=False,
 )
+print("PyGcylon setup done!")
