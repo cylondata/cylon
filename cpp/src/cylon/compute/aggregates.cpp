@@ -56,7 +56,7 @@ cylon::Status Count(const std::shared_ptr<cylon::Table> &table, int32_t col_idx,
   const auto &data_type = cylon::Int64();
 
   arrow::compute::ExecContext exec_ctx(cylon::ToArrowPool(ctx));
-  arrow::compute::ScalarAggregateOptions options(true, 0);
+  arrow::compute::CountOptions options;
   CYLON_ASSIGN_OR_RAISE(auto count_res, arrow::compute::Count(a_col, options, &exec_ctx));
 
   if (ctx->GetWorldSize() > 1) {

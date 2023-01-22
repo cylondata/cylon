@@ -13,7 +13,7 @@
  */
 
 #include <arrow/api.h>
-#include <arrow/visitor_inline.h>
+#include <arrow/visit_data_inline.h>
 #include <arrow/compute/api.h>
 #include <chrono>
 #include <glog/logging.h>
@@ -207,7 +207,7 @@ inline Status aggregate(arrow::MemoryPool *pool,
 
   const auto &arr = table->column(col_idx)->chunk(0);
   int64_t i = 0;
-  arrow::VisitArrayDataInline<ARROW_T>(*arr->data(),
+  arrow::VisitArraySpanInline<ARROW_T>(*arr->data(),
                                        [&](const C_TYPE &val) {
                                          kernel->Update(&val, &agg_states[group_ids[i]]);
                                          i++;

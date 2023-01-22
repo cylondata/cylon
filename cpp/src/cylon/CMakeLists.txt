@@ -230,6 +230,7 @@ ENDIF()
 target_link_libraries(cylon ${MPI_CXX_LIBRARIES})
 target_link_libraries(cylon ${GLOG_LIBRARIES})
 target_link_libraries(cylon ${ARROW_LIB})
+target_link_libraries(cylon ${ARROW_DATASET_LIB})
 target_link_libraries(cylon Threads::Threads)
 target_link_libraries(cylon ${PARQUET_LIB})
 

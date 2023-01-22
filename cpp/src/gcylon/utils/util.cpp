@@ -44,20 +44,21 @@ bool table_equal(const cudf::table_view &tv1, const cudf::table_view &tv2) {
   }
 
   // if the tables have zero rows
-  if(tv1.num_rows() == 0) {
+  if (tv1.num_rows() == 0) {
     return true;
   }
 
-  std::unique_ptr<cudf::aggregation> agg = cudf::make_all_aggregation();
-  cudf::data_type bool_type = cudf::data_type(cudf::type_id::BOOL8);
+  auto agg = cudf::make_all_aggregation<cudf::reduce_aggregation>();
+  cudf::data_type bool_type{cudf::type_id::BOOL8};
 
   // compare all elements in the table
   for (int i = 0; i < tv1.num_columns(); ++i) {
-    std::unique_ptr<cudf::column> result_column = cudf::binary_operation(tv1.column(i),
-                                                                         tv2.column(i),
-                                                                         cudf::binary_operator::NULL_EQUALS,
-                                                                         bool_type);
-    std::unique_ptr<cudf::scalar> all = cudf::reduce(result_column->view(), agg, bool_type);
+    const auto &result_column = cudf::binary_operation(tv1.column(i),
+                                                       tv2.column(i),
+                                                       cudf::binary_operator::NULL_EQUALS,
+                                                       bool_type);
+    auto col_view = result_column->view();
+    std::unique_ptr<cudf::scalar> all = cudf::reduce(col_view, *agg, bool_type);
     std::unique_ptr<cudf::numeric_scalar<bool>> all_numeric(
         static_cast<cudf::numeric_scalar<bool> *>(all.release()));
     if (!all_numeric->value()) {

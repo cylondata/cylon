@@ -276,8 +276,10 @@ uint64_t GetNumberSplitsToFitInCache(int64_t total_bytes, int total_elements, in
     return 1;
   }
 
-  int64_t cache_size = arrow::internal::CpuInfo::GetInstance()->CacheSize(arrow::internal::CpuInfo::L1_CACHE);
-  cache_size += arrow::internal::CpuInfo::GetInstance()->CacheSize(arrow::internal::CpuInfo::L2_CACHE);
+  int64_t cache_size =
+      arrow::internal::CpuInfo::GetInstance()->CacheSize(arrow::internal::CpuInfo::CacheLevel::L1);
+  cache_size +=
+      arrow::internal::CpuInfo::GetInstance()->CacheSize(arrow::internal::CpuInfo::CacheLevel::L2);
   int64_t average_element_size = total_bytes / total_elements;
   int64_t elements_in_cache = cache_size / average_element_size;
   return ceil((double) (total_elements / parallel) / elements_in_cache);

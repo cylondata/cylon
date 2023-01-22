@@ -34,7 +34,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif ()
 
 # cmake modules directories
-set(CYLON_ARROW_VERSION 5.0.0)
+set(CYLON_ARROW_VERSION 9.0.0)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/" ${CMAKE_MODULE_PATH})
 list(APPEND CMAKE_MODULE_PATH ${CYLON_SOURCE_DIR}/CMake)
 
@@ -201,10 +201,38 @@ message(STATUS "Glog libs: ${GLOG_LIBRARIES}")
 # this is required on windows to prevent clashes between ERROR abbreviation in logging.h and windows.h
 if (WIN32)
     add_definitions("-DGLOG_NO_ABBREVIATED_SEVERITIES")
+    add_definitions("-DNOMINMAX=1")
 endif ()
 
 # include Modules/Build.cmake
 include(Build)
+
+# Off if you dont want to build tests -- ON default
+option(CYLON_WITH_TEST "Build Cylon C++ tests." OFF)
+if (CYLON_WITH_TEST)
+    message("C++ tests enabled")
+    set(CYLON_CATCH2_GIT_TAG v2.13.9)
+    set(CYLON_CATCH2_HEADER_HASH 27da57c7a06d09be8dd81fab7246b79e7892b6ae7e4e49ba8631f1d5a955e3fc)
+
+
+    # Ref: https://cliutils.gitlab.io/modern-cmake/chapters/testing/catch.html
+    message("Downloading Catch2 header ${CYLON_CATCH2_GIT_TAG}")
+    set(catch2_url https://github.com/catchorg/Catch2/releases/download/${CYLON_CATCH2_GIT_TAG}/catch.hpp)
+    set(CYLON_CATCH2_HEADER_PATH "${CMAKE_CURRENT_BINARY_DIR}/test/catch.hpp")
+    file(DOWNLOAD ${catch2_url} ${CYLON_CATCH2_HEADER_PATH}
+            STATUS status
+            EXPECTED_HASH SHA256=${CYLON_CATCH2_HEADER_HASH})
+    list(GET status 0 error)
+    if (error)
+        message(FATAL_ERROR "Could not download ${catch2_url}")
+    else ()
+        message(STATUS "Catch2 header downloaded to ${CYLON_CATCH2_HEADER_PATH}")
+    endif ()
+
+    set(CMAKE_CTEST_ARGUMENTS "--output-on-failure")
+    enable_testing()
+endif(CYLON_WITH_TEST)
+
 
 # if building gcylon, no need to build cylon
 option(GCYLON_BUILD "Build GCylon" OFF)
@@ -213,8 +241,6 @@ if (GCYLON_BUILD)
     add_subdirectory(src/gcylon)
     add_subdirectory(src/examples/gcylon)
     if (CYLON_WITH_TEST)
-        message("Tests enabled!")
-        enable_testing()
         add_subdirectory(test/gcylon)
     endif ()
     return()
@@ -322,6 +348,9 @@ if (${ARROW_BUILD_TYPE} STREQUAL "SYSTEM")
     find_library(ARROW_LIB arrow ${CYLON_ARROW_VERSION} REQUIRED)
     message(STATUS "Arrow lib: ${ARROW_LIB}")
 
+    find_library(ARROW_DATASET_LIB arrow_dataset ${CYLON_ARROW_VERSION} REQUIRED)
+    message(STATUS "Arrow dataset lib: ${ARROW_DATASET_LIB}")
+
     if (PYCYLON_BUILD)
         find_library(ARROW_PY_LIB arrow_python ${CYLON_ARROW_VERSION} REQUIRED)
         message(STATUS "Arrow py lib: ${ARROW_PY_LIB}")
@@ -389,13 +418,6 @@ if (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
 endif ()
 
 # Off if you dont want to build tests -- ON default
-option(CYLON_WITH_TEST "Build Cylon C++ tests." OFF)
 if (CYLON_WITH_TEST)
-    message("C++ tests enabled")
-    set(CYLON_CATCH2_GIT_TAG v2.13.9)
-    set(CYLON_CATCH2_HEADER_HASH 27da57c7a06d09be8dd81fab7246b79e7892b6ae7e4e49ba8631f1d5a955e3fc)
-
-    enable_testing()
-    set(CMAKE_CTEST_ARGUMENTS "--output-on-failure")
     add_subdirectory(test)
 endif ()

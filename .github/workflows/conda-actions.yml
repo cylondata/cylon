@@ -23,11 +23,8 @@ jobs:
         include:
           # 20.04 supports CUDA 11.0+
           - os: ubuntu-20.04
-            cuda: "11.2.2"
+            cuda: "11.5.2"
             gcc: 9
-          # - os: ubuntu-20.04
-          #   cuda: "11.2"
-          #   gcc: 10
 
     steps:
     - uses: actions/checkout@v2
@@ -40,7 +37,7 @@ jobs:
         echo "CXX=/usr/bin/g++-${{ matrix.gcc }}" >> $GITHUB_ENV
         echo "CUDAHOSTCXX=/usr/bin/g++-${{ matrix.gcc }}" >> $GITHUB_ENV
 
-    - uses: Jimver/cuda-toolkit@v0.2.4
+    - uses: Jimver/cuda-toolkit@v0.2.8
       id: cuda-toolkit
       with:
         cuda: ${{ matrix.cuda }}

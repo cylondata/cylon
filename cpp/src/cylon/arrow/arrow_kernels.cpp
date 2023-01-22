@@ -14,7 +14,7 @@
 
 #include <glog/logging.h>
 #include <type_traits>
-#include <arrow/visitor_inline.h>
+#include <arrow/visit_data_inline.h>
 
 #include <cylon/arrow/arrow_kernels.hpp>
 #include <cylon/util/macros.hpp>

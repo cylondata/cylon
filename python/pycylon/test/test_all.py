@@ -314,8 +314,9 @@ if os.environ.get('CYLON_GLOO') and os.environ.get('CYLON_UCC'):
             f"{get_mpi_command()} -n 4 python -m pytest "
             f"python/pycylon/test/test_mpi_multiple_env_init.py")
 
+
+@assert_success
 def test_dist_slice():
     print("39. Dist Slice Test")
     return os.system(get_mpi_command() + " -n 4 python -m pytest --with-mpi "
-                                                   "python/pycylon/test/test_slice.py")
-
+                                         "python/pycylon/test/test_slice.py")

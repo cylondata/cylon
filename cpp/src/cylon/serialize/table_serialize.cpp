@@ -35,7 +35,7 @@ Status CollectBitmapInfo(const arrow::ArrayData &data, int32_t *buffer_sizes,
   }
 
   // there are nulls
-  *buffer_sizes = (int32_t) arrow::BitUtil::BytesForBits(data.length);
+  *buffer_sizes = (int32_t) arrow::bit_util::BytesForBits(data.length);
   if (data.offset == 0) { // no offset
     *data_buffers = data.buffers[buf_idx]->data();
   } else if (data.offset % CHAR_BIT == 0) { // offset is at a byte boundary

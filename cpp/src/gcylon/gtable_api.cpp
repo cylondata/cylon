@@ -14,6 +14,7 @@
 
 #include <cudf/partitioning.hpp>
 #include <cudf/join.hpp>
+#include <cudf/types.hpp>
 #include <cudf/io/csv.hpp>
 
 #include <gcylon/gtable.hpp>
@@ -132,15 +133,58 @@ cylon::Status Shuffle(std::shared_ptr<GTable> &input_table,
   auto ctx = input_table->GetContext();
 
   RETURN_CYLON_STATUS_IF_FAILED(
-    Shuffle(input_table->GetCudfTable()->view(), columns_to_hash, ctx, table_out));
+      Shuffle(input_table->GetCudfTable()->view(), columns_to_hash, ctx, table_out));
 
   RETURN_CYLON_STATUS_IF_FAILED(
-    GTable::FromCudfTable(ctx, table_out, output_table));
+      GTable::FromCudfTable(ctx, table_out, output_table));
 
   // set metadata for the shuffled table
   output_table->SetCudfMetadata(input_table->GetCudfMetadata());
 
   return cylon::Status::OK();
+}
+
+// ref: https://github.com/rapidsai/cudf/blob/9f573016959754e3272b3b9b0f09583d0a5529a3/cpp/tests/join/join_tests.cpp#L56-L91
+// This function is a wrapper around cudf's join APIs that takes the gather map
+// from join APIs and materializes the table that would be created by gathering
+// from the joined tables. Join APIs originally returned tables like this, but
+// they were modified in https://github.com/rapidsai/cudf/pull/7454. This
+// helper function allows us to avoid rewriting all our tests in terms of
+// gather maps.
+template<std::pair<std::unique_ptr<rmm::device_uvector<cudf::size_type>>,
+                   std::unique_ptr<rmm::device_uvector<cudf::size_type>>> (*join_impl)(
+    cudf::table_view const &left_keys,
+    cudf::table_view const &right_keys,
+    cudf::null_equality compare_nulls,
+    rmm::mr::device_memory_resource *mr),
+    cudf::out_of_bounds_policy oob_policy = cudf::out_of_bounds_policy::DONT_CHECK>
+std::unique_ptr<cudf::table> join_and_gather(
+    cudf::table_view const &left_input,
+    cudf::table_view const &right_input,
+    std::vector<cudf::size_type> const &left_on,
+    std::vector<cudf::size_type> const &right_on,
+    cudf::null_equality compare_nulls,
+    rmm::mr::device_memory_resource *mr = rmm::mr::get_current_device_resource()) {
+  auto left_selected = left_input.select(left_on);
+  auto right_selected = right_input.select(right_on);
+  auto const[left_join_indices, right_join_indices] =
+  join_impl(left_selected, right_selected, compare_nulls, mr);
+
+  auto left_indices_span = cudf::device_span<cudf::size_type const>{*left_join_indices};
+  auto right_indices_span = cudf::device_span<cudf::size_type const>{*right_join_indices};
+
+  auto left_indices_col = cudf::column_view{left_indices_span};
+  auto right_indices_col = cudf::column_view{right_indices_span};
+
+  auto left_result = cudf::gather(left_input, left_indices_col, oob_policy);
+  auto right_result = cudf::gather(right_input, right_indices_col, oob_policy);
+
+  auto joined_cols = left_result->release();
+  auto right_cols = right_result->release();
+  joined_cols.insert(joined_cols.end(),
+                     std::make_move_iterator(right_cols.begin()),
+                     std::make_move_iterator(right_cols.end()));
+  return std::make_unique<cudf::table>(std::move(joined_cols));
 }
 
 cylon::Status joinTables(const cudf::table_view &left,
@@ -150,31 +194,40 @@ cylon::Status joinTables(const cudf::table_view &left,
                          std::unique_ptr<cudf::table> &table_out) {
 
   if (join_config.GetAlgorithm() == cylon::join::config::JoinAlgorithm::SORT) {
-    return cylon::Status(cylon::Code::NotImplemented, "SORT join is not supported on GPUs yet.");
+    return {cylon::Code::NotImplemented, "SORT join is not supported on GPUs yet."};
   }
 
-  if (join_config.GetType() == cylon::join::config::JoinType::INNER) {
-    table_out = cudf::inner_join(left,
-                                 right,
-                                 join_config.GetLeftColumnIdx(),
-                                 join_config.GetRightColumnIdx());
-  } else if (join_config.GetType() == cylon::join::config::JoinType::LEFT) {
-    table_out = cudf::left_join(left,
-                                right,
-                                join_config.GetLeftColumnIdx(),
-                                join_config.GetRightColumnIdx());
-  } else if (join_config.GetType() == cylon::join::config::JoinType::RIGHT) {
-    table_out = cudf::left_join(right,
-                                left,
-                                join_config.GetRightColumnIdx(),
-                                join_config.GetLeftColumnIdx());
-  } else if (join_config.GetType() == cylon::join::config::JoinType::FULL_OUTER) {
-    table_out = cudf::full_join(left,
-                                right,
-                                join_config.GetLeftColumnIdx(),
-                                join_config.GetRightColumnIdx());
+  switch (join_config.GetType()) {
+    case cylon::join::config::INNER:
+      table_out = join_and_gather<cudf::inner_join>(left,
+                                                    right,
+                                                    join_config.GetLeftColumnIdx(),
+                                                    join_config.GetRightColumnIdx(),
+                                                    cudf::null_equality::EQUAL);
+      break;
+    case cylon::join::config::LEFT:
+      table_out = join_and_gather<cudf::left_join>(left,
+                                                   right,
+                                                   join_config.GetLeftColumnIdx(),
+                                                   join_config.GetRightColumnIdx(),
+                                                   cudf::null_equality::EQUAL);
+      break;
+    case cylon::join::config::RIGHT:
+      table_out = join_and_gather<cudf::left_join>(right,
+                                                   left,
+                                                   join_config.GetRightColumnIdx(),
+                                                   join_config.GetLeftColumnIdx(),
+                                                   cudf::null_equality::EQUAL);
+      break;
+    case cylon::join::config::FULL_OUTER:
+      table_out = join_and_gather<cudf::full_join>(left,
+                                                   right,
+                                                   join_config.GetLeftColumnIdx(),
+                                                   join_config.GetRightColumnIdx(),
+                                                   cudf::null_equality::EQUAL);
+      break;
+    default: return {cylon::Code::Invalid, "Invalid join type"};
   }
-
   return cylon::Status::OK();
 }
 
@@ -288,9 +341,8 @@ cylon::Status DistributedJoin(std::shared_ptr<GTable> &left,
 cylon::Status WriteToCsv(std::shared_ptr<GTable> &table, std::string output_file) {
   cudf::io::sink_info sink_info(output_file);
   cudf::io::csv_writer_options options =
-    cudf::io::csv_writer_options::builder(sink_info, table->GetCudfTable()->view())
-      .metadata(&(table->GetCudfMetadata()))
-      .include_header(true);
+      cudf::io::csv_writer_options::builder(sink_info, table->GetCudfTable()->view())
+          .names(table->GetCudfMetadata().column_names).include_header(true);
   cudf::io::write_csv(options);
   return cylon::Status::OK();
 }

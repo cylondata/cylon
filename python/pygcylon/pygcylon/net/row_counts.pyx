@@ -13,15 +13,10 @@
 ##
 
 from libcpp.memory cimport shared_ptr
-from libcpp.utility cimport move
 from libcpp.vector cimport vector
-from pycylon.ctx.context cimport CCylonContext
 from pycylon.api.lib cimport pycylon_unwrap_context
 
 from pygcylon.net.row_counts cimport RowCountsAllTables
-
-from cudf._lib.cpp.table.table cimport table
-from cudf._lib.table cimport Table
 
 
 def row_counts_all_tables(num_rows, context):

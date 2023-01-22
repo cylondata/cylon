@@ -13,13 +13,12 @@
 # limitations under the License.
 
 import argparse
-import os
-import subprocess
 import logging
+import os
 import platform
-from pathlib import Path
-
+import subprocess
 import sys
+from pathlib import Path
 
 logging.basicConfig(format='[%(levelname)s] %(message)s')
 logger = logging.getLogger("cylon_build")

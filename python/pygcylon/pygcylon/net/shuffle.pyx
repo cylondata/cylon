@@ -21,12 +21,13 @@ from pycylon.api.lib cimport pycylon_unwrap_context
 
 from pygcylon.net.shuffle cimport Shuffle
 
+import cudf
 from cudf._lib.cpp.table.table_view cimport table_view
 from cudf._lib.cpp.table.table cimport table
-from cudf._lib.table cimport Table, table_view_from_table
+from cudf._lib.utils cimport table_view_from_table
 from cudf._lib.utils cimport data_from_unique_ptr
 
-def shuffle(Table input_table, hash_columns, ignore_index, context):
+def shuffle(object input_table, hash_columns, ignore_index, context)  -> cudf.DataFrame:
     cdef CStatus status
     cdef vector[int] c_hash_columns
     cdef shared_ptr[CCylonContext] c_ctx_ptr = pycylon_unwrap_context(context)
@@ -39,12 +40,10 @@ def shuffle(Table input_table, hash_columns, ignore_index, context):
         status = Shuffle(input_tview, c_hash_columns, c_ctx_ptr, c_table_out)
         if status.is_ok():
             index_names = None if ignore_index else input_table._index_names
-            return Table(*data_from_unique_ptr(move(c_table_out),
-                                               input_table._column_names,
-                                               index_names=index_names))
+            return cudf.DataFrame._from_data(*data_from_unique_ptr(move(c_table_out),
+                                                                   input_table._column_names,
+                                                                   index_names=index_names))
         else:
             raise ValueError(f"Shuffle operation failed : {status.get_msg().decode()}")
     else:
         raise ValueError('Hash columns are not provided')
-
-

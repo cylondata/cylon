@@ -17,22 +17,18 @@ from libcpp.memory cimport unique_ptr
 from libcpp.utility cimport move
 from libcpp.vector cimport vector
 
+import cudf
 from cudf._lib.cpp.table.table_view cimport table_view
 from cudf._lib.cpp.table.table cimport table
-from cudf._lib.table cimport Table, table_view_from_table
-from cudf._lib.utils cimport data_from_unique_ptr
+from cudf._lib.utils cimport data_from_unique_ptr, table_view_from_table
+
 
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.api.lib cimport pycylon_unwrap_context
 from pygcylon.net.c_comms cimport Repartition, Gather, Broadcast, AllGather
 
-
-def repartition(
-        Table input_table,
-        context,
-        object rows_per_worker=None,
-        ignore_index=False,
-):
+def repartition(object input_table, context, object rows_per_worker=None,
+                ignore_index=False) -> cudf.DataFrame:
     cdef table_view c_tv = table_view_from_table(input_table, ignore_index=ignore_index)
     cdef vector[int] c_rows_per_worker
     cdef CStatus status
@@ -53,21 +49,13 @@ def repartition(
     )
 
     if status.is_ok():
-        return Table(*data_from_unique_ptr(
-            move(c_table_out),
-            column_names=input_table._column_names,
-            index_names=index_names,
-        ))
+        return cudf.DataFrame._from_data(*data_from_unique_ptr(
+            move(c_table_out), column_names=input_table._column_names, index_names=index_names))
     else:
         raise ValueError(f"Repartition operation failed : {status.get_msg().decode()}")
 
-
-def gather(
-        Table input_table,
-        context,
-        object gather_root,
-        ignore_index=False,
-):
+def gather(object input_table, context, object gather_root,
+           ignore_index=False, ) -> cudf.DataFrame:
     cdef table_view c_tv = table_view_from_table(input_table, ignore_index=ignore_index)
     cdef int c_gather_root = gather_root
     cdef CStatus c_status
@@ -85,7 +73,7 @@ def gather(
     )
 
     if c_status.is_ok():
-        return Table(*data_from_unique_ptr(
+        return cudf.DataFrame._from_data(*data_from_unique_ptr(
             move(c_table_out),
             column_names=input_table._column_names,
             index_names=index_names,
@@ -93,12 +81,8 @@ def gather(
     else:
         raise ValueError(f"Gather operation failed : {c_status.get_msg().decode()}")
 
-
-def allgather(
-        Table input_table,
-        context,
-        ignore_index=False,
-):
+def allgather(object input_table, context,
+              ignore_index=False, ) -> cudf.DataFrame:
     cdef table_view c_tv = table_view_from_table(input_table, ignore_index=ignore_index)
     cdef CStatus c_status
     cdef shared_ptr[CCylonContext] c_ctx_ptr = pycylon_unwrap_context(context)
@@ -114,7 +98,7 @@ def allgather(
     )
 
     if c_status.is_ok():
-        return Table(*data_from_unique_ptr(
+        return cudf.DataFrame._from_data(*data_from_unique_ptr(
             move(c_table_out),
             column_names=input_table._column_names,
             index_names=index_names,
@@ -122,13 +106,8 @@ def allgather(
     else:
         raise ValueError(f"AllGather operation failed : {c_status.get_msg().decode()}")
 
-
-def broadcast(
-        Table input_table,
-        context,
-        object root,
-        ignore_index=False,
-):
+def broadcast(object input_table, context, object root,
+              ignore_index=False, ) -> cudf.DataFrame:
     cdef table_view c_tv = table_view_from_table(input_table, ignore_index=ignore_index)
     cdef int c_root = root
     cdef CStatus c_status
@@ -146,7 +125,7 @@ def broadcast(
     )
 
     if c_status.is_ok():
-        return Table(*data_from_unique_ptr(
+        return cudf.DataFrame._from_data(*data_from_unique_ptr(
             move(c_table_out),
             column_names=input_table._column_names,
             index_names=index_names,

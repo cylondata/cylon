@@ -16,7 +16,7 @@
 #include <cmath>
 
 #include <arrow/compute/api.h>
-#include <arrow/visitor_inline.h>
+#include <arrow/util/bit_util.h>
 
 #include "cylon/compute/aggregates.hpp"
 #include "cylon/ctx/arrow_memory_pool_utils.hpp"
@@ -367,7 +367,7 @@ std::shared_ptr<arrow::DataType> PromoteDatatype(const std::vector<arrow::Type::
   }
 
   if (max_width_signed <= max_width_unsigned) {
-    max_width_signed = static_cast<int>(arrow::BitUtil::NextPower2(max_width_unsigned + 1));
+    max_width_signed = static_cast<int>(arrow::bit_util::NextPower2(max_width_unsigned + 1));
   }
 
   if (max_width_signed >= 64) return arrow::int64();

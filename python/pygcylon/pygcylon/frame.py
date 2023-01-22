@@ -152,10 +152,10 @@ class DataFrame(object):
             return DataFrame.from_cudf(joined_df)
 
         # shuffle dataframes on index columns
-        hash_columns = [*range(self._cdf._num_indices)]
+        hash_columns = [*range(self._cdf.index.nlevels)]
         shuffled_left = _shuffle(self._cdf, hash_columns=hash_columns, env=env)
 
-        hash_columns = [*range(other._cdf._num_indices)]
+        hash_columns = [*range(other._cdf.index.nlevels)]
         shuffled_right = _shuffle(other._cdf, hash_columns=hash_columns, env=env)
 
         joined_df = shuffled_left.join(shuffled_right,
@@ -164,7 +164,8 @@ class DataFrame(object):
                                        lsuffix=lsuffix,
                                        rsuffix=rsuffix,
                                        sort=sort,
-                                       method=algorithm)
+                                       # method=algorithm
+                                       )
         return DataFrame.from_cudf(joined_df)
 
     def merge(self,
@@ -288,7 +289,8 @@ class DataFrame(object):
                                         how=how,
                                         sort=sort,
                                         suffixes=suffixes,
-                                        method=algorithm)
+                                        # method=algorithm,
+                                        )
             return DataFrame.from_cudf(merged_df)
 
         from cudf.core.join.join import Merge
@@ -330,7 +332,8 @@ class DataFrame(object):
                                         how=how,
                                         sort=sort,
                                         suffixes=suffixes,
-                                        method=algorithm)
+                                        # method=algorithm,
+                                        )
         return DataFrame.from_cudf(merged_df)
 
     @staticmethod
@@ -377,23 +380,23 @@ class DataFrame(object):
 
         if left_index or right_index:
             # If either true, we need to process both indices as columns
-            left_join_cols = list(lhs._index_names) + list(lhs._column_names)
-            right_join_cols = list(rhs._index_names) + list(rhs._column_names)
+            left_join_cols = list(lhs.index.names) + list(lhs._column_names)
+            right_join_cols = list(rhs.index.names) + list(rhs._column_names)
 
             if left_index and right_index:
                 # Both dataframes must take index column indices
-                left_on_indices = right_on_indices = range(lhs._num_indices)
+                left_on_indices = right_on_indices = range(lhs.index.nlevels)
 
             elif left_index:
                 # Joins left index columns with right 'on' columns
-                left_on_indices = range(lhs._num_indices)
+                left_on_indices = range(lhs.index.nlevels)
                 right_on_indices = [
                     right_join_cols.index(on_col) for on_col in right_on
                 ]
 
             elif right_index:
                 # Joins right index columns with left 'on' columns
-                right_on_indices = range(rhs._num_indices)
+                right_on_indices = range(rhs.index.nlevels)
                 left_on_indices = [
                     left_join_cols.index(on_col) for on_col in left_on
                 ]
@@ -434,9 +437,10 @@ class DataFrame(object):
         :param dfs: list of DataFrame objects
         :return: list of list of column indices
         """
-        all_df_indices = [];
+        all_df_indices = []
         for cdf in dfs:
-            df_indices = [*range(cdf._cdf._num_indices, cdf._cdf._num_indices + cdf._cdf._num_columns)]
+            num_indices = cdf._cdf.index.nlevels
+            df_indices = [*range(num_indices, num_indices + cdf._cdf._num_columns)]
             all_df_indices.append(df_indices)
         return all_df_indices
 
@@ -522,8 +526,9 @@ class DataFrame(object):
             return DataFrame.from_cudf(dropped_df) if not inplace else None
 
         shuffle_column_indices = []
+        num_indices = self._cdf.index.nlevels
         for name in subset:
-            shuffle_column_indices.append(self._cdf._num_indices + self._cdf._column_names.index(name))
+            shuffle_column_indices.append(num_indices + self._cdf._column_names.index(name))
 
         shuffled_df = _shuffle(self._cdf, hash_columns=shuffle_column_indices, env=env)
 
@@ -834,8 +839,8 @@ class DataFrame(object):
             return DataFrame._set_diff(df1=df1, df2=df2, subset=subset)
 
         # column indices for performing distributed shuffle
-        df1_hash_columns = [df1._num_indices + df1.columns.to_list().index(cname) for cname in subset]
-        df2_hash_columns = [df2._num_indices + df2.columns.to_list().index(cname) for cname in subset]
+        df1_hash_columns = [df1.index.nlevels + df1.columns.to_list().index(cname) for cname in subset]
+        df2_hash_columns = [df2.index.nlevels + df2.columns.to_list().index(cname) for cname in subset]
 
         shuffled_df1 = _shuffle(df1, hash_columns=df1_hash_columns, env=env)
         shuffled_df2 = _shuffle(df2, hash_columns=df2_hash_columns, env=env)
@@ -1266,7 +1271,7 @@ class DataFrame(object):
         if not isinstance(column_names, list) and not isinstance(column_names[0], str):
             raise ValueError
 
-        number_of_index_columns = 0 if ignore_index else df._num_indices
+        number_of_index_columns = 0 if ignore_index else df.index.nlevels
         return [number_of_index_columns + df.columns.to_list().index(cname) for cname in column_names]
 
     def sort_index(
@@ -1847,5 +1852,5 @@ def _shuffle(df: cudf.DataFrame, hash_columns, env: CylonEnv = None, ignore_inde
     if env.world_size == 1:
         raise ValueError(f"Not a distributed DataFrame. No shuffling for local DataFrames.")
 
-    tbl = cshuffle(df, hash_columns=hash_columns, ignore_index=ignore_index, context=env.context)
-    return cudf.DataFrame._from_data(tbl._data, tbl._index)
+    return cshuffle(df, hash_columns=hash_columns, ignore_index=ignore_index, context=env.context)
+    # return cudf.DataFrame._from_data(tbl._data, tbl._index)

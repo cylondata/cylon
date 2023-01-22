@@ -55,14 +55,10 @@ include_directories(
         ${CUDAToolkit_INCLUDE_DIRS}
         ${CONDA_INCLUDE_DIRS}
         ${CUDF_CUDA_INCLUDE_DIR}
+        ${CMAKE_CURRENT_BINARY_DIR}/..
         )
 
 include(CTest)
-
-#build a binary
-macro(tx_add_exe EXENAME)
-  add_executable(${EXENAME} ${EXENAME}.cpp)
-endmacro(tx_add_exe)
 
 # macro to add a test
 function(cylon_add_test TESTNAME)
