@@ -11,6 +11,13 @@ The solution is to use the guide we provide here.
 
 ## Intsall instructions
 
+Clone the repository
+
+```shell
+git clone https://github.com/cylondata/cylon.git
+cd cylon
+```
+
 There are two ways you can build cylon on Rivanna
 
 ### Fix all dependencies for Cylon on Rivanna without the dependencies of the system gcc and openmpi version.
@@ -91,6 +98,11 @@ which python gcc g++
 python build.py --cpp --test --python --pytest
 
 ```
+Run the Slurm script
+
+```shell
+sbatch rivana/job.slurm
+```
 
 ### Build Cylon by using the loaded module of openmpi and gcc
 
@@ -162,7 +174,10 @@ python build.py --cpp --test --python --pytest
 
 The two version of slurm scripts are created in this folder. Run any of them with the below command:
 
+Run the Slurm script
+
 ```shell
-sbatch job.slurm
+sbatch rivana/job_with_module.slurm
 ```
+
  

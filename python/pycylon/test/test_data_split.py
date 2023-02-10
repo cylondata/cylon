@@ -61,4 +61,8 @@ def test_data_split():
     env.barrier()
     
     if env.rank == 0:
-        os.remove(data_file)
+        try:
+            os.remove(data_file)
+            return False
+        except OSError:    # file is in use
+            return True

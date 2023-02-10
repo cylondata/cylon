@@ -6,13 +6,13 @@
 #SBATCH -t 10:00:00
 
 PARENT=$HOME/.conda/envs  # parent directory of conda env
-ENV=cylon_rivanna           # name of env
+ENV=cylon_dev          # name of env
 
 #---- DO NOT MODIFY THIS SECTION ----
 DIR=$PARENT/$ENV
 module purge
 module load anaconda
-source activate cylon_rivanna
+source activate cylon_dev
 
 export OMPI_MCA_pml="ucx" OMPI_MCA_osc="ucx" \
        PATH=$DIR/bin:$DIR/libexec/gcc/x86_64-conda-linux-gnu/12.2.0:$PATH \
@@ -24,4 +24,3 @@ which python gcc g++
 #---- (END) ----
 
 python build.py --cpp --test --python --pytest
-
