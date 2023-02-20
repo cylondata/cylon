@@ -29,6 +29,13 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Clean-up container 
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf "/usr/local/share/boost"
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+    
     # Specify the correct host compilers
     - name: Install/Select gcc and g++
       run: |
