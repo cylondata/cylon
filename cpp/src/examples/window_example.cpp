@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
 
   CHECK_STATUS_AND_PRINT(first_table,
                          cylon::windowing::HashWindow(window_config_rolling_obs, first_table, {0, 1},
-                                            {{2, cylon::compute::NUNIQUE}}, output),
+                                            {{2, cylon::compute::SUM}}, output),
                          output);
 
 
