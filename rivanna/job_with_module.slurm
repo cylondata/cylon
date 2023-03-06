@@ -6,7 +6,7 @@
 #SBATCH -t 10:00:00
 
 PARENT=$HOME/.conda/envs  # parent directory of conda env
-ENV=cylon_dev           # name of env
+ENV=cylon_rivanna          # name of env
 
 #---- DO NOT MODIFY THIS SECTION ----
 DIR=$PARENT/$ENV
