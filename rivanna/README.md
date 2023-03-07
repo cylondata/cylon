@@ -101,7 +101,7 @@ python build.py --cpp --test --python --pytest
 Run the Slurm script
 
 ```shell
-sbatch rivana/job.slurm
+sbatch rivanna/job.slurm
 ```
 
 ### Build Cylon by using the loaded module of openmpi and gcc
@@ -177,7 +177,7 @@ The two version of slurm scripts are created in this folder. Run any of them wit
 Run the Slurm script
 
 ```shell
-sbatch rivana/job_with_module.slurm
+sbatch rivanna/job_with_module.slurm
 ```
 
  
