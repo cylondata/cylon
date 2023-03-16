@@ -47,7 +47,7 @@ cdef extern from "../../../../cpp/src/cylon/ctx/cylon_context.hpp" namespace "cy
 
         string GetConfig(const string &key, const string &defn)
 
-        shared_ptr[CCommunicator] GetCommunicator() const
+        shared_ptr[CCommunicator] & GetCommunicator() const
 
         int GetRank()
 
