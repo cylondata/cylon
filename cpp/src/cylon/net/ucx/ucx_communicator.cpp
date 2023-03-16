@@ -48,6 +48,14 @@ std::shared_ptr<UCXConfig> UCXConfig::Make(
   return std::make_shared<UCXConfig>(oobContext);
 }
 
+std::shared_ptr<UCXConfig> UCXConfig::Make(MPI_Comm comm) {
+    return std::make_shared<UCXConfig>(comm);
+}
+
+UCXConfig::UCXConfig(MPI_Comm comm) : comm_(comm) {}
+
+MPI_Comm UCXConfig::GetMPIComm() const { return comm_; }
+
 void UCXConfig::setOOBContext(std::shared_ptr<UCXOOBContext> oobContext) {
   this->oobContext = oobContext;
 }

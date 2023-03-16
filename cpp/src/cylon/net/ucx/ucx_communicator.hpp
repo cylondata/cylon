@@ -34,16 +34,20 @@ class UCXConfig : public CommConfig {
 
  public:
   explicit UCXConfig(std::shared_ptr<UCXOOBContext> oobContext);
+  explicit UCXConfig(MPI_Comm comm = MPI_COMM_NULL);
 
   static std::shared_ptr<UCXConfig> Make(
       std::shared_ptr<UCXOOBContext> oobContext);
 
+  static std::shared_ptr<UCXConfig> Make(MPI_Comm comm = MPI_COMM_NULL);
   void setOOBContext(std::shared_ptr<UCXOOBContext> oobContext);
 
   std::shared_ptr<UCXOOBContext> getOOBContext();
+  MPI_Comm GetMPIComm() const;
 
  private:
   std::shared_ptr<UCXOOBContext> oobContext;
+  MPI_Comm comm_;
 };
 
 #ifdef BUILD_CYLON_UCC
