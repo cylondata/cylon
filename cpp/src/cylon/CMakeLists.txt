@@ -25,6 +25,11 @@ else ()
     set_source_files_properties(util/murmur3.cpp util/murmur3.hpp PROPERTIES COMPILE_FLAGS -Wno-implicit-fallthrough)
 endif (WIN32)
 
+# ucx
+option(CYLON_UCX "Build Cylon with UCX" OFF)
+option(CYLON_UCC "Build Cylon with UCC" OFF)
+option(CYLON_USE_REDIS, "Build Cylon with Redis" OFF)
+
 if (CYLON_UCX)
     set(UCX_CYLON_FILES
             net/ucx/ucx_channel.hpp
@@ -236,16 +241,16 @@ target_link_libraries(cylon ${ARROW_DATASET_LIB})
 target_link_libraries(cylon Threads::Threads)
 target_link_libraries(cylon ${PARQUET_LIB})
 
-# ucx
-option(CYLON_UCX "Build Cylon with UCX" OFF)
-option(CYLON_UCC "Build Cylon with UCC" OFF)
-option(CYLON_USE_REDIS, "Build Cylon with Redis" OFF)
+
 if (CYLON_UCX)
+    message("Cylon UCX Enabled")
     target_link_libraries(cylon ${UCX_LIBRARIES})
     if (CYLON_UCC)
+        message("Cylon UCC Enabled")
         target_link_libraries(cylon ucc)
     endif ()
     if(CYLON_USE_REDIS)
+        message("Cylon Redis Enabled")
         add_definitions(-DBUILD_CYLON_REDIS)
         # <------------ add hiredis dependency --------------->
         find_path(HIREDIS_HEADER hiredis)
