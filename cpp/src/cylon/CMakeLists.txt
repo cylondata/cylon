@@ -236,6 +236,10 @@ target_link_libraries(cylon ${ARROW_DATASET_LIB})
 target_link_libraries(cylon Threads::Threads)
 target_link_libraries(cylon ${PARQUET_LIB})
 
+# ucx
+option(CYLON_UCX "Build Cylon with UCX" OFF)
+option(CYLON_UCC "Build Cylon with UCC" OFF)
+option(CYLON_USE_REDIS, "Build Cylon with Redis" OFF)
 if (CYLON_UCX)
     target_link_libraries(cylon ${UCX_LIBRARIES})
     if (CYLON_UCC)
