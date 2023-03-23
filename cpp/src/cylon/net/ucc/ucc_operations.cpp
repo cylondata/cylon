@@ -14,7 +14,6 @@
 
 #include "cylon/net/ucc/ucc_operations.hpp"
 #include "cylon/util/macros.hpp"
-#include "cylon/net/utils.hpp"
 
 namespace cylon {
 namespace ucc {
@@ -252,8 +251,6 @@ UccTableGatherImpl::UccTableGatherImpl(ucc_team_h ucc_team,
 void UccTableGatherImpl::Init(int32_t num_buffers) {
   this->requests_.resize(num_buffers);
   this->args_.resize(num_buffers);
-  this->displacements_ = new std::vector<std::vector<int>>(num_buffers);
-  this->all_recv_counts_ = new std::vector<std::vector<int>>(num_buffers);
 }
 
 Status UccTableGatherImpl::GatherBufferSizes(const int32_t *send_data, int32_t num_buffers,
@@ -262,7 +259,7 @@ Status UccTableGatherImpl::GatherBufferSizes(const int32_t *send_data, int32_t n
   ucc_coll_req_h req;
 
   args.mask = 0;
-  args.coll_type = UCC_COLL_TYPE_ALLGATHER;
+  args.coll_type = UCC_COLL_TYPE_GATHER;
   args.root = gather_root;
 
   args.src.info.buffer = const_cast<int32_t *>(send_data);
@@ -270,17 +267,9 @@ Status UccTableGatherImpl::GatherBufferSizes(const int32_t *send_data, int32_t n
   args.src.info.datatype = UCC_DT_INT32;
   args.src.info.mem_type = UCC_MEMORY_TYPE_HOST;
 
-  int32_t total_sz = num_buffers * world_size;
-  std::vector<int32_t> all_buffer_sizes;
   if(rank == gather_root) {
     args.dst.info.buffer = rcv_data;
-    args.dst.info.count = total_sz;
-    args.dst.info.datatype = UCC_DT_INT32;
-    args.dst.info.mem_type = UCC_MEMORY_TYPE_HOST;
-  } else {
-    all_buffer_sizes.resize(total_sz);
-    args.dst.info.buffer = all_buffer_sizes.data();
-    args.dst.info.count = total_sz;
+    args.dst.info.count = num_buffers * world_size;
     args.dst.info.datatype = UCC_DT_INT32;
     args.dst.info.mem_type = UCC_MEMORY_TYPE_HOST;
   }
@@ -298,15 +287,6 @@ Status UccTableGatherImpl::GatherBufferSizes(const int32_t *send_data, int32_t n
   }
 
   RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_collective_finalize(req));
-
-  if(rank != gather_root) {
-    for (int32_t i = 0; i < num_buffers; ++i) {
-      (*all_recv_counts_)[i] = cylon::net::receiveCounts(all_buffer_sizes, i,
-                                                      num_buffers, world_size);
-      (*displacements_)[i] = std::move(cylon::net::displacementsPerBuffer(all_buffer_sizes, i,
-                                                      num_buffers, world_size));
-    }
-  }
   return Status::OK();
 }
 
@@ -317,7 +297,7 @@ Status UccTableGatherImpl::IgatherBufferData(
   ucc_coll_args_t &args = args_[buf_idx];
 
   args.mask = 0;
-  args.coll_type = UCC_COLL_TYPE_ALLGATHERV;
+  args.coll_type = UCC_COLL_TYPE_GATHERV;
   args.root = gather_root;
 
   args.src.info.buffer = const_cast<uint8_t *>(send_data);
@@ -333,19 +313,6 @@ Status UccTableGatherImpl::IgatherBufferData(
         (ucc_aint_t *)displacements.data();
     args.dst.info_v.datatype = UCC_DT_UINT8;
     args.dst.info_v.mem_type = UCC_MEMORY_TYPE_HOST;
-  } else {
-    int sum = 0;
-    auto& recv_counts_ = (*all_recv_counts_)[buf_idx];
-    for(auto count: recv_counts_) {
-      sum += count;
-    }
-    recv_data_placeholder = new uint8_t[sum];
-    args.dst.info_v.buffer = recv_data_placeholder;
-
-    args.dst.info_v.counts = (ucc_count_t *)(*all_recv_counts_)[buf_idx].data();
-    args.dst.info_v.displacements = (ucc_aint_t *)(*displacements_)[buf_idx].data();
-    args.dst.info_v.datatype = UCC_DT_UINT8;
-    args.dst.info_v.mem_type = UCC_MEMORY_TYPE_HOST;
   }
 
   RETURN_CYLON_STATUS_IF_UCC_FAILED(
@@ -358,12 +325,6 @@ Status UccTableGatherImpl::IgatherBufferData(
 Status UccTableGatherImpl::WaitAll(int32_t num_buffers) {
   CYLON_UNUSED(num_buffers);
   return WaitAllHelper(requests_, ucc_context_);
-}
-
-UccTableGatherImpl::~UccTableGatherImpl() {
-  delete displacements_;
-  delete all_recv_counts_;
-  delete recv_data_placeholder;
 }
 
 UccTableBcastImpl::UccTableBcastImpl(ucc_team_h ucc_team, ucc_context_h ucc_context)
