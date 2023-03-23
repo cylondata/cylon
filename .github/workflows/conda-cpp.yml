@@ -61,7 +61,7 @@ jobs:
           make install
 
       - name: Build cylon, pycylon and run cpp test
-        run: python build.py -cmake-flags="-DCYLON_UCX=1 -DCYLON_GLOO=1 -DCYLON_USE_REDIS=0 -DGLOO_INSTALL_PREFIX=$HOME/gloo/install -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$HOME/ucc/install" -ipath="$HOME/cylon/install" --cpp --python --test
+        run: python build.py -cmake-flags="-DCYLON_UCX=1 -DCYLON_GLOO=1 -DGLOO_INSTALL_PREFIX=$HOME/gloo/install -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$HOME/ucc/install" -ipath="$HOME/cylon/install" --cpp --python --test
 
       - name: Run pytest
         run: python build.py -ipath="$HOME/cylon/install" --pytest

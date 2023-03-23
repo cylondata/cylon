@@ -6,8 +6,9 @@
 
 #include "cylon/util/macros.hpp"
 
-
+#ifdef BUILD_CYLON_REDIS
 #include "sw/redis++/redis++.h"
+#endif
 
 #ifdef BUILD_CYLON_UCC
 #include <ucc/api/ucc.h>
