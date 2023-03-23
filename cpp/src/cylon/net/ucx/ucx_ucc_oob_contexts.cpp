@@ -2,6 +2,8 @@
 
 namespace cylon {
 namespace net {
+
+#ifdef BUILD_CYLON_REDIS
 UCXRedisOOBContext::UCXRedisOOBContext(int ws, std::string rds)
     : redis(std::make_shared<sw::redis::Redis>(rds)), world_size(ws) {}
 
@@ -42,7 +44,7 @@ Status UCXRedisOOBContext::OOBAllgather(uint8_t *src, uint8_t *dst,
 }
 
 Status UCXRedisOOBContext::Finalize() { return Status::OK(); };
-
+#endif
 Status UCXMPIOOBContext::InitOOB() {
   int initialized;
   MPI_Initialized(&initialized);
@@ -75,6 +77,8 @@ Status UCXMPIOOBContext::Finalize() {
 }
 
 #ifdef BUILD_CYLON_UCC
+
+#ifdef BUILD_CYLON_REDIS
 void UCCRedisOOBContext::InitOOB(int rank) { this->rank = rank; }
 
 std::shared_ptr<UCXOOBContext> UCCRedisOOBContext::makeUCXOOBContext() {
@@ -153,7 +157,7 @@ int UCCRedisOOBContext::getWorldSize() { return world_size; }
 void UCCRedisOOBContext::setRank(int rk) { rank = rk; }
 
 int UCCRedisOOBContext::getRank() { return rank; }
-
+#endif
 void UCCMPIOOBContext::InitOOB(int rank){
   CYLON_UNUSED(rank);
 };

@@ -299,12 +299,21 @@ Status UCXUCCCommunicator::Make(const std::shared_ptr<CommConfig> &config,
   ctx_params.mask = UCC_CONTEXT_PARAM_FIELD_OOB;
 
   if (ucc_oob_ctx->Type() == OOBType::OOB_REDIS) {
+#ifdef BUILD_CYLON_REDIS
     ctx_params.oob.allgather = team_params.oob.allgather =
         UCCRedisOOBContext::oob_allgather;
     ctx_params.oob.req_test = team_params.oob.req_test =
         UCCRedisOOBContext::oob_allgather_test;
     ctx_params.oob.req_free = team_params.oob.req_free =
         UCCRedisOOBContext::oob_allgather_free;
+#else
+      ctx_params.oob.allgather = team_params.oob.allgather =
+              UCCMPIOOBContext::oob_allgather;
+      ctx_params.oob.req_test = team_params.oob.req_test =
+              UCCMPIOOBContext::oob_allgather_test;
+      ctx_params.oob.req_free = team_params.oob.req_free =
+              UCCMPIOOBContext::oob_allgather_free;
+#endif
   } else if (ucc_oob_ctx->Type() == OOBType::OOB_MPI) {
     ctx_params.oob.allgather = team_params.oob.allgather =
         UCCMPIOOBContext::oob_allgather;

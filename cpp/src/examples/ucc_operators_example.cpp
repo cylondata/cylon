@@ -225,8 +225,10 @@ int main(int argc, char **argv) {
     oob_ctx = std::make_shared<cylon::net::UCCMPIOOBContext>();
   } else {
     // auto redis = std::make_shared<sw::redis::Redis>();
+#ifdef BUILD_CYLON_REDIS
     oob_ctx = std::make_shared<cylon::net::UCCRedisOOBContext>(
         4, "tcp://127.0.0.1:6379");
+#endif
   }
 
   std::shared_ptr<cylon::CylonContext> ctx;

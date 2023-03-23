@@ -21,8 +21,9 @@
 #include <cylon/net/ucx/ucx_ucc_oob_contexts.hpp>
 
 #include "cylon/util/macros.hpp"
+#ifdef BUILD_CYLON_REDIS
 #include "sw/redis++/redis++.h"
-
+#endif
 #ifdef BUILD_CYLON_UCC
 #include <ucc/api/ucc.h>
 #endif
@@ -104,9 +105,11 @@ class UCXCommunicator : public Communicator {
                             MemoryPool *pool,
                             std::shared_ptr<Communicator> *out);
 
+#ifdef BUILD_CYLON_REDIS
   static Status MakeWithRedis(const std::shared_ptr<CommConfig> &config,
                               MemoryPool *pool,
                               std::shared_ptr<Communicator> *out);
+#endif
 
   // # UCX specific attributes - These need to be passed to the channels created
   // from the communicator The worker for receiving

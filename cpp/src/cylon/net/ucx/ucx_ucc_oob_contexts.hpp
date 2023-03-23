@@ -5,6 +5,8 @@
 #include <cylon/net/ucx/ucx_operations.hpp>
 
 #include "cylon/util/macros.hpp"
+
+
 #include "sw/redis++/redis++.h"
 
 #ifdef BUILD_CYLON_UCC
@@ -13,7 +15,10 @@
 
 namespace cylon {
 namespace net {
-enum OOBType { OOB_MPI = 0, OOB_REDIS = 1 };
+enum OOBType {
+    OOB_MPI = 0,
+    OOB_REDIS = 1
+};
 
 class UCXOOBContext {
  public:
@@ -24,6 +29,7 @@ class UCXOOBContext {
   virtual Status Finalize() = 0;
 };
 
+#ifdef BUILD_CYLON_REDIS
 class UCXRedisOOBContext : public UCXOOBContext {
  public:
   UCXRedisOOBContext(int world_size, std::string redis_addr);
@@ -41,6 +47,8 @@ class UCXRedisOOBContext : public UCXOOBContext {
   int world_size;
   int rank = -1;
 };
+
+#endif
 
 class UCXMPIOOBContext : public UCXOOBContext {
  public:
@@ -63,6 +71,7 @@ class UCCOOBContext {
   virtual void *getCollInfo() = 0;
 };
 
+#ifdef BUILD_CYLON_REDIS
 class UCCRedisOOBContext : public UCCOOBContext {
  public:
   void InitOOB(int rank) override;
@@ -98,7 +107,7 @@ class UCCRedisOOBContext : public UCCOOBContext {
   int num_oob_allgather = 0;
   std::string redis_addr;
 };
-
+#endif
 class UCCMPIOOBContext : public UCCOOBContext {
  public:
   UCCMPIOOBContext() = default;
