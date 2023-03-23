@@ -25,11 +25,6 @@ else ()
     set_source_files_properties(util/murmur3.cpp util/murmur3.hpp PROPERTIES COMPILE_FLAGS -Wno-implicit-fallthrough)
 endif (WIN32)
 
-# ucx
-option(CYLON_UCX "Build Cylon with UCX" OFF)
-option(CYLON_UCC "Build Cylon with UCC" OFF)
-option(CYLON_USE_REDIS, "Build Cylon with Redis" OFF)
-
 if (CYLON_UCX)
     set(UCX_CYLON_FILES
             net/ucx/ucx_channel.hpp

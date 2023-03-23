@@ -246,9 +246,7 @@ if (GCYLON_BUILD)
     return()
 endif ()
 
-# ucx
-option(CYLON_UCX "Build Cylon with UCX" OFF)
-option(CYLON_UCC "Build Cylon with UCC" OFF)
+
 if (CYLON_UCX)
     message("Cylon UCX enabled")
     # Definition used for checking
