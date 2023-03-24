@@ -249,6 +249,15 @@ void UCXCommunicator::Barrier() { MPI_Barrier(MPI_COMM_WORLD); }
 CommType UCXCommunicator::GetCommType() const { return UCX; }
 
 #ifdef BUILD_CYLON_UCC
+
+        UCXUCCCommunicator::UCXUCCCommunicator(const std::shared_ptr<Communicator> &ucx_comm)
+                : Communicator(ucx_comm->GetMemoryPool(), ucx_comm->GetRank(), ucx_comm->GetWorldSize()),
+                  ucx_comm_(std::static_pointer_cast<UCXCommunicator>(ucx_comm)) {}
+
+
+
+
+
 UCXUCCCommunicator::UCXUCCCommunicator(
     std::shared_ptr<Communicator> ucx_comm,
     std::shared_ptr<UCCOOBContext> &oob_context)

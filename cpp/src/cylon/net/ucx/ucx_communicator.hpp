@@ -130,8 +130,14 @@ class UCXUCCCommunicator : public Communicator {
   explicit UCXUCCCommunicator(std::shared_ptr<Communicator> ucx_comm,
                               std::shared_ptr<UCCOOBContext> &oobContext);
 
+  explicit UCXUCCCommunicator(const std::shared_ptr<Communicator>& ucx_comm);
+
+
+
   static Status Make(const std::shared_ptr<CommConfig> &config,
                      MemoryPool *pool, std::shared_ptr<Communicator> *out);
+
+
 
   CommType GetCommType() const override;
   std::unique_ptr<Channel> CreateChannel() const override;
