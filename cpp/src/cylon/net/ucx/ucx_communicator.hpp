@@ -31,9 +31,10 @@
 namespace cylon {
 namespace net {
 class UCXConfig : public CommConfig {
-  CommType Type() override;
+
 
  public:
+    CommType Type() override;
   explicit UCXConfig(std::shared_ptr<UCXOOBContext> oobContext);
   explicit UCXConfig(MPI_Comm comm = MPI_COMM_NULL);
 
@@ -53,9 +54,10 @@ class UCXConfig : public CommConfig {
 
 #ifdef BUILD_CYLON_UCC
 class UCCConfig : public CommConfig {
-  CommType Type() override;
+
 
  public:
+    CommType Type() override;
   explicit UCCConfig(std::shared_ptr<UCCOOBContext> oobContext);
   static std::shared_ptr<UCCConfig> Make(
       std::shared_ptr<UCCOOBContext> &oobContext);
