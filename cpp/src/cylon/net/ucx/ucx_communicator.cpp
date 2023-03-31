@@ -83,11 +83,12 @@ void UCCConfig::setOOBContext(std::shared_ptr<UCCOOBContext> oobContext) {
 
 std::shared_ptr<UCCOOBContext> UCCConfig::getOOBContext() { return oobContext; }
 
-std::unique_ptr<Channel> UCXCommunicator::CreateChannel() const {
-  return std::make_unique<UCXChannel>(this);
-}
+
 #endif
 
+std::unique_ptr<Channel> UCXCommunicator::CreateChannel() const {
+    return std::make_unique<UCXChannel>(this);
+}
 int UCXCommunicator::GetRank() const { return this->rank; }
 int UCXCommunicator::GetWorldSize() const { return this->world_size; }
 
@@ -361,6 +362,8 @@ void UCXCommunicator::Barrier() {
 CommType UCXCommunicator::GetCommType() const {
   return UCX;
 }
+
+
 
 #ifdef BUILD_CYLON_UCC
 

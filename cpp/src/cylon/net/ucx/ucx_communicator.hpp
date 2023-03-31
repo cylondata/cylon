@@ -79,7 +79,9 @@ class UCXCommunicator : public Communicator {
 
     ~UCXCommunicator() override = default;
 
-  std::unique_ptr<Channel> CreateChannel() const override;
+
+
+    std::unique_ptr<Channel> CreateChannel() const override;
   int GetRank() const override;
   int GetWorldSize() const override;
   void Finalize() override;
