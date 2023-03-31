@@ -47,7 +47,7 @@ class UCXConfig : public CommConfig {
   MPI_Comm GetMPIComm() const;
 
  private:
-  std::shared_ptr<UCXOOBContext> oobContext;
+  std::shared_ptr<UCXOOBContext> oobContext = nullptr;
   MPI_Comm comm_;
 };
 
@@ -69,9 +69,13 @@ class UCCConfig : public CommConfig {
 
 class UCXCommunicator : public Communicator {
  public:
-  explicit UCXCommunicator(MemoryPool *pool);
+    explicit UCXCommunicator(MemoryPool *pool);
+    UCXCommunicator(MemoryPool *pool, bool externally_init, MPI_Comm comm);
 
-  ~UCXCommunicator() override = default;
+
+
+
+    ~UCXCommunicator() override = default;
 
   std::unique_ptr<Channel> CreateChannel() const override;
   int GetRank() const override;
@@ -101,15 +105,8 @@ class UCXCommunicator : public Communicator {
   static Status Make(const std::shared_ptr<CommConfig> &config,
                      MemoryPool *pool, std::shared_ptr<Communicator> *out);
 
-  static Status MakeWithMPI(const std::shared_ptr<CommConfig> &config,
-                            MemoryPool *pool,
-                            std::shared_ptr<Communicator> *out);
-
-#ifdef BUILD_CYLON_REDIS
-  static Status MakeWithRedis(const std::shared_ptr<CommConfig> &config,
-                              MemoryPool *pool,
-                              std::shared_ptr<Communicator> *out);
-#endif
+    static Status MakeOOB(const std::shared_ptr<CommConfig> &config,
+                             MemoryPool *pool, std::shared_ptr<Communicator> *out);
 
   // # UCX specific attributes - These need to be passed to the channels created
   // from the communicator The worker for receiving
@@ -121,7 +118,11 @@ class UCXCommunicator : public Communicator {
   // UCP Context - Holds a UCP communication instance's global information.
   ucp_context_h ucpContext{};
 
-  std::shared_ptr<UCXOOBContext> oobContext;
+  std::shared_ptr<UCXOOBContext> oobContext = nullptr;
+
+    bool externally_init = false;
+    MPI_Comm mpi_comm;
+
 };
 
 #ifdef BUILD_CYLON_UCC
@@ -136,6 +137,7 @@ class UCXUCCCommunicator : public Communicator {
 
   static Status Make(const std::shared_ptr<CommConfig> &config,
                      MemoryPool *pool, std::shared_ptr<Communicator> *out);
+
 
 
 
@@ -163,8 +165,13 @@ class UCXUCCCommunicator : public Communicator {
 
   ucc_team_h uccTeam{};
   ucc_context_h uccContext{};
-  std::shared_ptr<Communicator> ucx_comm_;
+  std::shared_ptr<UCXCommunicator> ucx_comm_;
   std::shared_ptr<UCCOOBContext> oobContext;
+
+private:
+    static Status MakeOOB(std::shared_ptr<UCCOOBContext> &ucc_oob_ctx,
+                       MemoryPool *pool, std::shared_ptr<Communicator> *out);
+
 };
 #endif
 }  // namespace net
