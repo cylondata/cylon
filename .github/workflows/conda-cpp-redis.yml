@@ -62,7 +62,7 @@ jobs:
           cd $HOME/redis-plus-plus
           mkdir build
           cd build
-          cmake -DCMAKE_PREFIX_PATH=$HOME/hiredis/install -DCMAKE_INSTALL_PREFIX=$HOME/redis-plus-plus/install -DREDIS_PLUS_PLUS_CXX_STANDARD=11
+          cmake -DCMAKE_PREFIX_PATH=$HOME/hiredis/install -DCMAKE_INSTALL_PREFIX=$HOME/redis-plus-plus/install -DREDIS_PLUS_PLUS_CXX_STANDARD=11 ..
           make
           make install
 
