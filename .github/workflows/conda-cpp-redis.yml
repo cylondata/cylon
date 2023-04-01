@@ -1,0 +1,77 @@
+name: Conda C++/Python/Redis - gcc,OpenMPI,Redis,UCX/UCC
+
+on:
+  push:
+    branches:
+      - main
+      - 0.**
+  pull_request:
+    branches:
+      - main
+      - 0.**
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -l {0}
+    strategy:
+      fail-fast: false
+      # explicit include-based build matrix, of known valid options
+      matrix:
+        include:
+          # 20.04 supports CUDA 11.0+
+          - os: ubuntu-20.04
+            gcc: 9
+            ucc: "master"
+
+    steps:
+      - uses: actions/checkout@v2
+
+      # Specify the correct host compilers
+      - name: Install/Select gcc and g++
+        run: |
+          sudo apt-get install -y gcc-${{ matrix.gcc }} g++-${{ matrix.gcc }} git
+          echo "CC=/usr/bin/gcc-${{ matrix.gcc }}" >> $GITHUB_ENV
+          echo "CXX=/usr/bin/g++-${{ matrix.gcc }}" >> $GITHUB_ENV
+
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: cylon_dev
+          environment-file: conda/environments/cylon.yml
+
+      - name: Activate conda
+        run: conda activate cylon_dev
+
+      - name: Install UCC
+        run: |
+          git clone --single-branch -b ${{ matrix.ucc }} https://github.com/openucx/ucc.git $HOME/ucc
+          cd $HOME/ucc
+          echo "conda ucx: $(conda list | grep ucx)"
+          ./autogen.sh
+          ./configure --prefix=$HOME/ucc/install --with-ucx=$CONDA/envs/cylon_dev
+          make install
+
+      - name: Install Redis
+        run: |
+          git clone https://github.com/redis/hiredis.git $HOME/hiredis
+          cd $HOME/hiredis
+          make PREFIX=$HOME/hiredis/install
+          make install
+          git https://github.com/sewenew/redis-plus-plus.git $HOME/redis-plus-plus
+          cd $HOME/redis-plus-plus
+          mkdir build
+          cd build
+          cmake -DCMAKE_PREFIX_PATH=$HOME/hiredis/install -DCMAKE_INSTALL_PREFIX=$HOME/redis-plus-plus/install -DREDIS_PLUS_PLUS_CXX_STANDARD=11
+          make
+          make install
+
+      - name: Build cylon, pycylon and run cpp test
+        run: python build.py -cmake-flags="-DCYLON_UCX=1 -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$HOME/ucc/install -DCYLON_USE_REDIS=1" -ipath="$HOME/cylon/install" --cpp --python --test
+
+      - name: Run pytest
+        run: python build.py -ipath="$HOME/cylon/install" --pytest
+
+      - name: Build Java
+        run: python build.py -ipath="$HOME/cylon/install" --java
