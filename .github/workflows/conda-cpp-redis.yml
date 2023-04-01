@@ -57,8 +57,7 @@ jobs:
         run: |
           git clone https://github.com/redis/hiredis.git $HOME/hiredis
           cd $HOME/hiredis
-          make PREFIX=$HOME/hiredis/install
-          make install
+          make PREFIX=$HOME/hiredis/install install
           git https://github.com/sewenew/redis-plus-plus.git $HOME/redis-plus-plus
           cd $HOME/redis-plus-plus
           mkdir build
