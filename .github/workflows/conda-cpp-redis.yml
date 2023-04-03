@@ -57,14 +57,15 @@ jobs:
         run: |
           git clone https://github.com/redis/hiredis.git $HOME/hiredis
           cd $HOME/hiredis
-          make PREFIX=$HOME/hiredis/install install
+          make 
+          sudo make install
           git clone https://github.com/sewenew/redis-plus-plus.git $HOME/redis-plus-plus
           cd $HOME/redis-plus-plus
           mkdir build
           cd build
-          cmake -DCMAKE_PREFIX_PATH=$HOME/hiredis/install -DCMAKE_INSTALL_PREFIX=$HOME/redis-plus-plus/install -DREDIS_PLUS_PLUS_CXX_STANDARD=11 ..
+          cmake -DREDIS_PLUS_PLUS_CXX_STANDARD=11 ..
           make
-          make install
+          sudo make install
 
       - name: Build cylon, pycylon and run cpp test
         run: python build.py -cmake-flags="-DCYLON_UCX=1 -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$HOME/ucc/install -DCYLON_USE_REDIS=1" -ipath="$HOME/cylon/install" --cpp --python --test
