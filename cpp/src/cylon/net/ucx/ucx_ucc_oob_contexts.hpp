@@ -3,6 +3,7 @@
 #include <cylon/net/comm_config.hpp>
 #include <cylon/net/communicator.hpp>
 #include <cylon/net/ucx/ucx_operations.hpp>
+#include <cylon/net/ucx/oob_type.hpp>
 
 #include "cylon/util/macros.hpp"
 
@@ -16,10 +17,7 @@
 
 namespace cylon {
 namespace net {
-enum OOBType {
-    OOB_MPI = 0,
-    OOB_REDIS = 1
-};
+
 
 class UCXOOBContext {
  public:
