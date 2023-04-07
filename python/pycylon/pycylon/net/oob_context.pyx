@@ -12,16 +12,17 @@
  # limitations under the License.
  ##
 
+IF CYTHON_UCX & CYTHON_UCC:
 
-from pycylon.net.oob_context cimport CUCXOOBContext
+    from pycylon.net.oob_context cimport CUCXOOBContext
 
-'''
-UCXOOBContext Mapping from Cylon C++ 
-'''
+    '''
+    UCXOOBContext Mapping from Cylon C++ 
+    '''
 
 
-cdef class UCXOOBContext:
+    cdef class UCXOOBContext:
 
-    def __cinit__(self):
-        pass
+        def __cinit__(self):
+            pass
 
