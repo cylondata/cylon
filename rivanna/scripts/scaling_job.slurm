@@ -2,7 +2,7 @@
 #SBATCH -A bii_dsc_community
 #SBATCH -p standard
 #SBATCH -N 1
-#SBATCH -c 32
+#SBATCH -c 10
 #SBATCH -t 10:00:00
 
 PARENT=$HOME/.conda/envs  # parent directory of conda env
@@ -23,4 +23,4 @@ export OMPI_MCA_pml="ucx" OMPI_MCA_osc="ucx" \
 which python gcc g++
 #---- (END) ----
 
-python cylon_scaling.py
+python rivanna/scripts/cylon_scaling.py -n 8

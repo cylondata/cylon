@@ -1,4 +1,10 @@
-Run the scripts in set of **compute nodes** as follows.
+1. Install Cloudmesh
+
+```
+pip install cloudmesh-common
+```
+
+2. Run the scripts in set of **compute nodes** as follows.
 
 ```bash
 #!/bin/bash
@@ -26,5 +32,5 @@ export OMPI_MCA_pml="ucx" OMPI_MCA_osc="ucx" \
 which python gcc g++
 #---- (END) ----
 
-python cylon_scaling.py
+python cylon_scaling.py -n 8
 ```

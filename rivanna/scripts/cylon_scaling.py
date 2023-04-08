@@ -68,7 +68,7 @@ if __name__ == "__main__":
                         help="s=strong w=weak")
 
     args = vars(parser.parse_args())
-    args['host'] = "summit"
+    args['host'] = "rivanna"
     join(args)
 
     # os.system(f"{git} branch | fgrep '*' ")
