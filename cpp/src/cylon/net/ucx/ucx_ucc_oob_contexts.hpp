@@ -7,6 +7,8 @@
 
 #include "cylon/util/macros.hpp"
 
+#include <cylon/net/ucx/ucx_ucc_oob_context.hpp>
+
 #ifdef BUILD_CYLON_REDIS
 #include "sw/redis++/redis++.h"
 #endif
@@ -18,15 +20,6 @@
 namespace cylon {
 namespace net {
 
-
-class UCXOOBContext {
- public:
-  virtual Status InitOOB() = 0;
-  virtual Status getWorldSizeAndRank(int &world_size, int &rank) = 0;
-  virtual Status OOBAllgather(uint8_t *src, uint8_t *dst, size_t srcSize,
-                              size_t dstSize) = 0;
-  virtual Status Finalize() = 0;
-};
 
 #ifdef BUILD_CYLON_REDIS
 class UCXRedisOOBContext : public UCXOOBContext {
