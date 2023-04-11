@@ -26,6 +26,10 @@
 #include "cylon/net/ucc/ucc_operations.hpp"
 #endif
 
+#ifdef BUILD_CYLON_REDIS
+#include "cylon/net/ucx/redis_ucx_ucc_oob_context.hpp"
+#endif
+
 namespace cylon {
 namespace net {
 

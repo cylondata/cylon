@@ -21,9 +21,7 @@
 #include <cylon/net/ucx/ucx_ucc_oob_contexts.hpp>
 
 #include "cylon/util/macros.hpp"
-//#ifdef BUILD_CYLON_REDIS
-//#include "sw/redis++/redis++.h"
-//#endif
+
 #ifdef BUILD_CYLON_UCC
 #include <ucc/api/ucc.h>
 #endif

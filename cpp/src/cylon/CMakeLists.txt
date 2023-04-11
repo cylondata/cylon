@@ -36,6 +36,12 @@ if (CYLON_UCX)
             net/ucx/ucx_ucc_oob_contexts.hpp
             net/ucx/ucx_ucc_oob_contexts.cpp
             )
+    if (CYLON_USE_REDIS)
+        set(UCX_REDIS_CYLON_FILES
+                net/ucx/redis_ucx_ucc_oob_context.hpp
+                net/ucx/redis_ucx_ucc_oob_context.cpp
+                )
+    endif(CYLON_USE_REDIS)
     if (CYLON_UCC)
         set(UCC_CYLON_FILES
                 net/ucc/ucc_operations.hpp
@@ -64,6 +70,7 @@ add_library(cylon SHARED
         ${UCX_CYLON_FILES}
         ${UCC_CYLON_FILES}
         ${CYLON_GLOO_FILES}
+        ${UCX_REDIS_CYLON_FILES}
         arrow/arrow_all_to_all.cpp
         arrow/arrow_all_to_all.hpp
         arrow/arrow_buffer.cpp
