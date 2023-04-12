@@ -22,6 +22,7 @@
 #include "cylon/util/macros.hpp"
 
 #include <cylon/net/ucx/ucx_ucc_oob_context.hpp>
+#include <cylon/net/ucx/ucc_oob_context.hpp>
 
 #ifdef BUILD_CYLON_UCC
 #include <ucc/api/ucc.h>
@@ -29,9 +30,6 @@
 
 namespace cylon {
 namespace net {
-
-
-
 
 class UCXMPIOOBContext : public UCXOOBContext {
  public:
@@ -45,14 +43,6 @@ class UCXMPIOOBContext : public UCXOOBContext {
   Status Finalize() override;
 };
 
-#ifdef BUILD_CYLON_UCC
-class UCCOOBContext {
- public:
-  virtual OOBType Type() = 0;
-  virtual std::shared_ptr<UCXOOBContext> makeUCXOOBContext() = 0;
-  virtual void InitOOB(int rank) = 0;
-  virtual void *getCollInfo() = 0;
-};
 
 
 class UCCMPIOOBContext : public UCCOOBContext {
@@ -72,7 +62,7 @@ class UCCMPIOOBContext : public UCCOOBContext {
 
   static ucc_status_t oob_allgather_free(void *req);
 };
-#endif
+
 }  // namespace net
 }  // namespace cylon
 #endif

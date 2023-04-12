@@ -18,7 +18,7 @@
 #include <cylon/net/comm_config.hpp>
 #include <cylon/net/communicator.hpp>
 #include <cylon/net/ucx/ucx_operations.hpp>
-#include <cylon/net/ucx/ucx_ucc_oob_contexts.hpp>
+#include <cylon/net/ucx/mpi_ucx_ucc_oob_context.hpp>
 
 #include "cylon/util/macros.hpp"
 

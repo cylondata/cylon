@@ -12,26 +12,36 @@
  * limitations under the License.
  */
 
-#ifndef CYLON_UCX_UCC_OOB_CONTEXT_HPP
-#define CYLON_UCX_UCC_OOB_CONTEXT_HPP
+#ifndef CYLON_UCC_OOB_CONTEXT_HPP
+#define CYLON_UCC_OOB_CONTEXT_HPP
 
+#include <cylon/net/comm_config.hpp>
+#include <cylon/net/communicator.hpp>
+#include <cylon/net/ucx/ucx_operations.hpp>
+#include <cylon/net/ucx/oob_type.hpp>
 
-#include "cylon/status.hpp"
+#include "cylon/util/macros.hpp"
+
+#include <cylon/net/ucx/ucx_ucc_oob_context.hpp>
+
 
 namespace cylon {
     namespace net {
-        class UCXOOBContext {
+#ifdef BUILD_CYLON_UCC
+
+        class UCCOOBContext {
         public:
-            virtual Status InitOOB() = 0;
+            virtual OOBType Type() = 0;
 
-            virtual Status getWorldSizeAndRank(int &world_size, int &rank) = 0;
+            virtual std::shared_ptr <UCXOOBContext> makeUCXOOBContext() = 0;
 
-            virtual Status OOBAllgather(uint8_t *src, uint8_t *dst, size_t srcSize,
-                                        size_t dstSize) = 0;
+            virtual void InitOOB(int rank) = 0;
 
-            virtual Status Finalize() = 0;
+            virtual void *getCollInfo() = 0;
         };
+
+#endif
     }
 }
 
-#endif //CYLON_UCX_UCC_OOB_CONTEXT_HPP
+#endif //CYLON_UCC_OOB_CONTEXT_HPP

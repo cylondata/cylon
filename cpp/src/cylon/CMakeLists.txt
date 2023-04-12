@@ -33,8 +33,8 @@ if (CYLON_UCX)
             net/ucx/ucx_communicator.cpp
             net/ucx/ucx_operations.hpp
             net/ucx/ucx_operations.cpp
-            net/ucx/ucx_ucc_oob_contexts.hpp
-            net/ucx/ucx_ucc_oob_contexts.cpp
+            net/ucx/mpi_ucx_ucc_oob_context.hpp
+            net/ucx/mpi_ucx_ucc_oob_context.cpp
             )
     if (CYLON_USE_REDIS)
         set(UCX_REDIS_CYLON_FILES

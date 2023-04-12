@@ -12,17 +12,15 @@
  # limitations under the License.
  ##
 
-IF CYTHON_UCX & CYTHON_UCC:
+IF CYTHON_UCX & CYTHON_UCC & CYTHON_REDIS:
 
-    from pycylon.net.oob_context cimport CUCXOOBContext
+    from pycylon.common.status cimport CStatus
+    from pycylon.net.ucx_oob_context cimport UCXOOBContext
 
-    '''
-    UCXOOBContext Mapping from Cylon C++ 
-    '''
+    cdef extern from "../../../../cpp/src/cylon/net/ucx/redis_ucx_ucc_oob_context.hpp" namespace "cylon::net":
+        cdef cppclass CUCXRedisOOBContext "cylon::net::UCXRedisOOBContext":
+            CStatus getWorldSizeAndRank(int &world_size, int &rank)
 
-
-    cdef class UCXOOBContext:
-
-        def __cinit__(self):
-            pass
-
+            CUCXRedisOOBContext(int &world_size, int &rank)
+    cdef class UCXRedisOOBContext(UCXOOBContext):
+        pass
