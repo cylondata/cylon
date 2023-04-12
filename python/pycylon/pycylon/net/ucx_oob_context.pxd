@@ -16,7 +16,7 @@ IF CYTHON_UCX :
 
     from pycylon.common.status cimport CStatus
 
-    cdef extern from "../../../../cpp/src/cylon/net/ucx/ucx_ucc_oob_context.hpp" namespace "cylon::net":
+    cdef extern from "../../../../cpp/src/cylon/net/ucx/ucx_oob_context.hpp" namespace "cylon::net":
         cdef cppclass CUCXOOBContext "cylon::net::UCXOOBContext":
             CStatus getWorldSizeAndRank(int &world_size, int &rank)
     cdef class UCXOOBContext:

@@ -19,10 +19,8 @@
 #include <cylon/net/communicator.hpp>
 #include <cylon/net/ucx/ucx_operations.hpp>
 #include <cylon/net/ucx/oob_type.hpp>
-
 #include "cylon/util/macros.hpp"
-
-#include <cylon/net/ucx/ucx_ucc_oob_context.hpp>
+#include <cylon/net/ucx/ucx_oob_context.hpp>
 
 
 namespace cylon {

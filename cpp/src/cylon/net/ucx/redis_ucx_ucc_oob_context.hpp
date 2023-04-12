@@ -22,7 +22,7 @@
 
 #include "cylon/util/macros.hpp"
 
-#include <cylon/net/ucx/ucx_ucc_oob_context.hpp>
+#include <cylon/net/ucx/ucx_oob_context.hpp>
 #include <cylon/net/ucx/mpi_ucx_ucc_oob_context.hpp>
 
 #ifdef BUILD_CYLON_REDIS

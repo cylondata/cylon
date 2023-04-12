@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef CYLON_UCX_UCC_OOB_CONTEXT_HPP
-#define CYLON_UCX_UCC_OOB_CONTEXT_HPP
+#ifndef CYLON_UCX_OOB_CONTEXT_HPP
+#define CYLON_UCX_OOB_CONTEXT_HPP
 
 
 #include "cylon/status.hpp"
@@ -34,4 +34,4 @@ namespace cylon {
     }
 }
 
-#endif //CYLON_UCX_UCC_OOB_CONTEXT_HPP
+#endif //CYLON_UCX_OOB_CONTEXT_HPP

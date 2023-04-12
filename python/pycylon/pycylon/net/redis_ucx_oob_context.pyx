@@ -12,10 +12,12 @@
  # limitations under the License.
  ##
 
-from pycylon.net.redis_ucx_oob_context cimport CUCXRedisOOBContext
+IF CYTHON_UCX & CYTHON_UCC & CYTHON_REDIS:
+
+    from pycylon.net.redis_ucx_oob_context cimport CUCXRedisOOBContext
 
 
-cdef class UCXRedisOOBContext:
+    cdef class UCXRedisOOBContext:
 
-    def __cinit__(self):
-        pass
+        def __cinit__(self):
+            pass

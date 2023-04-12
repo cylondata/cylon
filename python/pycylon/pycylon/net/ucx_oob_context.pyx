@@ -12,7 +12,7 @@
  # limitations under the License.
  ##
 
-IF CYTHON_UCX & CYTHON_UCC:
+IF CYTHON_UCX :
 
     from pycylon.net.ucx_oob_context cimport CUCXOOBContext
 

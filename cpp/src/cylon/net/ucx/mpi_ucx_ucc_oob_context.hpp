@@ -21,7 +21,7 @@
 
 #include "cylon/util/macros.hpp"
 
-#include <cylon/net/ucx/ucx_ucc_oob_context.hpp>
+#include <cylon/net/ucx/ucx_oob_context.hpp>
 #include <cylon/net/ucx/ucc_oob_context.hpp>
 
 #ifdef BUILD_CYLON_UCC
@@ -44,7 +44,7 @@ class UCXMPIOOBContext : public UCXOOBContext {
 };
 
 
-
+#ifdef BUILD_CYLON_UCC
 class UCCMPIOOBContext : public UCCOOBContext {
  public:
   UCCMPIOOBContext() = default;
@@ -62,6 +62,8 @@ class UCCMPIOOBContext : public UCCOOBContext {
 
   static ucc_status_t oob_allgather_free(void *req);
 };
+
+#endif
 
 }  // namespace net
 }  // namespace cylon
