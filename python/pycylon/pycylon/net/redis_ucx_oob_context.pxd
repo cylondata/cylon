@@ -17,6 +17,7 @@ IF CYTHON_UCX & CYTHON_UCC & CYTHON_REDIS:
     from pycylon.common.status cimport CStatus
     from pycylon.net.ucx_oob_context cimport UCXOOBContext
     from libcpp.string cimport string
+    from libcpp.memory cimport shared_ptr
 
     cdef extern from "../../../../cpp/src/cylon/net/ucx/redis_ucx_ucc_oob_context.hpp" namespace "cylon::net":
         cdef cppclass CUCXRedisOOBContext "cylon::net::UCXRedisOOBContext":
@@ -24,4 +25,6 @@ IF CYTHON_UCX & CYTHON_UCC & CYTHON_REDIS:
 
             CUCXRedisOOBContext(int world_size, string redis_addr)
     cdef class UCXRedisOOBContext(UCXOOBContext):
-        cdef CUCXRedisOOBContext *thisptr
+
+        cdef:
+            shared_ptr[CUCXRedisOOBContext] ucx_redis_oob_context_shd_ptr

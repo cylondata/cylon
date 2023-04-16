@@ -17,7 +17,7 @@ IF CYTHON_UCX & CYTHON_UCC & CYTHON_REDIS:
     from pycylon.net.redis_ucc_oob_context cimport CUCCRedisOOBContext
     from pycylon.net.redis_ucx_oob_context cimport CUCXRedisOOBContext
     from pycylon.net.ucx_oob_context cimport CUCXOOBContext
-    from libcpp.memory cimport shared_ptr, make_shared
+    from libcpp.memory cimport make_shared
 
     '''
     UCCRedisOOBContext Mapping from Cylon C++ 
@@ -26,15 +26,22 @@ IF CYTHON_UCX & CYTHON_UCC & CYTHON_REDIS:
     cdef class UCCRedisOOBContext:
 
         def __cinit__(self, int world_size, string redis_addr ):
-            self.world_size = world_size
-            self.redis_addr = redis_addr
-            self.ucx_context_shd_ptr =  make_shared[CUCXRedisOOBContext](world_size, redis_addr)
 
+            self.ucx_redis_oob_context_shd_ptr =  make_shared[CUCXRedisOOBContext](world_size, redis_addr)
 
             if world_size !=-1 :
-                self.thisptr = new CUCCRedisOOBContext(world_size, redis_addr)
+                self.ucc_redis_oob_context_shd_ptr = make_shared[CUCCRedisOOBContext](world_size, redis_addr)
             else:
-                self.thisptr = new CUCCRedisOOBContext()
+                self.ucc_redis_oob_context_shd_ptr = make_shared[CUCCRedisOOBContext]()
 
-        def __dealloc__(self):
-            del self.thisptr
+        @property
+        def oob_type(self):
+            return self.ucc_redis_oob_context_shd_ptr.get().Type()
+
+        @property
+        def oob_worldsize(self):
+            return self.ucc_redis_oob_context_shd_ptr.get().getWorldSize()
+
+        @property
+        def oob_rank(self):
+            return self.ucc_redis_oob_context_shd_ptr.get().getRank()

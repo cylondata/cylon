@@ -18,6 +18,7 @@ IF CYTHON_UCX & CYTHON_UCC & CYTHON_REDIS:
     from libcpp.memory cimport shared_ptr
     from pycylon.net.oob_type cimport COOBType
     from pycylon.net.ucx_oob_context cimport CUCXOOBContext
+    from pycylon.net.ucc_oob_context cimport UCCOOBContext
     from pycylon.net.redis_ucx_oob_context cimport CUCXRedisOOBContext
     from libcpp.string cimport string
 
@@ -25,14 +26,17 @@ IF CYTHON_UCX & CYTHON_UCC & CYTHON_REDIS:
         cdef cppclass CUCCRedisOOBContext "cylon::net::UCCRedisOOBContext":
             COOBType Type()
 
-            shared_ptr[CUCXOOBContext] makeUCXOOBContext();
-
             CUCCRedisOOBContext(int world_size, string redis_addr)
 
             CUCCRedisOOBContext()
-    cdef class UCCRedisOOBContext:
+
+            int getWorldSize()
+
+            int getRank()
+    cdef class UCCRedisOOBContext(UCCOOBContext):
         cdef:
-            cdef CUCCRedisOOBContext *thisptr
-            shared_ptr[CUCXRedisOOBContext] ucx_context_shd_ptr
-            int world_size
-            int rank
+
+            shared_ptr[CUCCRedisOOBContext] ucc_redis_oob_context_shd_ptr
+
+            shared_ptr[CUCXRedisOOBContext] ucx_redis_oob_context_shd_ptr
+

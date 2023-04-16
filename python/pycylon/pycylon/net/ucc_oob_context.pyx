@@ -12,14 +12,19 @@
  # limitations under the License.
  ##
 
-IF CYTHON_UCX & CYTHON_UCC & CYTHON_REDIS:
+IF CYTHON_UCC:
 
-    from pycylon.net.redis_ucx_oob_context cimport CUCXRedisOOBContext
-    from libcpp.memory cimport make_shared
+    from pycylon.net.ucc_oob_context cimport CUCCOOBContext
+
+    '''
+    UCC Context Mapping from Cylon C++ 
+    '''
 
 
-    cdef class UCXRedisOOBContext:
+    cdef class UCCOOBContext:
 
+        def __cinit__(self):
+            pass
 
-        def __cinit__(self, int world_size, string redis_addr):
-            self.ucx_redis_oob_context_shd_ptr = make_shared[CUCXRedisOOBContext](world_size, redis_addr)
+        def comm_type(self):
+            pass
