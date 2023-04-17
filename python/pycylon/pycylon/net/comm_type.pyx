@@ -24,3 +24,4 @@ cpdef enum CommType:
     TCP = CCommType._TCP
     UCX = CCommType._UCX
     GLOO = CCommType._GLOO
+    UCC = CCommType._UCC
