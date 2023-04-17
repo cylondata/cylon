@@ -16,7 +16,9 @@ IF CYTHON_UCC:
     from pycylon.net.comm_config cimport CommConfig
     from pycylon.net.ucc_config cimport CUCCConfig
     from pycylon.net.ucc_oob_context cimport CUCCOOBContext
-    from pycylon.net.redis_ucc_oob_context cimport UCCRedisOOBContext
+    IF CYTHON_REDIS:
+        from pycylon.net.redis_ucc_oob_context cimport UCCRedisOOBContext
+
     from pycylon.net.ucc_oob_context cimport UCCOOBContext
     from libcpp.memory cimport shared_ptr, dynamic_pointer_cast
 
@@ -27,13 +29,14 @@ IF CYTHON_UCC:
         UCCConfig Type mapping from libCylon to PyCylon
         """
         def __cinit__(self, object context):
-            if isinstance(context, UCCRedisOOBContext):
-                 self.ucc_oob_context_ptr = <shared_ptr[CUCCOOBContext]>(<UCCRedisOOBContext> context).ucc_redis_oob_context_shd_ptr
+            IF CYTHON_REDIS:
+                if isinstance(context, UCCRedisOOBContext):
+                    self.ucc_oob_context_ptr = <shared_ptr[CUCCOOBContext]>(<UCCRedisOOBContext> context).ucc_redis_oob_context_shd_ptr
 
-                 self.ucc_config_shd_ptr = CUCCConfig.Make(self.ucc_oob_context_ptr)
+                    self.ucc_config_shd_ptr = CUCCConfig.Make(self.ucc_oob_context_ptr)
 
-            else:
-                raise ValueError('Passed object is not an instance of UCCOOBContext')
+                else:
+                    raise ValueError('Passed object is not an instance of UCCOOBContext')
 
 
         @property
