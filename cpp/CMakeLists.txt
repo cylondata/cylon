@@ -302,6 +302,11 @@ if (CYLON_UCX)
         include_directories(SYSTEM ${UCC_INCLUDE_DIRS})
         link_directories(${UCC_LIBRARIES} ${UCC_LIBRARIES}/ucc)
     endif (CYLON_UCC)
+
+    if(CYLON_USE_REDIS)
+        message("Cylon Redis Enabled")
+        add_definitions(-DBUILD_CYLON_REDIS)
+    endif (CYLON_USE_REDIS)
 endif (CYLON_UCX)
 
 # gloo

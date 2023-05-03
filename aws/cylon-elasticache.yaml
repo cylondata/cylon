@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  AvailabilityZone1:
+    Type: String
+
+  AvailabilityZone2:
+    Type: String
+
+  CacheEngine:
+    Type: String
+
+  CacheEngineVersion:
+    Type: String
+
+  CacheNodeType:
+    Type: String
+
+  CacheParameterGroupName:
+    Type: String
+
+  CacheSecurityGroup:
+    Type: String
+
+  CacheSubnet1:
+    Type: String
+
+  CacheSubnet2:
+    Type: String
+
+  Prefix:
+    Type: String
+
+  RedisPort:
+    Type: Number
+
+  ReplicaCount:
+    Type: Number
+
+
+Resources:
+  SubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      CacheSubnetGroupName: !Sub "${Prefix}-subnetgroup"
+      Description: !Sub "${Prefix}-SubnetGroup"
+      SubnetIds:
+        - !Ref CacheSubnet1
+        - !Ref CacheSubnet2
+      Tags:
+        - Key: "name"
+          Value: !Sub "${Prefix}-Redis SubnetGroup"
+
+
+
+
+  CacheCluster:
+    Type: AWS::ElastiCache::CacheCluster
+    Properties:
+      ClusterName: !Sub "${Prefix}-Redis"
+      CacheNodeType: !Ref CacheNodeType
+      CacheSubnetGroupName: !Ref SubnetGroup
+      Engine: !Ref CacheEngine
+      EngineVersion: 7.0
+      NumCacheNodes: 1 #has to be 1 for redis
+      VpcSecurityGroupIds:
+        - !Ref CacheSecurityGroup
+      Tags:
+        - Key: "name"
+          Value: !Sub "${Prefix}-Redis Cluster"
+    DependsOn: SubnetGroup

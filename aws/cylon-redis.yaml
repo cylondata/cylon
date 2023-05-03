@@ -1,0 +1,90 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  TemplateBucketName:
+    Type: String
+    Default: staylor.dev
+
+  Prefix:
+    Type: String
+    Default: cylon
+
+  Architecture:
+    Type: String
+    Default: arm64
+
+  AvailabilityZone1:
+    Type: String
+    Default: us-east-1d
+
+  AvailabilityZone2:
+    Type: String
+    Default: us-east-1e
+
+  CacheEngine:
+    Type: String
+    Default: redis
+
+  CacheEngineVersion:
+    Type: String
+    Default: 6.2
+
+  CacheNodeType:
+    Type: String
+    Default: cache.t4g.micro
+
+  CacheParameterGroupName:
+    Type: String
+    Default: default.redis7.cluster.on
+
+  CacheSecurityGroupName:
+    Type: String
+    Default: sg-03d5d4a486bcba53c
+
+  CacheSubnet1:
+    Type: String
+    Default: subnet-0216c94ae373be63f
+
+  CacheSubnet2:
+    Type: String
+    Default: subnet-07e518dad2b3e9eb9
+
+  ImageId:
+    Type: String
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-arm64-gp2
+
+  InstanceType:
+    Type: String
+    Default: t4g.nano
+
+  ReplicaCount:
+    Type: Number
+    Default: 1
+
+  Runtime:
+    Type: String
+    Default: python3.8
+
+  RedisPort:
+    Type: Number
+    Default: 6379
+
+
+Resources:
+  ElastiCacheStack:
+    Type: AWS::CloudFormation::Stack
+    "DeletionPolicy" : "Delete"
+    Properties:
+      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-elasticache.yaml"
+      Parameters:
+        AvailabilityZone1: !Ref AvailabilityZone1
+        AvailabilityZone2: !Ref AvailabilityZone2
+        CacheEngine: !Ref CacheEngine
+        CacheEngineVersion: !Ref CacheEngineVersion
+        CacheNodeType: !Ref CacheNodeType
+        CacheParameterGroupName: !Ref CacheParameterGroupName
+        CacheSecurityGroup: !Ref CacheSecurityGroupName
+        CacheSubnet1: !Ref CacheSubnet1
+        CacheSubnet2: !Ref CacheSubnet2
+        Prefix: !Ref Prefix
+        RedisPort: !Ref RedisPort
+        ReplicaCount: !Ref ReplicaCount

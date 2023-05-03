@@ -28,6 +28,7 @@
 #include <cylon/net/ucx/ucx_communicator.hpp>
 #include <cylon/table.hpp>
 #include <cylon/scalar.hpp>
+#include "net/ucx/redis_ucx_ucc_oob_context.hpp"
 
 auto read_options = cylon::io::config::CSVReadOptions()
                         .UseThreads(false)
