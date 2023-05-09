@@ -24,6 +24,9 @@ IF CYTHON_UCX & CYTHON_UCC & CYTHON_REDIS:
             CStatus getWorldSizeAndRank(int &world_size, int &rank)
 
             CUCXRedisOOBContext(int world_size, string redis_addr)
+
+            @ staticmethod
+            shared_ptr[CUCXRedisOOBContext] Make(int world_size, string redis_addr);
     cdef class UCXRedisOOBContext(UCXOOBContext):
 
         cdef:

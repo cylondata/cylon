@@ -54,6 +54,8 @@ namespace cylon {
 
             Status Finalize();
 
+            static std::shared_ptr<UCXRedisOOBContext> Make(int world_size, std::string redis_addr);
+
         private:
             std::shared_ptr<sw::redis::Redis> redis;
             int world_size;
@@ -71,6 +73,8 @@ namespace cylon {
             OOBType Type() override;
 
             UCCRedisOOBContext(int world_size, std::string redis_addr);
+
+            static std::shared_ptr<UCCRedisOOBContext> Make(int world_size, std::string redis_addr);
 
             /***
              * This constructor is used with python script `run_ucc_with_redis.py`

@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: "2010-09-09"
 Parameters:
   TemplateBucketName:
     Type: String
-    Default: staylor.dev
+    Default: staylor.dev2
 
   Prefix:
     Type: String
@@ -14,11 +14,11 @@ Parameters:
 
   AvailabilityZone1:
     Type: String
-    Default: us-east-1d
+    Default: us-east-1c
 
   AvailabilityZone2:
     Type: String
-    Default: us-east-1e
+    Default: us-east-1d
 
   CacheEngine:
     Type: String
@@ -38,15 +38,15 @@ Parameters:
 
   CacheSecurityGroupName:
     Type: String
-    Default: sg-03d5d4a486bcba53c
+    Default: sg-0da3e3dcebe706315
 
   CacheSubnet1:
     Type: String
-    Default: subnet-0216c94ae373be63f
+    Default: subnet-07995eea6c462cd73
 
   CacheSubnet2:
     Type: String
-    Default: subnet-07e518dad2b3e9eb9
+    Default: subnet-039df5ab7fd94f516
 
   ImageId:
     Type: String
@@ -74,7 +74,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     "DeletionPolicy" : "Delete"
     Properties:
-      TemplateURL: !Sub "https://${TemplateBucketName}.s3.${AWS::Region}.amazonaws.com/${Prefix}/${Prefix}-elasticache.yaml"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucketName}/${Prefix}/${Prefix}-elasticache.yaml"
       Parameters:
         AvailabilityZone1: !Ref AvailabilityZone1
         AvailabilityZone2: !Ref AvailabilityZone2

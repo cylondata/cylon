@@ -43,7 +43,11 @@ namespace cylon {
             return Status::OK();
         }
 
-        Status UCXRedisOOBContext::Finalize() { return Status::OK(); };
+        Status UCXRedisOOBContext::Finalize() { return Status::OK(); }
+
+        std::shared_ptr<UCXRedisOOBContext> UCXRedisOOBContext::Make(int world_size, std::string redis_addr) {
+            return std::make_shared<UCXRedisOOBContext>(world_size, redis_addr);
+        };
 
         void UCCRedisOOBContext::InitOOB(int rank) { this->rank = rank; }
 
@@ -123,6 +127,11 @@ namespace cylon {
         void UCCRedisOOBContext::setRank(int rk) { rank = rk; }
 
         int UCCRedisOOBContext::getRank() { return rank; }
+
+        std::shared_ptr<UCCRedisOOBContext> UCCRedisOOBContext::Make(int world_size, std::string redis_addr) {
+            return std::make_shared<UCCRedisOOBContext>(world_size, redis_addr);
+        }
+
 #endif
 
     }

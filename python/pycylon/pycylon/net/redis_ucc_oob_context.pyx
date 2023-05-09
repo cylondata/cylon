@@ -25,14 +25,14 @@ IF CYTHON_UCX & CYTHON_UCC & CYTHON_REDIS:
 
     cdef class UCCRedisOOBContext:
 
-        def __cinit__(self, int world_size, string redis_addr ):
-
-            self.ucx_redis_oob_context_shd_ptr =  make_shared[CUCXRedisOOBContext](world_size, redis_addr)
+        def __cinit__(self,  world_size: int,  redis_addr : str ):
 
             if world_size !=-1 :
-                self.ucc_redis_oob_context_shd_ptr = make_shared[CUCCRedisOOBContext](world_size, redis_addr)
+                self.ucc_redis_oob_context_shd_ptr = CUCCRedisOOBContext.Make(world_size, redis_addr.encode())
             else:
                 self.ucc_redis_oob_context_shd_ptr = make_shared[CUCCRedisOOBContext]()
+
+            self.ucx_redis_oob_context_shd_ptr = self.ucc_redis_oob_context_shd_ptr.get().makeUCXOOBContext()
 
         @property
         def oob_type(self):
@@ -45,3 +45,4 @@ IF CYTHON_UCX & CYTHON_UCC & CYTHON_REDIS:
         @property
         def oob_rank(self):
             return self.ucc_redis_oob_context_shd_ptr.get().getRank()
+
