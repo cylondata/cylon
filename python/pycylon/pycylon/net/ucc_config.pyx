@@ -35,6 +35,8 @@ IF CYTHON_UCC:
 
                     self.ucc_config_shd_ptr = CUCCConfig.Make(self.ucc_oob_context_ptr)
 
+                    print("initialized Redis UCC Config context")
+
                 else:
                     raise ValueError('Passed object is not an instance of UCCOOBContext')
 

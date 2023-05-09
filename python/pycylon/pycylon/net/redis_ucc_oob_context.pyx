@@ -32,7 +32,6 @@ IF CYTHON_UCX & CYTHON_UCC & CYTHON_REDIS:
             else:
                 self.ucc_redis_oob_context_shd_ptr = make_shared[CUCCRedisOOBContext]()
 
-            self.ucx_redis_oob_context_shd_ptr = self.ucc_redis_oob_context_shd_ptr.get().makeUCXOOBContext()
 
         @property
         def oob_type(self):

@@ -36,15 +36,14 @@ IF CYTHON_UCX & CYTHON_UCC & CYTHON_REDIS:
 
             int getRank()
 
-
-
             @ staticmethod
             shared_ptr[CUCCRedisOOBContext] Make(int world_size, string redis_addr);
+
     cdef class UCCRedisOOBContext(UCCOOBContext):
         cdef:
 
             shared_ptr[CUCCRedisOOBContext] ucc_redis_oob_context_shd_ptr
-            shared_ptr[CUCXOOBContext] ucx_redis_oob_context_shd_ptr
+
 
 
 
