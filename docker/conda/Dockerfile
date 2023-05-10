@@ -22,6 +22,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py38_4.12.0-Linu
 
 ENV CYLON_HOME=/cylon
 ENV CYLON_PREFIX=/cylon/install
+ENV LD_LIBRARY_PATH="$CYLON_PREFIX/lib:${LD_LIBRARY_PATH}"
 
 WORKDIR $CYLON_HOME
 
