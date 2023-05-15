@@ -306,6 +306,13 @@ if (CYLON_UCX)
     if(CYLON_USE_REDIS)
         message("Cylon Redis Enabled")
         add_definitions(-DBUILD_CYLON_REDIS)
+
+
+        find_library(HIREDIS_LIB hiredis HINTS ${REDIS_INSTALL_PREFIX}/lib)
+        find_library(REDIS_PLUS_PLUS_LIB redis++ HINTS ${REDIS_INSTALL_PREFIX}/lib)
+        set(REDIS_LIBRARIES
+                ${HIREDIS_LIB}
+                ${REDIS_PLUS_PLUS_LIB})
     endif (CYLON_USE_REDIS)
 endif (CYLON_UCX)
 

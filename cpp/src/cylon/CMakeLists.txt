@@ -258,16 +258,17 @@ if (CYLON_UCX)
         find_path(HIREDIS_HEADER hiredis HINTS ${REDIS_INSTALL_PREFIX}/include)
         target_include_directories(cylon PUBLIC ${HIREDIS_HEADER})
 
-        find_library(HIREDIS_LIB hiredis HINTS ${REDIS_INSTALL_PREFIX}/lib)
-        target_link_libraries(cylon ${HIREDIS_LIB})
+        #find_library(HIREDIS_LIB hiredis HINTS ${REDIS_INSTALL_PREFIX}/lib)
+        #target_link_libraries(cylon ${HIREDIS_LIB})
 
         # <------------ add redis-plus-plus dependency -------------->
         # NOTE: this should be *sw* NOT *redis++*
         find_path(REDIS_PLUS_PLUS_HEADER sw HINTS ${REDIS_INSTALL_PREFIX}/include)
         target_include_directories(cylon PUBLIC ${REDIS_PLUS_PLUS_HEADER})
 
-        find_library(REDIS_PLUS_PLUS_LIB redis++ HINTS ${REDIS_INSTALL_PREFIX}/lib)
-        target_link_libraries(cylon ${REDIS_PLUS_PLUS_LIB})
+        #find_library(REDIS_PLUS_PLUS_LIB redis++ HINTS ${REDIS_INSTALL_PREFIX}/lib)
+        #target_link_libraries(cylon ${REDIS_PLUS_PLUS_LIB})
+        target_link_libraries(cylon ${REDIS_LIBRARIES})
     endif()
 endif ()
 
