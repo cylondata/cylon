@@ -3,14 +3,18 @@ from pycylon.net.redis_ucc_oob_context import UCCRedisOOBContext
 from pycylon import Table, CylonEnv
 from pycylon.io import CSVReadOptions
 from pycylon.io import read_csv
+import argparse
 
 if __name__ == "__main__":
     print("Initializing redis...")
 
-    #redis = UCXRedisOOBContext(2, "tcp://cylon-redis.mveu6e.0001.use1.cache.amazonaws.com:6379".encode())
-    #config = UCCConfig()
-
-    redis_context = UCCRedisOOBContext(2, "tcp://cylon-redis.mveu6e.0001.use1.cache.amazonaws.com:6379")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--world_size', "-n", type=int, help="world size")
+    parser.add_argument("--redis_host", "-h", type=str, help="redis address, default to 127.0.0.1",
+                        default="127.0.0.1")
+    parser.add_argument("--port", "-p", type=int, help="name of redis port", default=6379)
+    args = parser.parse_args()
+    redis_context = UCCRedisOOBContext(args.world_size, f"tcp://{args.redis_host}:{args.port}")
 
     if redis_context is not None:
         ucc_config = UCCConfig(redis_context)
