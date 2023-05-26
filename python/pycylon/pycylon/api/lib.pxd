@@ -35,10 +35,10 @@ from pycylon.io.csv_read_config cimport CSVReadOptions
 from pycylon.io.csv_write_config cimport CCSVWriteOptions
 from pycylon.io.csv_write_config import CSVWriteOptions
 from pycylon.io.csv_write_config cimport CSVWriteOptions
-from pycylon.data.data_type cimport CType
-from pycylon.data.data_type import Type
-from pycylon.data.data_type cimport CLayout
-from pycylon.data.data_type import Layout
+from pycylon.data.ctype cimport CType
+from pycylon.data.ctype import Type
+from pycylon.data.layout cimport CLayout
+from pycylon.data.layout import Layout
 from pycylon.data.data_type cimport CDataType
 from pycylon.data.data_type import DataType
 from pycylon.common.status cimport CStatus
