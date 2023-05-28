@@ -24,7 +24,7 @@ from pycylon.data.scalar cimport CScalar
 
 cdef extern from "../../../../cpp/src/cylon/net/communicator.hpp" namespace "cylon::net":
     cdef cppclass CCommunicator "cylon::net":
-        void Init(const shared_ptr[CCommConfig] &config)
+
         # TODO: add create Channel
         int GetRank()
         int GetWorldSize()
@@ -32,20 +32,27 @@ cdef extern from "../../../../cpp/src/cylon/net/communicator.hpp" namespace "cyl
         void Barrier()
         CCommType GetCommType()
 
-        #CStatus AllReduce(const shared_ptr[CScalar] &value,
-        #                   CReduceOp reduce_op,
-        #                   shared_ptr[CScalar] *output)
+        CStatus AllReduce(const shared_ptr[CScalar] &value,
+                           CReduceOp reduce_op,
+                           shared_ptr[CScalar] *output)
 
-
+cdef class Communicator:
+    pass
 
 
 cdef extern from "../../../../cpp/src/cylon/net/mpi/mpi_communicator.hpp" namespace "cylon::net":
     cdef cppclass CMPICommunicator "cylon::net::MPICommunicator":
-        void Init(const shared_ptr[CCommConfig] &config)
+        
         int GetRank()
         int GetWorldSize()
         void Finalize()
         void Barrier()
         CCommType GetCommType()
 
+        CStatus AllReduce(const shared_ptr[CScalar] & value,
+                          CReduceOp reduce_op,
+                          shared_ptr[CScalar] *output)
 
+
+cdef class MPICommunicator(Communicator):
+    pass

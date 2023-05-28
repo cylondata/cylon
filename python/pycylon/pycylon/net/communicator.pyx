@@ -13,9 +13,9 @@
  ##
 
 from pycylon.net.communicator cimport CMPICommunicator
+from pycylon.net.communicator cimport Communicator
 
-
-cdef class MPICommunicator:
+cdef class MPICommunicator(Communicator):
 
     def __cinit__(self):
         pass
