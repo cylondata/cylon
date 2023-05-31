@@ -1,3 +1,4 @@
+
 ##
  # Licensed under the Apache License, Version 2.0 (the "License");
  # you may not use this file except in compliance with the License.
@@ -12,14 +13,12 @@
  # limitations under the License.
  ##
 
-from pycylon.net.reduce_op import ReduceOp
 
 
-cdef class Communicator:
+
+from pycylon.net.communicator cimport Communicator
+
+cdef class MPICommunicator(Communicator):
 
     def __cinit__(self):
         pass
-
-    def allreduce(self, value, reduce_op: ReduceOp):
-        pass
-
