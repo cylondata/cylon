@@ -29,6 +29,7 @@ IF CYTHON_GLOO:
 IF CYTHON_UCX & CYTHON_UCC:
 	from pycylon.net.ucx_config cimport CUCXConfig
 	from pycylon.net.ucc_config cimport CUCCConfig
+	from pycylon.net.ucc_ucx_communicator cimport CUCXUCCCommunicator
 from pycylon.io.csv_read_config cimport CCSVReadOptions
 from pycylon.io.csv_read_config import CSVReadOptions
 from pycylon.io.csv_read_config cimport CSVReadOptions
@@ -68,6 +69,8 @@ IF CYTHON_GLOO:
 IF CYTHON_UCX & CYTHON_UCC:
 	cdef api shared_ptr[CUCXConfig] pycylon_unwrap_ucx_config(object config)
 	cdef api shared_ptr[CUCCConfig] pycylon_unwrap_ucc_config(object config)
+
+	cdef api object pycylon_wrap_ucc_ucx_communicator(const shared_ptr[CUCXUCCCommunicator] & ccommunicator)
 
 
 

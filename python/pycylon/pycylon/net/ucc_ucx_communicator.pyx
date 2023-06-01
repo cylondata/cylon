@@ -13,35 +13,35 @@
  # limitations under the License.
  ##
 
+IF CYTHON_UCX & CYTHON_UCC:
 
 
-
-from pycylon.net.communicator cimport Communicator
-from pycylon.net.ucc_ucx_communicator cimport CUCXUCCCommunicator
-from pycylon.data.scalar cimport Scalar
-from pycylon.data.scalar cimport CScalar
-from libcpp.memory cimport shared_ptr
-from pycylon.net.reduce_op import ReduceOp
-import pyarrow as pa
-from pyarrow.lib cimport pyarrow_wrap_scalar
-
-
-cdef class UCXUCCCommunicator(Communicator):
-
-    def __cinit__(self):
-        pass
-
-    cdef void init(self, const shared_ptr[CUCXUCCCommunicator]& communicator):
-        self.ucc_cucx_comm_shd_ptr = communicator
+    from pycylon.net.communicator cimport Communicator
+    from pycylon.net.ucc_ucx_communicator cimport CUCXUCCCommunicator
+    from pycylon.data.scalar cimport Scalar
+    from pycylon.data.scalar cimport CScalar
+    from libcpp.memory cimport shared_ptr
+    from pycylon.net.reduce_op import ReduceOp
+    import pyarrow as pa
+    from pyarrow.lib cimport pyarrow_wrap_scalar
 
 
-    def allreduce(self, value, reduce_op: ReduceOp):
-        cdef shared_ptr[CScalar] cresult
-        scalarv = Scalar(pa.scalar(value))
+    cdef class UCXUCCCommunicator(Communicator):
 
-        self.ucc_cucx_comm_shd_ptr.get().AllReduce(scalarv.thisPtr, reduce_op, &cresult)
+        def __cinit__(self):
+            pass
 
-        return pyarrow_wrap_scalar(cresult.get().data()).as_py()
+        cdef void init(self, const shared_ptr[CUCXUCCCommunicator]& communicator):
+            self.ucc_cucx_comm_shd_ptr = communicator
+
+
+        def allreduce(self, value, reduce_op: ReduceOp):
+            cdef shared_ptr[CScalar] cresult
+            scalarv = Scalar(pa.scalar(value))
+
+            self.ucc_cucx_comm_shd_ptr.get().AllReduce(scalarv.thisPtr, reduce_op, &cresult)
+
+            return pyarrow_wrap_scalar(cresult.get().data()).as_py()
 
 
 

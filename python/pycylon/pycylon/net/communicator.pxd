@@ -23,7 +23,7 @@ from pycylon.data.scalar cimport CScalar
 
 
 cdef extern from "../../../../cpp/src/cylon/net/communicator.hpp" namespace "cylon::net":
-    cdef cppclass CCommunicator "cylon::net":
+    cdef cppclass CCommunicator "cylon::net::Communicator":
 
         # TODO: add create Channel
         int GetRank()

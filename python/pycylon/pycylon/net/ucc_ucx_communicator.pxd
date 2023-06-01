@@ -12,30 +12,32 @@
  # limitations under the License.
  ##
 
-from libcpp.memory cimport shared_ptr
-from pycylon.net.comm_type cimport CCommType
-from pycylon.net.reduce_op cimport CReduceOp
-from pycylon.common.status cimport CStatus
-from pycylon.data.scalar cimport CScalar
-from pycylon.net.communicator cimport Communicator
+IF CYTHON_UCX & CYTHON_UCC:
+
+    from libcpp.memory cimport shared_ptr
+    from pycylon.net.comm_type cimport CCommType
+    from pycylon.net.reduce_op cimport CReduceOp
+    from pycylon.common.status cimport CStatus
+    from pycylon.data.scalar cimport CScalar
+    from pycylon.net.communicator cimport Communicator
 
 
-cdef extern from "../../../../cpp/src/cylon/net/ucx/ucx_communicator.hpp" namespace "cylon::net":
-    cdef cppclass CUCXUCCCommunicator "cylon::net::UCXUCCCommunicator":
+    cdef extern from "../../../../cpp/src/cylon/net/ucx/ucx_communicator.hpp" namespace "cylon::net":
+        cdef cppclass CUCXUCCCommunicator "cylon::net::UCXUCCCommunicator":
 
-        int GetRank()
-        int GetWorldSize()
-        void Finalize()
-        void Barrier()
-        CCommType GetCommType()
+            int GetRank()
+            int GetWorldSize()
+            void Finalize()
+            void Barrier()
+            CCommType GetCommType()
 
-        CStatus AllReduce(const shared_ptr[CScalar] & value,
+            CStatus AllReduce(const shared_ptr[CScalar] & value,
                           CReduceOp reduce_op,
                           shared_ptr[CScalar] *output)
 
 
-cdef class UCXUCCCommunicator(Communicator):
-    cdef:
-        shared_ptr[CUCXUCCCommunicator] ucc_cucx_comm_shd_ptr
+    cdef class UCXUCCCommunicator(Communicator):
+        cdef:
+            shared_ptr[CUCXUCCCommunicator] ucc_cucx_comm_shd_ptr
 
-        void init(self, const shared_ptr[CUCXUCCCommunicator] & communicator)
+            void init(self, const shared_ptr[CUCXUCCCommunicator] & communicator)
