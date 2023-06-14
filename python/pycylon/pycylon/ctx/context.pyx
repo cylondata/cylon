@@ -24,6 +24,8 @@ IF CYTHON_GLOO:
 IF CYTHON_UCX & CYTHON_UCC:
     from pycylon.api.lib cimport pycylon_unwrap_ucx_config, pycylon_unwrap_ucc_config, pycylon_wrap_ucc_ucx_communicator
     from pycylon.net.ucc_ucx_communicator cimport CUCXUCCCommunicator, UCXUCCCommunicator
+from pycylon.net.mpi_communicator cimport CMPICommunicator, MPICommunicator
+from pycylon.api.lib cimport pycylon_wrap_mci_communicator
 from pycylon.net import CommType
 from pycylon.net.mpi_config cimport CMPIConfig
 from pycylon.net.mpi_config import MPIConfig
@@ -135,7 +137,7 @@ cdef class CylonContext:
     def get_communicator(self):
         if CYTHON_UCX & CYTHON_UCC:
             return pycylon_wrap_ucc_ucx_communicator(dynamic_pointer_cast[CUCXUCCCommunicator, CCommunicator](self.ctx_shd_ptr.get().GetCommunicator()))
-        return None
+        return pycylon_wrap_mci_communicator(dynamic_pointer_cast[CMPICommunicator, CCommunicator](self.ctx_shd_ptr.get().GetCommunicator()))
 
     def finalize(self):
         '''

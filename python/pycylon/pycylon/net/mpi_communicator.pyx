@@ -18,7 +18,26 @@
 
 from pycylon.net.communicator cimport Communicator
 
+from pycylon.net.reduce_op import ReduceOp
+import pyarrow as pa
+from pyarrow.lib cimport pyarrow_wrap_scalar
+from pycylon.data.scalar cimport CScalar
+from libcpp.memory cimport shared_ptr
+from pycylon.data.scalar cimport Scalar
+
+
 cdef class MPICommunicator(Communicator):
 
     def __cinit__(self):
         pass
+
+    cdef void init(self, const shared_ptr[CMPICommunicator]& communicator):
+        self.mpi_comm_shd_ptr = communicator
+
+    def allreduce(self, value, reduce_op: ReduceOp):
+        cdef shared_ptr[CScalar] cresult
+        scalarv = Scalar(pa.scalar(value))
+
+        self.mpi_comm_shd_ptr.get().AllReduce(scalarv.thisPtr, reduce_op, &cresult)
+
+        return pyarrow_wrap_scalar(cresult.get().data()).as_py()

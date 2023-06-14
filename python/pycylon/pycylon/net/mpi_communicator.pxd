@@ -35,4 +35,7 @@ cdef extern from "../../../../cpp/src/cylon/net/mpi/mpi_communicator.hpp" namesp
 
 
 cdef class MPICommunicator(Communicator):
-    pass
+    cdef:
+        shared_ptr[CMPICommunicator] mpi_comm_shd_ptr
+
+        void init(self, const shared_ptr[CMPICommunicator] & communicator)
