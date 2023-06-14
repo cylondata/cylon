@@ -30,6 +30,8 @@ IF CYTHON_UCX & CYTHON_UCC:
 	from pycylon.net.ucx_config cimport CUCXConfig
 	from pycylon.net.ucc_config cimport CUCCConfig
 	from pycylon.net.ucc_ucx_communicator cimport CUCXUCCCommunicator
+IF CYTHON_UCX:
+	from pycylon.net.ucx_communicator cimport CUCXCommunicator
 from pycylon.net.mpi_communicator cimport CMPICommunicator
 from pycylon.io.csv_read_config cimport CCSVReadOptions
 from pycylon.io.csv_read_config import CSVReadOptions
@@ -73,6 +75,8 @@ IF CYTHON_UCX & CYTHON_UCC:
 
 	cdef api object pycylon_wrap_ucc_ucx_communicator(const shared_ptr[CUCXUCCCommunicator] & ccommunicator)
 
+IF CYTHON_UCX:
+	cdef api object pycylon_wrap_ucx_communicator(const shared_ptr[CUCXCommunicator] & ccommunicator)
 
 cdef api object pycylon_wrap_mci_communicator(const shared_ptr[CMPICommunicator] & ccomunicator)
 

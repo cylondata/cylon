@@ -24,6 +24,9 @@ IF CYTHON_GLOO:
 IF CYTHON_UCX & CYTHON_UCC:
     from pycylon.api.lib cimport pycylon_unwrap_ucx_config, pycylon_unwrap_ucc_config, pycylon_wrap_ucc_ucx_communicator
     from pycylon.net.ucc_ucx_communicator cimport CUCXUCCCommunicator, UCXUCCCommunicator
+IF CYTHON_UCX:
+    from pycylon.api.lib cimport pycylon_wrap_ucx_communicator
+    from pycylon.net.ucx_communicator cimport CUCXCommunicator, UCXCommunicator
 from pycylon.net.mpi_communicator cimport CMPICommunicator, MPICommunicator
 from pycylon.api.lib cimport pycylon_wrap_mci_communicator
 from pycylon.net import CommType
@@ -135,8 +138,11 @@ cdef class CylonContext:
         return self.ctx_shd_ptr.get().GetWorldSize()
 
     def get_communicator(self):
-        if CYTHON_UCX & CYTHON_UCC:
+        IF CYTHON_UCX & CYTHON_UCC:
             return pycylon_wrap_ucc_ucx_communicator(dynamic_pointer_cast[CUCXUCCCommunicator, CCommunicator](self.ctx_shd_ptr.get().GetCommunicator()))
+        ELIF CYTHON_UCX:
+            return pycylon_wrap_ucx_communicator(
+                dynamic_pointer_cast[CUCXCommunicator, CCommunicator](self.ctx_shd_ptr.get().GetCommunicator()))
         return pycylon_wrap_mci_communicator(dynamic_pointer_cast[CMPICommunicator, CCommunicator](self.ctx_shd_ptr.get().GetCommunicator()))
 
     def finalize(self):
