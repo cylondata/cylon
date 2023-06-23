@@ -34,7 +34,10 @@ def join(data=None):
 
     df1 = DataFrame(pd.DataFrame(data1).add_prefix("col"))
     df2 = DataFrame(pd.DataFrame(data2).add_prefix("col"))
-
+    
+    if env.rank == 0:
+        print("Task# ", data['task'])
+        
     for i in range(data['it']):
         env.barrier()
         StopWatch.start(f"join_{i}_{data['host']}_{data['rows']}_{data['it']}")
@@ -42,7 +45,7 @@ def join(data=None):
         df3 = df1.merge(df2, on=[0], algorithm='sort', env=env)
         env.barrier()
         t2 = time.time()
-        t = (t2 - t1) * 1000
+        t = (t2 - t1)
         sum_t = comm.reduce(t)
         tot_l = comm.reduce(len(df3))
 
@@ -69,7 +72,9 @@ if __name__ == "__main__":
 
     args = vars(parser.parse_args())
     args['host'] = "rivanna"
-    join(args)
+    for i in range(160):
+        args['task'] = i
+        join(args)
 
     # os.system(f"{git} branch | fgrep '*' ")
     # os.system(f"{git} rev-parse HEAD")

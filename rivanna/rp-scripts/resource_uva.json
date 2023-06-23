@@ -1,0 +1,39 @@
+{
+        "description"                 : "Heterogeneous community-model Linux cluster",
+        "notes"                       : "Access from registered UVA IP address. See https://www.rc.virginia.edu/userinfo/rivanna/login/",
+        "schemas"                     : ["local", "ssh", "interactive"],
+        "local"                       :
+        {
+            "job_manager_endpoint"    : "slurm://rivanna.hpc.virginia.edu/",
+            "filesystem_endpoint"     : "file://rivanna.hpc.virginia.edu/"
+        },
+        "ssh"                         :
+        {
+            "job_manager_endpoint"    : "slurm+ssh://rivanna.hpc.virginia.edu/",
+            "filesystem_endpoint"     : "sftp://rivanna.hpc.virginia.edu/"
+        },
+        "interactive"                 :
+        {
+            "job_manager_endpoint"    : "fork://localhost/",
+            "filesystem_endpoint"     : "file://localhost/"
+        },
+        "default_queue"               : "standard",
+        "resource_manager"            : "SLURM",
+        "agent_scheduler"             : "CONTINUOUS",
+        "agent_spawner"               : "POPEN",
+        "launch_methods"              : {
+                                         "order": ["MPIRUN"],
+                                         "MPIRUN" : {}
+                                        },
+        "pre_bootstrap_0"             : [
+                                        "module load gcc/9.2.0",
+                                        "module load openmpi/3.1.6",
+                                        "module load python/3.7.7",
+                                        "export LD_LIBRARY_PATH=$HOME/rc_arup/cylon/build/arrow/install/lib64:$HOME/rc_arup/cylon/build/glog/install/lib64:$HOME/rc_arup/cylon/build/lib64:$HOME/rc_arup/cylon/build/lib:$LD_LIBRARY_PATH"
+                                        ],
+        "default_remote_workdir"      : "/scratch/$USER",
+        "python_dist"                 : "default",
+        "virtenv_dist"                : "default",
+        "virtenv_mode"                : "create",
+        "rp_version"                  : "local"
+}
