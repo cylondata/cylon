@@ -23,7 +23,7 @@ radical-stack
 You need to export mongo-db url:
 
 ```shell
-export RADICAL_PILOT_DBURL="mongodb://rct-tutorial:HXH7vExF7GvCeMWn@95.217.193.116:27017/rct-tutorial"
+export RADICAL_PILOT_DBURL="mongodb:ADD_YOUR_URL"
 ```
 Setup is done. Now let's execute scaling with cylon.
 
