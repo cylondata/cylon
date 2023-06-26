@@ -252,7 +252,7 @@ if (CYLON_UCX)
     # Definition used for checking
     add_definitions(-DBUILD_CYLON_UCX)
 
-    if (CONDA_LINK_DIRS)
+    if (CONDA_LINK_DIRS AND NOT UCX_LIBDIR)
         message("Using Conda UCX")
         find_library(UCX_UCT uct REQUIRED HINTS ${CONDA_LINK_DIRS})
         find_library(UCX_UCS ucs REQUIRED HINTS ${CONDA_LINK_DIRS})
@@ -278,7 +278,7 @@ if (CYLON_UCX)
         # Set library directory for later use
         set(UCX_LIBRARIES
                 ${UCX_LIBDIR}/ucx/libuct_cma.so
-                ${UCX_LIBDIR}/ucx/libuct_ib.so
+                #${UCX_LIBDIR}/ucx/libuct_ib.so
                 ${UCX_LIBDIR}/libuct.so
                 ${UCX_LIBDIR}/libucs.so
                 ${UCX_LIBDIR}/libucm.so

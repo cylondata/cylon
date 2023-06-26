@@ -12,7 +12,7 @@ dependencies:
   - ucx>=1.12.1
   - cython>=0.29,<0.30
   - numpy
-  - pandas>=1.0,<1.6.0dev0
+  - pandas>=1.0
   - fsspec>=0.6.0
   - setuptools
   # they are not needed for using pygcylon or compiling it

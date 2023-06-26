@@ -1,29 +1,78 @@
-FROM ubuntu:20.04
+FROM --platform=linux/amd64 ubuntu:22.04
 MAINTAINER cylondata@googlegroups.com
 
-RUN DEBIAN_FRONTEND=noninteractive TZ=America/New_York apt-get update -y  && apt-get upgrade -y \
-   && apt-get install -y apt-utils tzdata
-RUN dpkg-reconfigure tzdata
+ARG DEBIAN_FRONTEND=noninteractive
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y python3 python3-dev python3-venv python3-pip git build-essential libopenmpi-dev vim cmake wget
-RUN DEBIAN_FRONTEND=noninteractive apt install openssh-server sudo -y
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+ENV PATH /opt/conda/bin:$PATH
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -y --fix-missing && \
+    apt-get install -y wget bzip2 ca-certificates curl git build-essential && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py310_23.3.1-0-Linux-x86_64.sh -O ~/miniconda.sh && \
+    /bin/bash ~/miniconda.sh -b -p /opt/conda && \
+    rm ~/miniconda.sh && \
+    #/opt/conda/bin/conda clean -a && \
+    ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
+    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
+    echo "conda activate cylon_dev" >> ~/.bashrc
+
 
 ENV CYLON_HOME=/cylon
-ENV CYLON_BUILD=$CYLON_HOME/build
-ENV CYLON_ENV=$CYLON_HOME/ENV
+ENV CYLON_PREFIX=/cylon/install
+ENV UCC_HOME=/ucc
 ENV UCX_HOME=/ucx
-ENV UCX_SOURCE=$UCX_HOME/ucx-1.10.1
+ENV UCX_SOURCE=$UCX_HOME/ucx-1.12.1
 ENV UCX_LIB=$UCX_SOURCE/install/lib
 ENV UCX_INCLUDE=$UCX_SOURCE/install/include
 
+
 WORKDIR $CYLON_HOME
 
-RUN wget https://github.com/openucx/ucx/releases/download/v1.10.1/ucx-1.10.1.tar.gz -P $UCX_HOME
-RUN cd $UCX_HOME && tar xzf ucx-1.10.1.tar.gz
+RUN git clone https://github.com/mstaylor/cylon.git $CYLON_HOME
+RUN git checkout -b ucc-reduce-ops
+
+RUN conda install -n base conda-libmamba-solver && conda config --set solver libmamba
+
+RUN conda env create -f $CYLON_HOME/conda/environments/cylon.yml
+
+SHELL ["/bin/bash", "--login", "-c"]
+
+RUN apt-get update &&  apt-get install autoconf -y &&  apt-get install libtool -y && apt-get install cmake -y
+
+#UCX install
+
+RUN wget https://github.com/openucx/ucx/releases/download/v1.12.1/ucx-1.12.1.tar.gz -P $UCX_HOME
+RUN cd $UCX_HOME && tar xzf ucx-1.12.1.tar.gz
 RUN cd $UCX_SOURCE && ./contrib/configure-release --prefix=$PWD/install
 RUN cd $UCX_SOURCE && make -j8 install
-RUN git clone https://github.com/cylondata/cylon.git $CYLON_HOME
 
-RUN cd $CYLON_HOME && /bin/bash build.sh -bpath $CYLON_BUILD --cpp --release --cmake-flags "-DCYLON_UCX=ON -DUCX_LIBDIR=$UCX_LIB -DUCX_INCLUDEDIR=$UCX_INCLUDE"
+#UCC install
+
+RUN git clone --single-branch -b master https://github.com/openucx/ucc.git $UCC_HOME
+RUN cd $UCC_HOME && \
+   ./autogen.sh && \
+   ./configure --prefix=$UCC_HOME/install --with-ucx=$UCX_SOURCE/install && \
+   make install
+
+#REDIS install
+RUN git clone https://github.com/redis/hiredis.git /hiredis && \
+    cd /hiredis && \
+    make && \
+    make install && \
+    git clone https://github.com/sewenew/redis-plus-plus.git /redis-plus-plus && \
+    cd /redis-plus-plus && \
+    mkdir build && \
+    cd build && \
+    cmake -DREDIS_PLUS_PLUS_CXX_STANDARD=11 .. && \
+    make && make install
+
+
+RUN cd $CYLON_HOME && \
+    python build.py -cmake-flags="-DCYLON_UCX=1 -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$UCC_HOME/install -DCYLON_USE_REDIS=1 -DUCX_INCLUDEDIR=$UCX_SOURCE/install/include -DUCX_LIBDIR=$UCX_SOURCE/install/lib" && \
+    -ipath="$CYLON_PREFIX" --cpp --python --test --pytest
+
 
 ENTRYPOINT ["/bin/bash"]
