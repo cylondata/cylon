@@ -32,7 +32,7 @@ ENV UCX_INCLUDE=$UCX_SOURCE/install/include
 WORKDIR $CYLON_HOME
 
 RUN git clone https://github.com/mstaylor/cylon.git $CYLON_HOME
-RUN git checkout -b ucc-reduce-ops
+RUN cd $CYLON_HOME && git checkout -b aws-docker-support origin/aws-docker-support
 
 RUN conda install -n base conda-libmamba-solver && conda config --set solver libmamba
 
