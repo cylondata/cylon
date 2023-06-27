@@ -40,7 +40,8 @@ RUN conda env create -f $CYLON_HOME/conda/environments/cylon.yml
 
 SHELL ["/bin/bash", "--login", "-c"]
 
-RUN apt-get update &&  apt-get install autoconf -y &&  apt-get install libtool -y && apt-get install cmake -y
+RUN apt-get update &&  apt-get install autoconf -y &&  apt-get install libtool -y && apt-get install cmake -y && \
+    apt-get install libnuma-dev -y
 
 #UCX install
 
