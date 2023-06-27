@@ -67,8 +67,7 @@ RUN git clone https://github.com/redis/hiredis.git /hiredis && \
 RUN . /opt/conda/etc/profile.d/conda.sh && \
     conda activate cylon_dev && \
     cd $CYLON_HOME && \
-    python build.py -cmake-flags="-DCYLON_UCX=1 -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$UCC_HOME/install -DCYLON_USE_REDIS=1 " && \
-    -ipath="$CYLON_PREFIX" --cpp --python --test --pytest
+    python build.py -cmake-flags="-DCYLON_UCX=1 -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$UCC_HOME/install -DCYLON_USE_REDIS=1 " -ipath="$CYLON_PREFIX" --cpp --python --test --pytest
 
 
 ENTRYPOINT ["/bin/bash"]
