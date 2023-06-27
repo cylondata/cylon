@@ -23,11 +23,6 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py310_23.3.1-0-L
 ENV CYLON_HOME=/cylon
 ENV CYLON_PREFIX=/cylon/install
 ENV UCC_HOME=/ucc
-ENV UCX_HOME=/ucx
-ENV UCX_SOURCE=$UCX_HOME/ucx-1.12.1
-ENV UCX_LIB=$UCX_SOURCE/install/lib
-ENV UCX_INCLUDE=$UCX_SOURCE/install/include
-
 
 WORKDIR $CYLON_HOME
 
