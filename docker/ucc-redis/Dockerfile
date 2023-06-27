@@ -43,19 +43,12 @@ SHELL ["/bin/bash", "--login", "-c"]
 RUN apt-get update &&  apt-get install autoconf -y &&  apt-get install libtool -y && apt-get install cmake -y && \
     apt-get install libnuma-dev -y
 
-#UCX install
-
-RUN wget https://github.com/openucx/ucx/releases/download/v1.12.1/ucx-1.12.1.tar.gz -P $UCX_HOME
-RUN cd $UCX_HOME && tar xzf ucx-1.12.1.tar.gz
-RUN cd $UCX_SOURCE && ./contrib/configure-release --prefix=$PWD/install
-RUN cd $UCX_SOURCE && make -j8 install
-
 #UCC install
 
 RUN git clone --single-branch -b master https://github.com/openucx/ucc.git $UCC_HOME
 RUN cd $UCC_HOME && \
    ./autogen.sh && \
-   ./configure --prefix=$UCC_HOME/install --with-ucx=$UCX_SOURCE/install && \
+   ./configure --prefix=$UCC_HOME/install --with-ucx=/opt/conda/envs/cylon_dev && \
    make install
 
 #REDIS install
@@ -72,7 +65,7 @@ RUN git clone https://github.com/redis/hiredis.git /hiredis && \
 
 
 RUN cd $CYLON_HOME && \
-    python build.py -cmake-flags="-DCYLON_UCX=1 -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$UCC_HOME/install -DCYLON_USE_REDIS=1 -DUCX_INCLUDEDIR=$UCX_SOURCE/install/include -DUCX_LIBDIR=$UCX_SOURCE/install/lib" && \
+    python build.py -cmake-flags="-DCYLON_UCX=1 -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$UCC_HOME/install -DCYLON_USE_REDIS=1 " && \
     -ipath="$CYLON_PREFIX" --cpp --python --test --pytest
 
 
