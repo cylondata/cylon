@@ -24,7 +24,7 @@ def get_file(file_name, bucket, object_name=None):
     # download the file
     s3_client = boto3.client('s3')
     try:
-        with open('FILE_NAME', 'wb') as f:
+        with open(file_name, 'wb') as f:
             s3_client.download_fileobj(bucket, object_name, f)
         return f
     except ClientError as e:
