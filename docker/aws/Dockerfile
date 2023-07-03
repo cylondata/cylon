@@ -9,7 +9,6 @@ ENV PATH /opt/conda/bin:$PATH
 ENV CYLON_HOME=/cylon
 ENV CYLON_PREFIX=/cylon/install
 ENV UCC_HOME=/ucc
-ENV SCRIPT_ARGS=""
 
 WORKDIR $CYLON_HOME
 
@@ -71,4 +70,4 @@ RUN . /opt/conda/etc/profile.d/conda.sh && \
 
 RUN echo "Script Arg: $SCRIPT_ARGS"
 
-ENTRYPOINT ["python", "/cylon/aws/scripts/S3_run_script.py", "$SCRIPT_ARGS"]
+ENTRYPOINT ["python", "/cylon/aws/scripts/S3_run_script.py"]

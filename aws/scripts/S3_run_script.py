@@ -8,6 +8,12 @@ import os
 
 import logging
 
+def environ_or_required(key):
+    return (
+        {'default': os.environ.get(key)} if os.environ.get(key)
+        else {'required': True}
+    )
+
 def get_file(file_name, bucket, object_name=None):
     """Upload a file to an S3 bucket
 
@@ -45,12 +51,12 @@ def join(data=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="run S3 script")
 
-    parser.add_argument('-b', dest='s3_bucket', type=str, help="S3 Bucket Name", required=True)
-    parser.add_argument('-o', dest='s3_object_name', type=str, help="S3 Object Name", required=True)
+    parser.add_argument('-b', dest='s3_bucket', type=str, help="S3 Bucket Name", **environ_or_required('S3_BUCKET'))
+    parser.add_argument('-o', dest='s3_object_name', type=str, help="S3 Object Name", **environ_or_required('S3_OBJECT_NAME'))
     parser.add_argument('-f', dest='output_filename', type=str, help="Output filename",
-                        required=True)
+                        **environ_or_required('OUTPUT_FILENAME'))
     parser.add_argument('-a', dest='args', type=str, help="script exec arguments",
-                        required=True)
+                        **environ_or_required('EXEC_ARGS'))
 
 
 
