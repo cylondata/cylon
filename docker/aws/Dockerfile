@@ -68,6 +68,5 @@ RUN . /opt/conda/etc/profile.d/conda.sh && \
     cd $CYLON_HOME && \
     python build.py -cmake-flags="-DCYLON_UCX=1 -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$UCC_HOME/install -DCYLON_USE_REDIS=1 " -ipath="$CYLON_PREFIX" --cpp --python --test --pytest
 
-RUN echo "Script Arg: $SCRIPT_ARGS"
 
 ENTRYPOINT ["python", "/cylon/aws/scripts/S3_run_script.py"]
