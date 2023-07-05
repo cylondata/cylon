@@ -36,12 +36,14 @@ RUN cd $CYLON_HOME && git checkout -b aws-docker-support origin/aws-docker-suppo
 
 SHELL ["/bin/bash", "--login", "-c"]
 
+RUN conda env create -f $CYLON_HOME/conda/environments/cylon.yml
+
 RUN . /opt/conda/etc/profile.d/conda.sh && \
     conda activate cylon_dev && \
     conda install -n base conda-libmamba-solver && conda config --set solver libmamba && \
     conda install -c anaconda boto3 && pip install cloudmesh-openstack
 
-RUN conda env create -f $CYLON_HOME/conda/environments/cylon.yml
+
 
 RUN apt-get update &&  apt-get install autoconf -y &&  apt-get install libtool -y && apt-get install cmake -y && \
     apt-get install libnuma-dev -y
