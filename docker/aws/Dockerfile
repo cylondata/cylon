@@ -24,7 +24,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py310_23.3.1-0-L
     ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
     echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
     echo "conda activate cylon_dev" >> ~/.bashrc && \
-    echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CYLON_PREFIX" >> ~/.bashrc
+    echo "export LD_LIBRARY_PATH=$CYLON_PREFIX"/lib >> ~/.bashrc
 
 
 
@@ -75,4 +75,4 @@ RUN . /opt/conda/etc/profile.d/conda.sh && \
     python build.py -cmake-flags="-DCYLON_UCX=1 -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$UCC_HOME/install -DCYLON_USE_REDIS=1 " -ipath="$CYLON_PREFIX" --cpp --python --test --pytest
 
 
-ENTRYPOINT ["/bin/bash", "python", "/cylon/aws/scripts/S3_run_script.py"]
+ENTRYPOINT ["/bin/bash", "/opt/conda/envs/cylon_dev/bin/python", "/cylon/aws/scripts/S3_run_script.py"]
