@@ -39,13 +39,13 @@ import radical.pilot as rp
 # For terminal output, set RADICAL_LOG_TGT=stderr or RADICAL_LOG_TGT=stdout
 logger = ru.Logger('raptor')
 PWD    = os.path.abspath(os.path.dirname(__file__))
-RANKS  = 10
+RANKS  = 398
 
 
 # ------------------------------------------------------------------------------
 #
 @rp.pythontask
-def cylon_join(comm=None, data={'unique': 0.9, 'scaling': 'w', 'rows':3500, 'it': 10}):
+def cylon_join(comm=None, data={'unique': 0.9, 'scaling': 'w', 'rows':20000000, 'it': 10}):
 
     import time
     import argparse
@@ -55,7 +55,7 @@ def cylon_join(comm=None, data={'unique': 0.9, 'scaling': 'w', 'rows':3500, 'it'
     from numpy.random import default_rng
     from pycylon.frame import CylonEnv, DataFrame
     from pycylon.net import MPIConfig
-
+    
     comm = comm
     data = data
 
@@ -93,6 +93,59 @@ def cylon_join(comm=None, data={'unique': 0.9, 'scaling': 'w', 'rows':3500, 'it'
             avg_t = sum_t / env.world_size
             print("### ", data['scaling'], env.world_size, num_rows, max_val, i, avg_t, tot_l)
 
+    if env.rank == 0:
+        pass
+    env.finalize()
+    
+    
+
+def cylon_slice(comm=None, data={'unique': 0.9, 'scaling': 'w', 'rows':20000000, 'it': 10}):
+
+    import time
+    import argparse
+
+    import pandas as pd
+
+    from numpy.random import default_rng
+    from pycylon.frame import CylonEnv, DataFrame
+    from pycylon.net import MPIConfig
+    
+    comm = comm
+    data = data
+
+    config = MPIConfig(comm)
+    env = CylonEnv(config=config, distributed=True)
+
+    u = data['unique']
+
+    if data['scaling'] == 'w':  # weak
+        num_rows = data['rows']
+        max_val = num_rows * env.world_size
+    else:  # 's' strong
+        max_val = data['rows']
+        num_rows = int(data['rows'] / env.world_size)
+
+    rng = default_rng(seed=env.rank)
+    data1 = rng.integers(0, int(max_val * u), size=(num_rows, 2))
+    data2 = rng.integers(0, int(max_val * u), size=(num_rows, 2))
+
+    df1 = DataFrame(pd.DataFrame(data1).add_prefix("col"))
+    df2 = DataFrame(pd.DataFrame(data2).add_prefix("col"))
+    
+    
+    for i in range(data['it']):
+        env.barrier()
+        t1 = time.time()
+        df3 = df1[0:20000000, env] # distributed slice
+        env.barrier()
+        t2 = time.time()
+        t = (t2 - t1)
+        sum_t = comm.reduce(t)
+        tot_l = comm.reduce(len(df3))
+
+        if env.rank == 0:
+            avg_t = sum_t / env.world_size
+            print("### ", data['scaling'], env.world_size, num_rows, max_val, i, avg_t, tot_l)
 
     if env.rank == 0:
         pass
@@ -134,7 +187,7 @@ if __name__ == '__main__':
     try:
         pd = rp.PilotDescription(cfg.pilot_descr)
 
-        pd.cores  = 40
+        pd.cores  = 400
         pd.gpus   = 0
         pd.runtime = 60
 
@@ -212,7 +265,7 @@ if __name__ == '__main__':
         tds = list()
         for i in range(1):
 
-            bson = cylon_join(comm=None, data={'unique': 0.9, 'scaling': 'w', 'rows':3500, 'it': 10})
+            bson = cylon_join(comm=None, data={'unique': 0.9, 'scaling': 'w', 'rows':20000000, 'it': 10})
             tds.append(rp.TaskDescription({
                 'uid'             : 'task.cylon.w.%06d' % i,
                 'mode'            : rp.TASK_FUNC,
@@ -226,7 +279,7 @@ if __name__ == '__main__':
             tasks = tmgr.submit_tasks(tds)
 
             logger.info('Wait for tasks %s', [t.uid for t in tds])
-            tmgr.wait_tasks(uids=[t.uid for t in tasks], timeout=60)
+            tmgr.wait_tasks(uids=[t.uid for t in tasks])
 
             for task in tasks:
                 report.info('id: %s [%s]:\n    out: %s\n    ret: %s\n'

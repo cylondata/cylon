@@ -61,13 +61,13 @@ class MyMaster(rp.raptor.Master):
     #
     def submit(self):
 
-        self._prof.prof('create_start')
+       # self._prof.prof('create_start')
 
         # create additional tasks to be distributed to the workers.
 
-        tds = list()
+        #tds = list()
 
-        self._prof.prof('create_stop')
+        #self._prof.prof('create_stop')
 
         # wait for outstanding tasks to complete
         while True:
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     # those workers and execute them.  Insert one smaller worker (see above)
     # NOTE: this assumes a certain worker size / layout
     out('workers: %d' % n_workers)
-    descr['ranks']         = 10 #nodes_per_worker * cores_per_node
+    descr['ranks']         = nodes_per_worker * cores_per_node
     descr['gpus_per_rank'] = nodes_per_worker * gpus_per_node
     worker_ids = master.submit_workers(
                  [rp.TaskDescription(descr) for _ in range(n_workers)])
@@ -193,7 +193,7 @@ if __name__ == '__main__':
     master.submit()
 
     # let some time pass for client side tasks to complete
-    time.sleep(60)
+    time.sleep(600)
 
     out('stop')
     # TODO: can be run from thread?
