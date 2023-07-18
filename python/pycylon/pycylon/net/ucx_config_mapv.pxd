@@ -16,8 +16,10 @@
 UCXConfigMapV Type mapping from Cylon C++ API
 '''
 
-cdef extern from "../../../../cpp/src/cylon/net/ucx/ucx_communicator.hpp" namespace "cylon::net":
+IF CYTHON_UCX & CYTHON_UCC:
 
-    cdef enum CUCXConfigMapV 'cylon::net::UCXConfigMapV':
-        _PORT 'cylon::net::UCXConfigMapV::PORT'
-        _ADDRESS 'cylon::net::UCXConfigMapV::ADDRESS'
+    cdef extern from "../../../../cpp/src/cylon/net/ucx/ucx_communicator.hpp" namespace "cylon::net":
+
+        cdef enum CUCXConfigMapV 'cylon::net::UCXConfigMapV':
+            _PORT 'cylon::net::UCXConfigMapV::PORT'
+            _ADDRESS 'cylon::net::UCXConfigMapV::ADDRESS'

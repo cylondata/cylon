@@ -33,7 +33,7 @@ class CommConfig {
 
       auto iter = this->config.find(key);
       if (iter != this->config.end()) {
-          return nullptr;
+          return {};
       }
 	return this->config.find(key)->second;
   }

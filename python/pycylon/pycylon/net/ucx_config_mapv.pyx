@@ -16,8 +16,10 @@
 Mapping Cylon C++ UCXConfigMapV Type with PyCylon CommType
 '''
 
-from pycylon.net.ucx_config_mapv cimport CUCXConfigMapV
+IF CYTHON_UCX & CYTHON_UCC:
 
-cpdef enum CommType:
-    PORT = CUCXConfigMapV._PORT
-    ADDRESS = CUCXConfigMapV._ADDRESS
+    from pycylon.net.ucx_config_mapv cimport CUCXConfigMapV
+
+    cpdef enum CommType:
+        PORT = CUCXConfigMapV._PORT
+        ADDRESS = CUCXConfigMapV._ADDRESS

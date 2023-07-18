@@ -135,7 +135,13 @@ UCXCommunicator::UCXCommunicator(MemoryPool *pool)
     : Communicator(pool, -1, -1) {}
 
 UCXCommunicator::UCXCommunicator(MemoryPool *pool, std::string address, int port)
-     : UCXCommunicator(pool) {}
+     : UCXCommunicator(pool) {
+    if (port != -1) {
+        this->port = port;
+        this->address = address;
+        this->addressTyp = UCX_ADDRESS_TYP::SOCK;
+    }
+}
 
 UCXCommunicator::UCXCommunicator(MemoryPool *pool, bool externally_init, MPI_Comm comm)
                 : Communicator(pool, -1, -1),
@@ -169,8 +175,21 @@ Status UCXCommunicator::MakeOOB(const std::shared_ptr<CommConfig> &config, Memor
                                 std::shared_ptr<Communicator> *out, const std::shared_ptr<CommConfig> &parent_config) {
     const auto &ucc_config = std::static_pointer_cast<UCXConfig>(config);
     auto oob_context = ucc_config->getOOBContext();
+    auto portStr = (+UCXConfigMapV::PORT)._to_string();
 
-    *out = std::make_shared<UCXCommunicator>(pool);
+    auto portConf = parent_config->GetConfig(portStr);
+
+    if (!portConf.empty()) {
+        auto addressConf = parent_config->GetConfig((+UCXConfigMapV::ADDRESS)._to_string());
+        auto port = std::stoi(portConf);
+        *out = std::make_shared<UCXCommunicator>(pool, addressConf, port);
+
+    } else {
+        *out = std::make_shared<UCXCommunicator>(pool);
+    }
+
+
+
     auto &comm = static_cast<UCXCommunicator &>(**out);
     comm.oobContext = oob_context;
 
