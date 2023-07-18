@@ -20,7 +20,9 @@
 #include <cylon/net/ucx/ucx_operations.hpp>
 #include <cylon/net/ucx/mpi_ucx_ucc_oob_context.hpp>
 
+
 #include "cylon/util/macros.hpp"
+#include "cylon/util/enum.hpp"
 
 #ifdef BUILD_CYLON_UCC
 #include <ucc/api/ucc.h>
@@ -28,6 +30,14 @@
 
 namespace cylon {
 namespace net {
+
+
+    BETTER_ENUM(UCXConfigMapV, char, PORT, ADDRESS)
+
+
+
+
+
 class UCXConfig : public CommConfig {
 
 
@@ -48,6 +58,8 @@ class UCXConfig : public CommConfig {
  private:
   std::shared_ptr<UCXOOBContext> oobContext = nullptr;
   MPI_Comm comm_;
+  std::string listen_address;
+  int listen_port;
 };
 
 #ifdef BUILD_CYLON_UCC
@@ -71,6 +83,8 @@ class UCXCommunicator : public Communicator {
  public:
     explicit UCXCommunicator(MemoryPool *pool);
     UCXCommunicator(MemoryPool *pool, bool externally_init, MPI_Comm comm);
+
+    UCXCommunicator(MemoryPool *pool, std::string address, int port);
 
 
 
@@ -108,7 +122,8 @@ class UCXCommunicator : public Communicator {
                      MemoryPool *pool, std::shared_ptr<Communicator> *out);
 
     static Status MakeOOB(const std::shared_ptr<CommConfig> &config,
-                             MemoryPool *pool, std::shared_ptr<Communicator> *out);
+                             MemoryPool *pool, std::shared_ptr<Communicator> *out,
+                          const std::shared_ptr<CommConfig> &parent_config);
 
   // # UCX specific attributes - These need to be passed to the channels created
   // from the communicator The worker for receiving
@@ -124,6 +139,14 @@ class UCXCommunicator : public Communicator {
 
     bool externally_init = false;
     MPI_Comm mpi_comm;
+
+private:
+    enum UCX_ADDRESS_TYP {
+        UCP,
+        SOCK
+    };
+
+    UCX_ADDRESS_TYP addressTyp = UCX_ADDRESS_TYP::UCP;
 
 };
 
@@ -172,7 +195,8 @@ class UCXUCCCommunicator : public Communicator {
 
 private:
     static Status MakeOOB(std::shared_ptr<UCCOOBContext> &ucc_oob_ctx,
-                       MemoryPool *pool, std::shared_ptr<Communicator> *out);
+                       MemoryPool *pool, std::shared_ptr<Communicator> *out,
+                          const std::shared_ptr<CommConfig> &config);
 
 };
 #endif

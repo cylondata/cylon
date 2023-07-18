@@ -134,6 +134,9 @@ Status UCXCommunicator::AllReduce(const std::shared_ptr<Column> &column,
 UCXCommunicator::UCXCommunicator(MemoryPool *pool)
     : Communicator(pool, -1, -1) {}
 
+UCXCommunicator::UCXCommunicator(MemoryPool *pool, std::string address, int port)
+     : UCXCommunicator(pool) {}
+
 UCXCommunicator::UCXCommunicator(MemoryPool *pool, bool externally_init, MPI_Comm comm)
                 : Communicator(pool, -1, -1),
                   externally_init(externally_init), mpi_comm(comm) {}
@@ -163,7 +166,7 @@ Status UCXCommunicator::Allgather(const std::shared_ptr<Scalar> &value,
 }
 
 Status UCXCommunicator::MakeOOB(const std::shared_ptr<CommConfig> &config, MemoryPool *pool,
-                                std::shared_ptr<Communicator> *out) {
+                                std::shared_ptr<Communicator> *out, const std::shared_ptr<CommConfig> &parent_config) {
     const auto &ucc_config = std::static_pointer_cast<UCXConfig>(config);
     auto oob_context = ucc_config->getOOBContext();
 
@@ -412,12 +415,15 @@ UCXUCCCommunicator::UCXUCCCommunicator(
       oobContext(oob_context) {}
 
 Status UCXUCCCommunicator::MakeOOB(std::shared_ptr<UCCOOBContext> &ucc_oob_ctx,
-                                   MemoryPool *pool, std::shared_ptr<Communicator> *out) {
+                                   MemoryPool *pool, std::shared_ptr<Communicator> *out,
+                                   const std::shared_ptr<CommConfig> &config) {
     std::shared_ptr<Communicator> ucx_comm;
     auto ucx_config =
             std::make_shared<UCXConfig>(ucc_oob_ctx->makeUCXOOBContext());
 
-    UCXCommunicator::MakeOOB(ucx_config, pool, &ucx_comm);
+    UCXCommunicator::MakeOOB(ucx_config, pool, &ucx_comm, config);
+
+
 
     *out = std::make_shared<UCXUCCCommunicator>(std::move(ucx_comm), ucc_oob_ctx);
 
@@ -515,7 +521,7 @@ Status UCXUCCCommunicator::Make(const std::shared_ptr<CommConfig> &config,
   auto ucc_oob_ctx = ucc_config->getOOBContext();
 
   if (ucc_oob_ctx != nullptr) { //call MPI Com
-      return UCXUCCCommunicator::MakeOOB(ucc_oob_ctx, pool, out);
+      return UCXUCCCommunicator::MakeOOB(ucc_oob_ctx, pool, out, config);
   }
 
           std::shared_ptr<Communicator> ucx_comm;

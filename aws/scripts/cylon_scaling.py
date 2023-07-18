@@ -51,6 +51,8 @@ def join(data=None):
     if ucc_config is None:
         print("unable to initialize uccconfig")
 
+
+
     env = CylonEnv(config=ucc_config, distributed=True)
 
     context = env.context
@@ -115,7 +117,8 @@ if __name__ == "__main__":
     parser.add_argument('-w', dest='world_size', type=int, help="world size", required=True)
     parser.add_argument("-r", dest='redis_host', type=str, help="redis address, default to 127.0.0.1",
                         default="127.0.0.1")
-    parser.add_argument("-p", dest='redis_port', type=int, help="name of redis port", default=6379)
+    parser.add_argument("-p1", dest='redis_port', type=int, help="name of redis port", default=6379)
+    parser.add_argument("-p2", dest='ucx_port', type=int, help='ucx listen port', default=50002)
     parser.add_argument('-f1', dest='output_scaling_filename', type=str, help="Output filename for scaling results",
                         required=True)
     parser.add_argument('-f2', dest='output_summary_filename', type=str, help="Output filename for scaling summary results",
