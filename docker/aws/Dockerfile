@@ -24,7 +24,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py310_23.3.1-0-L
     ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
     echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
     echo "conda activate cylon_dev" >> ~/.bashrc && \
-    echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CYLON_PREFIX" >> ~/.bashrc
+    echo "export LD_LIBRARY_PATH=$CYLON_PREFIX"/lib >> ~/.bashrc
 
 
 
@@ -32,12 +32,18 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py310_23.3.1-0-L
 RUN git clone https://github.com/mstaylor/cylon.git $CYLON_HOME
 RUN cd $CYLON_HOME && git checkout -b aws-docker-support origin/aws-docker-support
 
-RUN conda install -n base conda-libmamba-solver && conda config --set solver libmamba && \
-    conda install -c anaconda boto3 && pip install cloudmesh-openstack
+
+
+SHELL ["/bin/bash", "--login", "-c"]
 
 RUN conda env create -f $CYLON_HOME/conda/environments/cylon.yml
 
-SHELL ["/bin/bash", "--login", "-c"]
+RUN . /opt/conda/etc/profile.d/conda.sh && \
+    conda activate cylon_dev && \
+    conda install -n base conda-libmamba-solver && conda config --set solver libmamba && \
+    conda install -c anaconda boto3 -y && pip install cloudmesh-openstack
+
+
 
 RUN apt-get update &&  apt-get install autoconf -y &&  apt-get install libtool -y && apt-get install cmake -y && \
     apt-get install libnuma-dev -y
@@ -68,5 +74,6 @@ RUN . /opt/conda/etc/profile.d/conda.sh && \
     cd $CYLON_HOME && \
     python build.py -cmake-flags="-DCYLON_UCX=1 -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$UCC_HOME/install -DCYLON_USE_REDIS=1 " -ipath="$CYLON_PREFIX" --cpp --python --test --pytest
 
+RUN chmod 0755 /cylon/aws/scripts/runCylon.sh
 
-ENTRYPOINT ["python", "/cylon/aws/scripts/S3_run_script.py"]
+ENTRYPOINT ["/cylon/aws/scripts/runCylon.sh"]

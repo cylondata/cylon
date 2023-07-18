@@ -1,0 +1,112 @@
+{
+    "taskDefinition": {
+        "containerDefinitions": [
+            {
+                "name": "cylon-ucc-ucx-redis",
+                "image": "448324707516.dkr.ecr.us-east-1.amazonaws.com/cylon-ucc-ucx-redis:latest",
+                "cpu": 8192,
+                "memory": 32768,
+                "portMappings": [],
+                "essential": true,
+                "command": [
+                    "python",
+                    "/cylon/aws/scripts/S3_run_script.py"
+                ],
+                "environment": [
+                    {
+                        "name": "S3_BUCKET",
+                        "value": "staylor.dev2"
+                    },
+                    {
+                        "name": "S3_OBJECT_NAME",
+                        "value": "cylon/scripts/cylon_scaling.py"
+                    },
+                    {
+                        "name": "OUTPUT_FILENAME",
+                        "value": "cylon_scaling.py"
+                    },
+                    {
+                        "name": "EXEC_ARGS",
+                        "value": "-n 5000 -s w -w 1 -r cylon-redis.mveu6e.0001.use1.cache.amazonaws.com -f1 cylon_scaling_test_fargate -b staylor.dev2 -o1 cylon/scaling/cylon_scaling_test_fargate.txt -f2 cylon_summary_test_fargate -o2 cylon/scaling/cylon_summary_test_fargate.txt"
+                    }
+                ],
+                "environmentFiles": [],
+                "mountPoints": [],
+                "volumesFrom": [],
+                "ulimits": [],
+                "logConfiguration": {
+                    "logDriver": "awslogs",
+                    "options": {
+                        "awslogs-create-group": "true",
+                        "awslogs-group": "/ecs/cylon-ucc-ucx-redis-task",
+                        "awslogs-region": "us-east-1",
+                        "awslogs-stream-prefix": "ecs"
+                    }
+                },
+              "linuxParameters": {
+                "sharedMemorySize": 8589934592
+              }
+            }
+        ],
+        "family": "cylon-ucc-ucx-redis-task",
+        "taskRoleArn": "arn:aws:iam::448324707516:role/ECSTaskRole",
+        "executionRoleArn": "arn:aws:iam::448324707516:role/ecsTaskExecutionRole",
+        "networkMode": "awsvpc",
+        "revision": 1,
+        "volumes": [],
+        "status": "ACTIVE",
+        "requiresAttributes": [
+            {
+                "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
+            },
+            {
+                "name": "ecs.capability.execution-role-awslogs"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.ecr-auth"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+            },
+            {
+                "name": "ecs.capability.increased-task-cpu-limit"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.task-iam-role"
+            },
+            {
+                "name": "ecs.capability.execution-role-ecr-pull"
+            },
+            {
+                "name": "ecs.capability.extensible-ephemeral-storage"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
+            },
+            {
+                "name": "ecs.capability.task-eni"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.docker-remote-api.1.29"
+            }
+        ],
+        "placementConstraints": [],
+        "compatibilities": [
+            "EC2",
+            "FARGATE"
+        ],
+        "runtimePlatform": {
+            "cpuArchitecture": "X86_64",
+            "operatingSystemFamily": "LINUX"
+        },
+        "requiresCompatibilities": [
+            "FARGATE"
+        ],
+        "cpu": "8192",
+        "memory": "32768",
+        "ephemeralStorage": {
+            "sizeInGiB": 100
+        }
+    },
+    "tags": []
+}
