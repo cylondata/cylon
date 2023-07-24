@@ -85,8 +85,30 @@ namespace cylon {
         };
 
 #endif
+        class UCXSocketData {
+            public:
+                UCXSocketData(std::string address, int port);
+                ~UCXSocketData()= default;
+
+            const std::string &getAddress() const;
+
+            int getPort() const;
+
+        private:
+                std::string address;
+                int port;
+
+
+
+        };
 
         class UCXCommunicator : public Communicator {
+
+        private:
+            enum UCX_ADDRESS_TYP {
+                UCP,
+                SOCK
+            };
         public:
             explicit UCXCommunicator(MemoryPool *pool);
 
@@ -107,6 +129,14 @@ namespace cylon {
             void Barrier() override;
 
             CommType GetCommType() const override;
+
+            UCX_ADDRESS_TYP getAddressTyp() const;
+
+            const std::string &getAddress() const;
+
+            int getPort() const;
+
+            sa_family_t getAiFamily() const;
 
             Status AllGather(const std::shared_ptr<Table> &table,
                              std::vector<std::shared_ptr<Table>> *out) const override;
@@ -139,6 +169,8 @@ namespace cylon {
                                   MemoryPool *pool, std::shared_ptr<Communicator> *out,
                                   const std::shared_ptr<CommConfig> &parent_config);
 
+            void set_sock_addr(const char *address_str, struct sockaddr_storage *saddr);
+
             // # UCX specific attributes - These need to be passed to the channels created
             // from the communicator The worker for receiving
             ucp_worker_h ucpRecvWorker{};
@@ -155,14 +187,14 @@ namespace cylon {
             MPI_Comm mpi_comm;
 
         private:
-            enum UCX_ADDRESS_TYP {
-                UCP,
-                SOCK
-            };
 
             UCX_ADDRESS_TYP addressTyp = UCX_ADDRESS_TYP::UCP;
             std::string address;
             int port;
+            sa_family_t ai_family   = AF_INET;
+
+
+
 
         };
 
