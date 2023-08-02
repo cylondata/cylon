@@ -4,7 +4,7 @@
 
 - To build the Docker image, 
 ```bash
-docker build -t cylondata/cylon .
+sudo docker build --shm-size 8589934592 -t cylondata/cylon-ucc
 ```
 
 - To run a container
