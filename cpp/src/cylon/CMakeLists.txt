@@ -220,8 +220,6 @@ add_library(cylon SHARED
         util/to_string.hpp
         util/uuid.cpp
         util/uuid.hpp
-        util/PackString.hpp
-        util/PackString.cpp
         scalar.cpp
         scalar.hpp
         net/ops/base_ops.hpp

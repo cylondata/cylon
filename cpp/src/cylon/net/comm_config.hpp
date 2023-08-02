@@ -32,10 +32,10 @@ class CommConfig {
   std::string GetConfig(const std::string &key) {
 
       auto iter = this->config.find(key);
-      if (iter != this->config.end()) {
+      if (iter == this->config.end()) {
           return {};
       }
-	return this->config.find(key)->second;
+	return iter->second;
   }
  public:
   virtual CommType Type() = 0;
