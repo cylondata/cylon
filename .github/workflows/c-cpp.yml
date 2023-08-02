@@ -22,7 +22,7 @@ jobs:
     - name: Installing UCX
       run: wget https://github.com/openucx/ucx/releases/download/v1.13.1/ucx-1.13.1.tar.gz -P $HOME/ucx && (cd $HOME/ucx && tar xzf ucx-1.13.1.tar.gz) && (cd $HOME/ucx/ucx-1.13.1 && ./contrib/configure-release --prefix=$PWD/install --with-go=no && make -j8 install)
     - name: Build and test
-      run: python3 -m venv ENV && ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --cpp --test --python --pytest --cmake-flags "-DCYLON_UCX=ON -DUCX_LIBDIR=$HOME/ucx/ucx-1.13.1/install/lib -DUCX_INCLUDEDIR=$HOME/ucx/ucx-1.13.1/install/include"
+      run: python3 -m venv ENV && ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --cpp --test --cpp --python_with_pyarrow --cython --pytest --cmake-flags "-DCYLON_UCX=ON -DUCX_LIBDIR=$HOME/ucx/ucx-1.13.1/install/lib -DUCX_INCLUDEDIR=$HOME/ucx/ucx-1.13.1/install/include"
     - name: Build java
       run: ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --java
 
