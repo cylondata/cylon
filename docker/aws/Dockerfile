@@ -10,6 +10,14 @@ ENV CYLON_HOME=/cylon
 ENV CYLON_PREFIX=/cylon/install
 ENV UCC_HOME=/ucc
 
+#give ARG EXPOSE_ENV a default value
+ARG EXPOSE_ENV=33000
+
+#assign the EXPOSE_ENV arg to the EXPOSE_ENV ENV so that it can be accessed
+#by the subsequent RUN call within the container
+ENV EXPOSE_ENV $EXPOSE_ENV
+
+
 WORKDIR $CYLON_HOME
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -y --fix-missing && \
@@ -76,6 +84,6 @@ RUN . /opt/conda/etc/profile.d/conda.sh && \
 
 RUN chmod 0755 /cylon/aws/scripts/runCylon.sh
 
-EXPOSE 33000
+EXPOSE $EXPOSE_ENV
 
 ENTRYPOINT ["/cylon/aws/scripts/runCylon.sh"]

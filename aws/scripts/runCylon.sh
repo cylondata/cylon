@@ -12,5 +12,5 @@ conda activate cylon_dev
 set -euo pipefail
 
 export LD_LIBRARY_PATH=/cylon/install/lib
-export UCX_TCP_PORT_RANGE="33000"
+
 exec python /cylon/aws/scripts/S3_run_script.py
