@@ -33,5 +33,5 @@ RUN mkdir /code && chown cylon /code
 
 USER cylon
 WORKDIR /home/cylon
-EXPOSE 33000
+
 ENTRYPOINT ["/bin/bash"]

@@ -76,4 +76,6 @@ RUN . /opt/conda/etc/profile.d/conda.sh && \
 
 RUN chmod 0755 /cylon/aws/scripts/runCylon.sh
 
+EXPOSE 33000
+
 ENTRYPOINT ["/cylon/aws/scripts/runCylon.sh"]
