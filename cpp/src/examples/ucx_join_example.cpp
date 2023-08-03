@@ -20,9 +20,6 @@
 #include <cylon/table.hpp>
 
 int main(int argc, char *argv[]) {
-#ifdef BUILD_CYLON_UCC // temporarily prevent build if using UCC
-  return 0;
-#else
   if (argc < 3) {
     LOG(ERROR) << "There should be two arguments with paths to csv files";
     return 1;
@@ -81,5 +78,4 @@ int main(int argc, char *argv[]) {
 
   ctx->Finalize();
   return 0;
-#endif
 }
