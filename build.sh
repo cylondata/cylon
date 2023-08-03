@@ -358,7 +358,7 @@ build_pyarrow() {
 
 build_python_pyarrow() {
   print_line
-  echo "Building Pyarrow"
+  echo "Building Pycylon"
   source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   read_python_requirements
   pip install pyarrow==9.0.0 || exit 1
