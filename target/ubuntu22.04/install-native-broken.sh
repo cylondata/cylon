@@ -1,3 +1,7 @@
+#
+# WARNING, DO NOT USE THIS install SCRIPT BUT USE install-conda.sh
+#
+
 #!/bin/sh
 #
 #  time sh target/ubuntu22.04/install.sh 
