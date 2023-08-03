@@ -9,9 +9,9 @@ dependencies:
   - pyarrow=9.0.0
   - glog
   - openmpi>=4.1.2
-  - cython>=0.29,<0.30
-  - numpy
-  - pandas>=1.0,<1.6.0dev0
+  - cython>=0.29.31,<3
+  - numpy<1.24.4
+  - pandas>=1.0,<2.0.0
   - fsspec>=0.6.0
   - setuptools
   # they are not needed for using pygcylon or compiling it

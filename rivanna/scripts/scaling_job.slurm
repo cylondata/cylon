@@ -1,26 +1,30 @@
 #!/bin/bash
+#SBATCH --nodes=4
+#SBATCH --ntasks-per-node=40
+#SBATCH --exclusive
+#SBATCH --time=1:00:00
+#SBATCH --partition=bii
 #SBATCH -A bii_dsc_community
-#SBATCH -p standard
-#SBATCH -N 1
-#SBATCH -c 10
-#SBATCH -t 10:00:00
+#SBATCH --output=rivanna/scripts/cylogs/mpirun-96t-4n-160w-35m-%x-%j.out
+#SBATCH --error=rivanna/scripts/cylogs/mpirun-96t-4n-160w-35m-%x-%j.err
 
-PARENT=$HOME/.conda/envs  # parent directory of conda env
-ENV=cylon_rivanna_1         # name of env
 
-#---- DO NOT MODIFY THIS SECTION ----
-DIR=$PARENT/$ENV
-module purge
-module load anaconda
-source activate cylon_rivanna_1
+module load gcc/9.2.0 openmpi/3.1.6 cmake/3.23.3 python/3.7.7
 
-export OMPI_MCA_pml="ucx" OMPI_MCA_osc="ucx" \
-       PATH=$DIR/bin:$DIR/libexec/gcc/x86_64-conda-linux-gnu/12.2.0:$PATH \
-       LD_LIBRARY_PATH=$DIR/lib:$LD_LIBRARY_PATH \
-       PYTHONPATH=$DIR/lib/python3.10/site-packages \
-       CC=$(which mpicc) CXX=$(which mpicxx)
+#module load gcc/11.2.0
+#module load openmpi/4.1.4
+#module load python/3.11.1
+
+#source $HOME/CYLON/bin/activate
+source $HOME/cylon_rp_venv/bin/activate
+
+BUILD_PATH=$PWD/build
+
+export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/lib64:$BUILD_PATH/lib64:$BUILD_PATH/lib:$LD_LIBRARY_PATH
+
 
 which python gcc g++
-#---- (END) ----
 
-python rivanna/scripts/cylon_scaling.py -n 8
+
+#srun -n 160 python $PWD/rivanna/scripts/cylon_scaling.py -n 35000000
+mpirun -np 160 python rivanna/scripts/cylon_scaling.py -n 35000000

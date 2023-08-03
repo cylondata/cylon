@@ -358,10 +358,10 @@ build_pyarrow() {
 
 build_python_pyarrow() {
   print_line
-  echo "Building Python"
+  echo "Building Pycylon"
   source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   read_python_requirements
-  pip install pyarrow==5.0.0 || exit 1
+  pip install pyarrow==9.0.0 || exit 1
 
   ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))') || exit 1
   LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
