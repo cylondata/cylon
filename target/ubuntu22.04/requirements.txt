@@ -1,0 +1,4 @@
+pytest
+pytest-mpi
+numpy
+pyarrow==9.0.0
