@@ -32,7 +32,7 @@ jobs:
       # Specify the correct host compilers
       - name: Install/Select gcc and g++
         run: |
-          apt-get install -y gcc-${{ matrix.gcc }} g++-${{ matrix.gcc }} git
+          sudo apt-get install -y gcc-${{ matrix.gcc }} g++-${{ matrix.gcc }} git
           echo "CC=/usr/bin/gcc-${{ matrix.gcc }}" >> $GITHUB_ENV
           echo "CXX=/usr/bin/g++-${{ matrix.gcc }}" >> $GITHUB_ENV
 
@@ -58,14 +58,14 @@ jobs:
           git clone https://github.com/redis/hiredis.git $HOME/hiredis
           cd $HOME/hiredis
           make 
-          make install
+          sudo make install
           git clone https://github.com/sewenew/redis-plus-plus.git $HOME/redis-plus-plus
           cd $HOME/redis-plus-plus
           mkdir build
           cd build
           cmake -DREDIS_PLUS_PLUS_CXX_STANDARD=11 ..
           make
-          make install
+          sudo make install
 
       - name: Build cylon, pycylon and run cpp test
         run: python build.py -cmake-flags="-DCYLON_UCX=1 -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$HOME/ucc/install -DCYLON_USE_REDIS=1" -ipath="$HOME/cylon/install" --cpp --python --test
