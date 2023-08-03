@@ -51,6 +51,10 @@ macro(cylon_add_exe EXENAME)
         endif (CYLON_UCC)
     endif (CYLON_UCX)
 
+    if(CYLON_USE_REDIS)
+        target_link_libraries(${EXENAME} ${REDIS_LIBRARIES})
+    endif(CYLON_USE_REDIS)
+
     install(TARGETS ${EXENAME} RUNTIME DESTINATION cylon/examples)
 endmacro(cylon_add_exe)
 
@@ -83,6 +87,9 @@ if (CYLON_UCX)
         cylon_add_exe(ucc_example)
         cylon_add_exe(ucc_operators_example)
         cylon_add_exe(ucc_allgather_vector_example)
+        if(CYLON_USE_REDIS)
+            cylon_add_exe(redis_ucc_ucx_example)
+       endif ()
     endif ()
 endif (CYLON_UCX)
 

@@ -42,11 +42,19 @@ CYLON_GLOO = strtobool(os.environ.get('CYLON_GLOO') or '0')
 GLOO_PREFIX = os.environ.get('GLOO_PREFIX')
 CYLON_UCX = strtobool(os.environ.get('CYLON_UCX') or '0')
 CYLON_UCC = strtobool(os.environ.get('CYLON_UCC') or '0')
+CYLON_REDIS = strtobool(os.environ.get('CYLON_REDIS') or '0')
 UCC_PREFIX = os.environ.get('UCC_PREFIX')
+REDIS_PREFIX = os.environ.get('REDIS_PREFIX')
 
 print("Cylon prefix:", CYLON_PREFIX)
 print("Arrow prefix:", ARROW_PREFIX)
 print("Arrow version:", pyarrow_version)
+print("UCC prefix:", UCC_PREFIX)
+print("CYLON REDIS: ", CYLON_REDIS)
+print("REDIS prefix:", REDIS_PREFIX)
+
+
+
 
 OS_NAME = platform.system()
 
@@ -142,7 +150,7 @@ else:
 
 macros = []
 # compile_time_env serves as preprocessor macros. ref: https://github.com/cython/cython/issues/2488
-compile_time_env = {'CYTHON_GLOO': False, 'CYTHON_UCC': False, 'CYTHON_UCX': False}
+compile_time_env = {'CYTHON_GLOO': False, 'CYTHON_UCC': False, 'CYTHON_UCX': False, 'CYTHON_REDIS': False}
 if CYLON_GLOO:
     libraries.append('gloo')
     library_dirs.append(os.path.join(GLOO_PREFIX, 'lib'))
@@ -165,6 +173,18 @@ if CYLON_UCC and CYLON_UCX:
 else:
     macros.append(('BUILD_CYLON_UCX', '0'))
     macros.append(('BUILD_CYLON_UCC', '0'))
+
+if CYLON_REDIS:
+    libraries.append('hiredis')
+    libraries.append('redis++')
+    macros.append(('BUILD_CYLON_REDIS', '1'))
+    compile_time_env['CYTHON_REDIS'] = True
+    library_dirs.append(os.path.join(REDIS_PREFIX, 'lib'))
+    include_dirs.append(os.path.join(REDIS_PREFIX, 'include', 'sw'))
+    include_dirs.append(os.path.join(REDIS_PREFIX, 'include', 'hiredis'))
+else:
+    macros.append(('BUILD_CYLON_REDIS', '0'))
+
 
 print('Libraries    :', libraries)
 print("Lib dirs     :", library_dirs)

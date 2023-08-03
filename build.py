@@ -169,11 +169,14 @@ def parse_cmake_flags(flag):
 
 CYLON_GLOO = parse_cmake_flags('CYLON_GLOO')
 GLOO_PREFIX = parse_cmake_flags('GLOO_INSTALL_PREFIX')
-
+CYLON_REDIS = parse_cmake_flags("CYLON_USE_REDIS")
 CYLON_UCX = parse_cmake_flags('CYLON_UCX')
 CYLON_UCC = parse_cmake_flags('CYLON_UCC')
 UCC_PREFIX = parse_cmake_flags('UCC_INSTALL_PREFIX')
+REDIS_PREFIX = parse_cmake_flags('REDIS_INSTALL_PREFIX')
 
+if CYLON_REDIS and (REDIS_PREFIX is None):
+    REDIS_PREFIX = "/usr/local"
 
 def print_line():
     logger.info("=================================================================")
@@ -189,6 +192,7 @@ logger.info(f"Install path   : {INSTALL_DIR}")
 logger.info(f"CMake flags    : {CMAKE_FLAGS}")
 logger.info(f" -CYLON_GLOO   : {CYLON_GLOO}")
 logger.info(f" -GLOO_PREFIX  : {GLOO_PREFIX}")
+logger.info(f" -REDIS_PREFIX  : {REDIS_PREFIX}")
 logger.info(f" -CYLON_UCX    : {CYLON_UCX}")
 logger.info(f" -CYLON_UCC    : {CYLON_UCC}")
 logger.info(f" -UCC_PREFIX   : {UCC_PREFIX}")
@@ -279,6 +283,14 @@ def python_test():
                                          os.path.join(UCC_PREFIX, "lib", "ucc") + os.pathsep + \
                                          env['LD_LIBRARY_PATH']
 
+            if CYLON_REDIS:
+                env['CYLON_REDIS'] = str(CYLON_REDIS)
+                env['REDIS_PREFIX'] = REDIS_PREFIX
+                env['LD_LIBRARY_PATH'] = os.path.join(REDIS_PREFIX, "lib") + os.pathsep + \
+                                         os.path.join(REDIS_PREFIX, "lib", "redis++") + os.pathsep + \
+                                         os.path.join(REDIS_PREFIX, "lib", "hiredis") + os.pathsep + \
+                                         env['LD_LIBRARY_PATH']
+
         elif OS_NAME == 'Darwin':
             if 'DYLD_LIBRARY_PATH' in env:
                 env['DYLD_LIBRARY_PATH'] = str(Path(INSTALL_DIR, "lib")) + os.pathsep \
@@ -318,6 +330,10 @@ def build_python():
         env['CYLON_UCX'] = str(CYLON_UCX)
         env['CYLON_UCC'] = str(CYLON_UCC)
         env['UCC_PREFIX'] = UCC_PREFIX
+
+    if CYLON_REDIS:
+        env['CYLON_REDIS'] = str(CYLON_REDIS)
+        env['REDIS_PREFIX'] = REDIS_PREFIX
 
     logger.info("Arrow prefix: " + str(Path(conda_prefix)))
     clean = '--upgrade' if args.clean else ''

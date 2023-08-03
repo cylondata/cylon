@@ -54,10 +54,21 @@ Status CylonContext::InitDistributed(const std::shared_ptr<cylon::net::CommConfi
       *ctx = std::make_shared<CylonContext>(true);
       auto pool = (*ctx)->GetMemoryPool();
 #ifdef BUILD_CYLON_UCC
+      // use UCC if we can
       return net::UCXUCCCommunicator::Make(config, pool, &(*ctx)->communicator);
 #else
       return net::UCXCommunicator::Make(config, pool, &(*ctx)->communicator);
 #endif
+#else
+      return {Code::NotImplemented, "UCX communication not implemented"};
+#endif
+    }
+
+    case net::UCC: {
+#if defined(BUILD_CYLON_UCX) && defined(BUILD_CYLON_UCC)
+      *ctx = std::make_shared<CylonContext>(true);
+      auto pool = (*ctx)->GetMemoryPool();
+      return net::UCXUCCCommunicator::Make(config, pool, &(*ctx)->communicator);
 #else
       return {Code::NotImplemented, "UCX communication not implemented"};
 #endif

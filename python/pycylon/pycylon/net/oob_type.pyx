@@ -16,12 +16,9 @@
 Mapping Cylon C++ Comm Type with PyCylon CommType
 '''
 
-from pycylon.net.comm_type cimport CCommType
+from pycylon.net.oob_type cimport COOBType
 
-cpdef enum CommType:
-    LOCAL = CCommType._LOCAL
-    MPI = CCommType._MPI
-    TCP = CCommType._TCP
-    UCX = CCommType._UCX
-    GLOO = CCommType._GLOO
-    UCC = CCommType._UCC
+cpdef enum OOBType:
+    OOB_MPI = COOBType._OOB_MPI
+    OOB_REDIS = COOBType._OOB_REDIS
+

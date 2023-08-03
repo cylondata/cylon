@@ -12,20 +12,16 @@
  * limitations under the License.
  */
 
-
-#ifndef CYLON_SRC_CYLON_NET_COMM_TYPE_HPP_
-#define CYLON_SRC_CYLON_NET_COMM_TYPE_HPP_
+#ifndef CYLON_OOB_TYPE_HPP
+#define CYLON_OOB_TYPE_HPP
 
 namespace cylon {
-namespace net {
-enum CommType {
-  LOCAL = 0,
-  MPI = 1,
-  TCP = 2,
-  UCX = 3,
-  GLOO = 4,
-  UCC = 5
-};
-}  // namespace net
-}  // namespace cylon
-#endif //CYLON_SRC_CYLON_NET_COMM_TYPE_HPP_
+    namespace net {
+        enum OOBType {
+            OOB_MPI = 0,
+            OOB_REDIS = 1
+        };
+    }
+}
+
+#endif //CYLON_OOB_TYPE_HPP

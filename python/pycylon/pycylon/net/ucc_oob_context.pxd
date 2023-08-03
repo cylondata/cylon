@@ -12,16 +12,13 @@
  # limitations under the License.
  ##
 
-'''
-Mapping Cylon C++ Comm Type with PyCylon CommType
-'''
+IF CYTHON_UCC:
 
-from pycylon.net.comm_type cimport CCommType
+    from pycylon.net.oob_type cimport COOBType
 
-cpdef enum CommType:
-    LOCAL = CCommType._LOCAL
-    MPI = CCommType._MPI
-    TCP = CCommType._TCP
-    UCX = CCommType._UCX
-    GLOO = CCommType._GLOO
-    UCC = CCommType._UCC
+    cdef extern from "../../../../cpp/src/cylon/net/ucx/ucc_oob_context.hpp" namespace "cylon::net":
+        cdef cppclass CUCCOOBContext "cylon::net::UCCOOBContext":
+            COOBType Type()
+
+    cdef class UCCOOBContext:
+        pass
