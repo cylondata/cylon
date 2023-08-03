@@ -32,6 +32,7 @@ IF CYTHON_GLOO:
 IF CYTHON_UCX & CYTHON_UCC:
     from pycylon.net.ucx_config import UCXConfig
     from pycylon.net.ucx_config cimport CUCXConfig, UCXConfig
+    from pycylon.net.ucc_config cimport CUCCConfig, UCCConfig
 from pycylon.io.csv_read_config cimport CCSVReadOptions
 from pycylon.io.csv_read_config import CSVReadOptions
 from pycylon.io.csv_read_config cimport CSVReadOptions
@@ -131,6 +132,11 @@ IF CYTHON_UCX & CYTHON_UCC:
         else:
             raise ValueError('Passed object is not an instance of UcxConfig')
 
+    cdef api shared_ptr[CUCCConfig] pycylon_unwrap_ucc_config(object config):
+        if isinstance(config, UCCConfig):
+            return (<UCCConfig> config).ucc_config_shd_ptr
+        else:
+            raise ValueError('Passed object is not an instance of UccConfig')
 cdef api CCSVReadOptions pycylon_unwrap_csv_read_options(object csv_read_options):
     cdef CSVReadOptions csvrdopt
     if pyclon_is_csv_read_options(csv_read_options):

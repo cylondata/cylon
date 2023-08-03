@@ -13,15 +13,11 @@
  ##
 
 '''
-Mapping Cylon C++ Comm Type with PyCylon CommType
+OOB Type mapping from Cylon C++ API
 '''
 
-from pycylon.net.comm_type cimport CCommType
+cdef extern from "../../../../cpp/src/cylon/net/ucx/oob_type.hpp" namespace "cylon::net":
 
-cpdef enum CommType:
-    LOCAL = CCommType._LOCAL
-    MPI = CCommType._MPI
-    TCP = CCommType._TCP
-    UCX = CCommType._UCX
-    GLOO = CCommType._GLOO
-    UCC = CCommType._UCC
+    cdef enum COOBType 'cylon::net::OOBType':
+        _OOB_MPI 'cylon::net::OOBType::OOB_MPI'
+        _OOB_REDIS 'cylon::net::OOBType::OOB_REDIS'
