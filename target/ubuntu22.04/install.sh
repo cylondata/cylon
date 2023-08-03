@@ -18,7 +18,7 @@ which python
 python --version
 source $VENV/bin/activate
 pip install pip -U
-pip install -r $PWD/target/ubuntu22.04/requirements.txt
+pip install -r $PWD/requirements.txt
 echo "# ======================================================="
 echo "# Compile cylon
 echo "# ======================================================="
