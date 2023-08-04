@@ -22,7 +22,7 @@ IF CYTHON_GLOO:
     from pycylon.api.lib cimport pycylon_unwrap_gloo_config
 
 IF CYTHON_UCX & CYTHON_UCC:
-    from pycylon.api.lib cimport pycylon_unwrap_ucx_config
+    from pycylon.api.lib cimport pycylon_unwrap_ucx_config, pycylon_unwrap_ucc_config
 from pycylon.net import CommType
 from pycylon.net.mpi_config cimport CMPIConfig
 from pycylon.net.mpi_config import MPIConfig
@@ -85,9 +85,18 @@ cdef class CylonContext:
             if config.comm_type == CommType.GLOO:
                 return <shared_ptr[CCommConfig]> pycylon_unwrap_gloo_config(config)
 
-        IF CYTHON_UCX & CYTHON_UCC:
-            if config.comm_type == CommType.UCX:
-                return <shared_ptr[CCommConfig]> pycylon_unwrap_ucx_config(config)
+        if CYTHON_UCX & CYTHON_UCC:
+            if  CYTHON_UCX & CYTHON_UCC:
+                if config.comm_type == CommType.UCX:
+                    return <shared_ptr[CCommConfig]> pycylon_unwrap_ucx_config(config)
+                if config.comm_type == CommType.UCC:
+                    return <shared_ptr[CCommConfig]> pycylon_unwrap_ucc_config(config)
+        else:
+            if  CYTHON_UCX & CYTHON_UCC:
+                if config.comm_type == CommType.UCX:
+                    return <shared_ptr[CCommConfig]> pycylon_unwrap_ucx_config(config)
+
+
 
         raise ValueError(f"Unsupported distributed comm config {config}")
 

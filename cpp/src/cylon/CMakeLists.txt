@@ -33,7 +33,15 @@ if (CYLON_UCX)
             net/ucx/ucx_communicator.cpp
             net/ucx/ucx_operations.hpp
             net/ucx/ucx_operations.cpp
+            net/ucx/mpi_ucx_ucc_oob_context.hpp
+            net/ucx/mpi_ucx_ucc_oob_context.cpp
             )
+    if (CYLON_USE_REDIS)
+        set(UCX_REDIS_CYLON_FILES
+                net/ucx/redis_ucx_ucc_oob_context.hpp
+                net/ucx/redis_ucx_ucc_oob_context.cpp
+                )
+    endif(CYLON_USE_REDIS)
     if (CYLON_UCC)
         set(UCC_CYLON_FILES
                 net/ucc/ucc_operations.hpp
@@ -62,6 +70,7 @@ add_library(cylon SHARED
         ${UCX_CYLON_FILES}
         ${UCC_CYLON_FILES}
         ${CYLON_GLOO_FILES}
+        ${UCX_REDIS_CYLON_FILES}
         arrow/arrow_all_to_all.cpp
         arrow/arrow_all_to_all.hpp
         arrow/arrow_buffer.cpp
@@ -234,11 +243,33 @@ target_link_libraries(cylon ${ARROW_DATASET_LIB})
 target_link_libraries(cylon Threads::Threads)
 target_link_libraries(cylon ${PARQUET_LIB})
 
+
 if (CYLON_UCX)
+    message("Cylon UCX Enabled")
     target_link_libraries(cylon ${UCX_LIBRARIES})
     if (CYLON_UCC)
+        message("Cylon UCC Enabled")
         target_link_libraries(cylon ucc)
     endif ()
+    if(CYLON_USE_REDIS)
+        message("Cylon Redis Enabled")
+        add_definitions(-DBUILD_CYLON_REDIS)
+        # <------------ add hiredis dependency --------------->
+        find_path(HIREDIS_HEADER hiredis HINTS ${REDIS_INSTALL_PREFIX}/include)
+        target_include_directories(cylon PUBLIC ${HIREDIS_HEADER})
+
+        #find_library(HIREDIS_LIB hiredis HINTS ${REDIS_INSTALL_PREFIX}/lib)
+        #target_link_libraries(cylon ${HIREDIS_LIB})
+
+        # <------------ add redis-plus-plus dependency -------------->
+        # NOTE: this should be *sw* NOT *redis++*
+        find_path(REDIS_PLUS_PLUS_HEADER sw HINTS ${REDIS_INSTALL_PREFIX}/include)
+        target_include_directories(cylon PUBLIC ${REDIS_PLUS_PLUS_HEADER})
+
+        #find_library(REDIS_PLUS_PLUS_LIB redis++ HINTS ${REDIS_INSTALL_PREFIX}/lib)
+        #target_link_libraries(cylon ${REDIS_PLUS_PLUS_LIB})
+        target_link_libraries(cylon ${REDIS_LIBRARIES})
+    endif()
 endif ()
 
 if (CYLON_GLOO)

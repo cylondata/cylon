@@ -12,16 +12,14 @@
  # limitations under the License.
  ##
 
-'''
-Mapping Cylon C++ Comm Type with PyCylon CommType
-'''
+IF CYTHON_UCX & CYTHON_UCC & CYTHON_REDIS:
 
-from pycylon.net.comm_type cimport CCommType
+    from pycylon.net.redis_ucx_oob_context cimport CUCXRedisOOBContext
+    from libcpp.memory cimport make_shared
 
-cpdef enum CommType:
-    LOCAL = CCommType._LOCAL
-    MPI = CCommType._MPI
-    TCP = CCommType._TCP
-    UCX = CCommType._UCX
-    GLOO = CCommType._GLOO
-    UCC = CCommType._UCC
+
+    cdef class UCXRedisOOBContext:
+
+
+        def __cinit__(self, int world_size, string redis_addr):
+            self.ucx_redis_oob_context_shd_ptr = make_shared[CUCXRedisOOBContext](world_size, redis_addr)
