@@ -58,6 +58,12 @@ time ./target/rivanna/install.sh
 
 The execution of the script will take some time.
 
+```
+real	61m17.789s
+user	53m10.282s
+sys   	6m52.742s
+```
+
 The script will look as follows
 
 ```bash
