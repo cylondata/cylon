@@ -18,6 +18,7 @@
  *  mpirun -n 4 bin/ucc_example
  */
 
+#ifdef BUILD_CYLON_UCC
 #include <iostream>
 
 #include <ucc/api/ucc.h>
@@ -27,6 +28,7 @@
 #include <cylon/net/ucx/ucx_communicator.hpp>
 #include <cylon/table.hpp>
 #include <cylon/scalar.hpp>
+#include "net/ucx/redis_ucx_ucc_oob_context.hpp"
 
 auto read_options = cylon::io::config::CSVReadOptions()
                         .UseThreads(false)
@@ -116,18 +118,37 @@ void testScalarAllgather(std::shared_ptr<cylon::CylonContext>& ctx) {
   std::cout<<"scalar gather test passed at rank "<<ctx->GetRank()<<std::endl;
 }
 
-void gather(std::shared_ptr<cylon::Table>& table,
-               std::shared_ptr<cylon::CylonContext>& ctx) {
-  std::vector<std::shared_ptr<cylon::Table>> out;
+void testTableGather(std::shared_ptr<cylon::CylonContext>& ctx) {
+  int ws = ctx->GetWorldSize();
+  if (ws > 4) {
+    std::cout << "table gather test can only take 4 or less processes."
+              << std::endl;
+    return;
+  }
+
+  std::shared_ptr<cylon::Table> table;
+  std::vector<std::shared_ptr<cylon::Table>> out, original(ws);
+
+  for (int i = 0; i < ws; i++) {
+    readInputCsv(i, ctx, original[i]);
+  }
+
+  readInputCsv(ctx->GetRank(), ctx, table);
   auto status = ctx->GetCommunicator()->Gather(table, 0, 1, &out);
-  std::cout<<status.get_msg()<<std::endl;
+
   if (ctx->GetRank() == 0) {
-    std::cout<<"out size: "<<out.size()<<std::endl;
-    for (auto out_table : out) {
-      out_table->Print();
-      // std::cout<<out_table->get_table()->num_rows()<<std::endl;
+    for (int i = 0; i < ws; i++) {
+      bool result;
+      cylon::Equals(out[i], original[i], result);
+      if (!result) {
+        std::cout << "table gather test failed at rank " << ctx->GetRank()
+                  << std::endl;
+        return;
+      }
     }
   }
+  std::cout << "table gather test passed at rank " << ctx->GetRank()
+            << std::endl;
 }
 
 void testTableBcast(std::shared_ptr<cylon::CylonContext>& ctx) {
@@ -198,9 +219,23 @@ void testScalarAllReduce(std::shared_ptr<cylon::CylonContext>& ctx) {
 }
 
 int main(int argc, char **argv) {
-  auto ucx_config = std::make_shared<cylon::net::UCXConfig>();
+  // auto redis = sw::redis::Redis("tcp://127.0.0.1:6379");
+  std::shared_ptr<cylon::net::UCCOOBContext> oob_ctx;
+
+  if(argc > 1 && std::string(argv[1]) == "mpi") {
+    oob_ctx = std::make_shared<cylon::net::UCCMPIOOBContext>();
+  } else {
+    // auto redis = std::make_shared<sw::redis::Redis>();
+#ifdef BUILD_CYLON_REDIS
+    oob_ctx = std::make_shared<cylon::net::UCCRedisOOBContext>(
+        4, "tcp://127.0.0.1:6379");
+#endif
+  }
+
   std::shared_ptr<cylon::CylonContext> ctx;
-  if (!cylon::CylonContext::InitDistributed(ucx_config, &ctx).is_ok()) {
+  auto ucc_config = std::make_shared<cylon::net::UCCConfig>(oob_ctx);
+
+  if (!cylon::CylonContext::InitDistributed(ucc_config, &ctx).is_ok()) {
     std::cerr << "ctx init failed! " << std::endl;
     return 1;
   }
@@ -211,4 +246,6 @@ int main(int argc, char **argv) {
   testTableBcast(ctx);
   testColumnAllReduce(ctx);
   testScalarAllReduce(ctx);
+  testTableGather(ctx);
 }
+#endif

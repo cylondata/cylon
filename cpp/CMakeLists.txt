@@ -246,9 +246,7 @@ if (GCYLON_BUILD)
     return()
 endif ()
 
-# ucx
-option(CYLON_UCX "Build Cylon with UCX" OFF)
-option(CYLON_UCC "Build Cylon with UCC" OFF)
+
 if (CYLON_UCX)
     message("Cylon UCX enabled")
     # Definition used for checking
@@ -304,6 +302,18 @@ if (CYLON_UCX)
         include_directories(SYSTEM ${UCC_INCLUDE_DIRS})
         link_directories(${UCC_LIBRARIES} ${UCC_LIBRARIES}/ucc)
     endif (CYLON_UCC)
+
+    if(CYLON_USE_REDIS)
+        message("Cylon Redis Enabled")
+        add_definitions(-DBUILD_CYLON_REDIS)
+
+
+        find_library(HIREDIS_LIB hiredis HINTS ${REDIS_INSTALL_PREFIX}/lib)
+        find_library(REDIS_PLUS_PLUS_LIB redis++ HINTS ${REDIS_INSTALL_PREFIX}/lib)
+        set(REDIS_LIBRARIES
+                ${HIREDIS_LIB}
+                ${REDIS_PLUS_PLUS_LIB})
+    endif (CYLON_USE_REDIS)
 endif (CYLON_UCX)
 
 # gloo

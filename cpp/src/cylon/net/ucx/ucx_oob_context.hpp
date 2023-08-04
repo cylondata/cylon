@@ -12,20 +12,26 @@
  * limitations under the License.
  */
 
+#ifndef CYLON_UCX_OOB_CONTEXT_HPP
+#define CYLON_UCX_OOB_CONTEXT_HPP
 
-#ifndef CYLON_SRC_CYLON_NET_COMM_TYPE_HPP_
-#define CYLON_SRC_CYLON_NET_COMM_TYPE_HPP_
+
+#include "cylon/status.hpp"
 
 namespace cylon {
-namespace net {
-enum CommType {
-  LOCAL = 0,
-  MPI = 1,
-  TCP = 2,
-  UCX = 3,
-  GLOO = 4,
-  UCC = 5
-};
-}  // namespace net
-}  // namespace cylon
-#endif //CYLON_SRC_CYLON_NET_COMM_TYPE_HPP_
+    namespace net {
+        class UCXOOBContext {
+        public:
+            virtual Status InitOOB() = 0;
+
+            virtual Status getWorldSizeAndRank(int &world_size, int &rank) = 0;
+
+            virtual Status OOBAllgather(uint8_t *src, uint8_t *dst, size_t srcSize,
+                                        size_t dstSize) = 0;
+
+            virtual Status Finalize() = 0;
+        };
+    }
+}
+
+#endif //CYLON_UCX_OOB_CONTEXT_HPP
