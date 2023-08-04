@@ -1,8 +1,4 @@
-#git clone https://github.com/cylondata/cylon.git
-git clone https://github.com/laszewsk/cylon.git
-cd cylon
-
-
+#~ /bin/sh
 
 PWD=`pwd`
 BUILD_PATH=$PWD/build
@@ -13,14 +9,13 @@ python -m venv $PWD/cy-rp-env
 
 source $PWD/cy-rp-env/bin/activate
 
-#pip install -r $PWD/requirements.txt 
+# pip install -r $PWD/requirements.txt
 
 pip install pip -U
 pip install pytest
 pip install -U pytest-mpi
 pip install numpy
 # pip install pyarrow==9.0.0
-
 
 export CC=`which gcc`
 export CXX=`which g++`
@@ -31,3 +26,5 @@ rm -rf build
 export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/lib64:$BUILD_PATH/lib64:$BUILD_PATH/lib:$LD_LIBRARY_PATH
 
 time ./build.sh -pyenv $PWD/cy-rp-env -bpath $PWD/build --cpp --python --cython --test --cmake-flags "-DMPI_C_COMPILER=$(which mpicc) -DMPI_CXX_COMPILER=$(which mpicxx)"
+```
+
