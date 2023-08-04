@@ -2,7 +2,10 @@
 git clone https://github.com/laszewsk/cylon.git
 cd cylon
 
+
+
 PWD=`pwd`
+BUILD_PATH=$PWD/build
 
 module load gcc/9.2.0 openmpi/3.1.6 python/3.7.7 cmake/3.23.3
 
@@ -23,8 +26,8 @@ export CC=`which gcc`
 export CXX=`which g++`
 CC=gcc MPICC=mpicc pip install --no-binary mpi4py install mpi4py
 
-#rm -rf build
-#UILD_PATH=$PWD/build
-#xport LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/lib64:$BUILD_PATH/lib64:$BUILD_PATH/lib:$LD_LIBRARY_PATH
+rm -rf build
 
-./build.sh -pyenv $PWD/cy-rp-env -bpath $(PWD)/build --cpp --python --cython --test --cmake-flags "-DMPI_C_COMPILER=$(which mpicc) -DMPI_CXX_COMPILER=$(which mpicxx)"
+export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/lib64:$BUILD_PATH/lib64:$BUILD_PATH/lib:$LD_LIBRARY_PATH
+
+time ./build.sh -pyenv $PWD/cy-rp-env -bpath $PWD/build --cpp --python --cython --test --cmake-flags "-DMPI_C_COMPILER=$(which mpicc) -DMPI_CXX_COMPILER=$(which mpicxx)"
