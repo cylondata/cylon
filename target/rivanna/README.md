@@ -50,7 +50,7 @@ target/rivanna/install.sh
 
 If you need to make modifications, copy the script and execute the copy.
 
-If you are happy with the original script, please execute it. 
+If you are happy with the original script, please execute it with 
 
 ```bash
 time ./target/rivanna/install.sh
