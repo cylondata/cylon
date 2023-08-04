@@ -10,6 +10,14 @@ ENV CYLON_HOME=/cylon
 ENV CYLON_PREFIX=/cylon/install
 ENV UCC_HOME=/ucc
 
+#give ARG EXPOSE_ENV a default value
+ARG EXPOSE_ENV=33000
+
+#assign the EXPOSE_ENV arg to the EXPOSE_ENV ENV so that it can be accessed
+#by the subsequent RUN call within the container
+ENV EXPOSE_ENV $EXPOSE_ENV
+
+
 WORKDIR $CYLON_HOME
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -y --fix-missing && \
@@ -75,5 +83,7 @@ RUN . /opt/conda/etc/profile.d/conda.sh && \
     python build.py -cmake-flags="-DCYLON_UCX=1 -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$UCC_HOME/install -DCYLON_USE_REDIS=1 " -ipath="$CYLON_PREFIX" --cpp --python --test --pytest
 
 RUN chmod 0755 /cylon/aws/scripts/runCylon.sh
+
+EXPOSE $EXPOSE_ENV
 
 ENTRYPOINT ["/cylon/aws/scripts/runCylon.sh"]

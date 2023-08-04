@@ -12,4 +12,5 @@ conda activate cylon_dev
 set -euo pipefail
 
 export LD_LIBRARY_PATH=/cylon/install/lib
+
 exec python /cylon/aws/scripts/S3_run_script.py
