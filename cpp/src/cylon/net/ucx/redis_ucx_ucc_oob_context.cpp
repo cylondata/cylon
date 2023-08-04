@@ -132,6 +132,16 @@ namespace cylon {
             return std::make_shared<UCCRedisOOBContext>(world_size, redis_addr);
         }
 
+        Status UCCRedisOOBContext::Finalize() {
+
+            if (this->redis != nullptr && this->getRank() == 0) {
+                this->redis->flushdb(true);
+            }
+
+            return Status::OK();
+
+        }
+
 #endif
 
     }

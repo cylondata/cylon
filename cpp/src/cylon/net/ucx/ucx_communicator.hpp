@@ -58,7 +58,10 @@ class UCCConfig : public CommConfig {
 
  public:
     CommType Type() override;
-  explicit UCCConfig(std::shared_ptr<UCCOOBContext> oobContext);
+
+    ~UCCConfig() override;
+
+    explicit UCCConfig(std::shared_ptr<UCCOOBContext> oobContext);
   static std::shared_ptr<UCCConfig> Make(
       std::shared_ptr<UCCOOBContext> &oobContext);
   void setOOBContext(std::shared_ptr<UCCOOBContext> oobContext);

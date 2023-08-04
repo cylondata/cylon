@@ -87,6 +87,13 @@ void UCCConfig::setOOBContext(std::shared_ptr<UCCOOBContext> oobContext) {
 
 std::shared_ptr<UCCOOBContext> UCCConfig::getOOBContext() { return oobContext; }
 
+        UCCConfig::~UCCConfig() {
+            auto context = this->oobContext.get();
+            if (context != nullptr) {
+                context->Finalize();
+            }
+        }
+
 
 #endif
 
