@@ -11,7 +11,7 @@ from cloudmesh.common.dotdict import dotdict
 from cloudmesh.common.Shell import Shell
 
 
-def join(data=None):
+def cylon_join(data=None):
     StopWatch.start(f"join_total_{data['host']}_{data['rows']}_{data['it']}")
 
     comm = MPI.COMM_WORLD
@@ -60,8 +60,57 @@ def join(data=None):
         StopWatch.benchmark(tag=str(data))
 
     env.finalize()
+    
+def cylon_sort(data=None):
+    StopWatch.start(f"sort_total_{data['host']}_{data['rows']}_{data['it']}")
 
-def slice(data=None):
+    comm = MPI.COMM_WORLD
+
+    config = MPIConfig(comm)
+    env = CylonEnv(config=config, distributed=True)
+
+    u = data['unique']
+
+    if data['scaling'] == 'w':  # weak
+        num_rows = data['rows']
+        max_val = num_rows * env.world_size
+    else:  # 's' strong
+        max_val = data['rows']
+        num_rows = int(data['rows'] / env.world_size)
+
+    rng = default_rng(seed=env.rank)
+    data1 = rng.integers(0, int(max_val * u), size=(num_rows, 2))
+
+    df1 = DataFrame(pd.DataFrame(data1).add_prefix("col"))
+    
+    if env.rank == 0:
+        print("Task# ", data['task'])
+        
+    for i in range(data['it']):
+        env.barrier()
+        StopWatch.start(f"sort_{i}_{data['host']}_{data['rows']}_{data['it']}")
+        t1 = time.time()
+        df3 = df1.sort_values(by=[0], env=env)
+        env.barrier()
+        t2 = time.time()
+        t = (t2 - t1)
+        sum_t = comm.reduce(t)
+        tot_l = comm.reduce(len(df3))
+
+        if env.rank == 0:
+            avg_t = sum_t / env.world_size
+            print("### ", data['scaling'], env.world_size, num_rows, max_val, i, avg_t, tot_l)
+            StopWatch.stop(f"sort_{i}_{data['host']}_{data['rows']}_{data['it']}")
+
+    StopWatch.stop(f"sort_total_{data['host']}_{data['rows']}_{data['it']}")
+
+    if env.rank == 0:
+        StopWatch.benchmark(tag=str(data))
+
+    env.finalize()
+    
+
+def cylon_slice(data=None):
     StopWatch.start(f"slice_total_{data['host']}_{data['rows']}_{data['it']}")
 
     comm = MPI.COMM_WORLD
@@ -113,6 +162,7 @@ def slice(data=None):
 
     env.finalize()
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="weak scaling")
     parser.add_argument('-n', dest='rows', type=int, required=True)
@@ -123,9 +173,11 @@ if __name__ == "__main__":
 
     args = vars(parser.parse_args())
     args['host'] = "rivanna"
-    for i in range(160):
+    for i in range(1):
         args['task'] = i
-        join(args)
+        #cylon_slice(args)
+        #cylon_join(args)
+        cylon_sort(args)
 
     # os.system(f"{git} branch | fgrep '*' ")
     # os.system(f"{git} rev-parse HEAD")
