@@ -1,18 +1,18 @@
 #!/bin/bash
-#SBATCH -A bii_dsc_community
-#SBATCH -p standard
-#SBATCH -N 1
-#SBATCH -c 37
+## xBATCH -A bii_dsc_community
+## xBATCH -p standard
+## xBATCH -N 1
+#X xSBATCH -c 37
 
-./target/rivanna/install.sh
+# ./target/rivanna/install.sh
 
-#INSTALL_JOB_ID=$(sbatch my_job.sh | awk '{print $4}')
+SLURM_JOB_ID=$(sbatch --wait -A bii_dsc_community -p standard  -N 1 -c37 ./target/rivanna/install.sh | awk '{print $4}')
 
 # Wait for the job to complete
-#srun --jobid=$INSTALL_JOB_ID echo "Waiting for job $JOB_ID to complete..."
-#srun --jobid=$INSTALL_JOB_ID sacct --format=JobID,End --noheader
+srun --jobid=$SLURM_JOB_ID echo "Waiting for job $SLURM_JOB_ID to complete..."
+srun --jobid=$SLURM_JOB_ID sacct --format=JobID,End --noheader
 
-#echo "Job $JOB_ID is completed."
+echo "Job $SLURM_JOB_ID is completed."
 
 echo "###############################################################"
 echo "# squeue"
