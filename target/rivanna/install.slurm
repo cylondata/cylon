@@ -6,11 +6,11 @@
 
 ./target/rivanna/install.sh
 
-#INSTALL_JOB_ID=$(sbatch my_job.sh | awk '{print $4}')
+#SLURM_JOB_ID=$(sbatch my_job.sh | awk '{print $4}')
 
 # Wait for the job to complete
-#srun --jobid=$INSTALL_JOB_ID echo "Waiting for job $JOB_ID to complete..."
-#srun --jobid=$INSTALL_JOB_ID sacct --format=JobID,End --noheader
+# srun --jobid=$SLURMJOB_ID echo "Waiting for job $JOB_ID to complete..."
+# srun --jobid=$SLURMJOB_ID sacct --format=JobID,End --noheader
 
 #echo "Job $JOB_ID is completed."
 
@@ -21,41 +21,21 @@ echo "###############################################################"
 squeue --format="%.18i %.9P %.30j %.8u %.8T %.10M %.9l %.6D %R" -j $SLURM_JOB_ID
 
 echo "###############################################################"
-echo "# sstat"
-echo "###############################################################"
-
-sstat --jobs=$SLURM_JOB_ID
-
-echo "###############################################################"
 echo "# seff"
 echo "###############################################################"
 
 seff #SLURM_JOB_ID
 
 echo "###############################################################"
-echo "# sacct"
-echo "###############################################################"
-
-sacct -X  -j $SLURM_JOB_ID -o Reserved
-
-echo "###############################################################"
-echo "# sacct times"
-echo "###############################################################"
-
-sacct -X  -j $SLURM_JOB_ID -o CPUTime
-
-sacct -X  -j $SLURM_JOB_ID -o Submit
-sacct -X  -j $SLURM_JOB_ID -o Start
-sacct -X  -j $SLURM_JOB_ID -o End
-sacct -X  -j $SLURM_JOB_ID -o Elapsed
-
-echo "###############################################################"
 echo "# sacct analyze waittime"
 echo "###############################################################"
 
+reserved_time=$(sacct -X  -j $SLURM_JOB_ID -o Reserved --noheader)
 submit_time=$(sacct -X -j $SLURM_JOB_ID -o Submit --noheader)
 start_time=$(sacct -X -j $SLURM_JOB_ID -o Start --noheader)
 end_time=$(sacct -X -j $SLURM_JOB_ID -o End --noheader)
+cpu_time=$(sacct -X -j $SLURM_JOB_ID -o CPUTime --noheader)
+elapsed_time=$(sacct -X -j $SLURM_JOB_ID -o Elapse --noheader)
 
 # Convert timestamps to seconds since epoch
 submit_seconds=$(date -d "$submit_time" +"%s")
@@ -69,6 +49,9 @@ wait_time=$((start_seconds - submit_seconds))
 wait_formatted=$(date -u -d @"$wait_time" +"%T")
 
 echo "JobID: $SLURM_JOB_ID"
+echo "CPU Time: $cpu_time"
+echo "Elapsed Time: $elapsed_time"
+echo "Researved Time: $reserved_time"
 echo "Submit Time: $submit_time"
 echo "Start Time: $start_time"
 echo "End Time: $end_time"
