@@ -14,7 +14,7 @@ clean:
 	rm -f *.log *.err script-*.slurm
 	rm -r raptor-*.cfg rp.session.*
 
-e:  load
+rp:  load
 	python rp-experiment-setup.py
 
 cy: load

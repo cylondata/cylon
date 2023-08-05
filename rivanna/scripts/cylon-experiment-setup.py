@@ -18,14 +18,14 @@ partition="parallel"
 
 # (nodes, threads, rows, partition, "exclusive")
 combination = [\
-    # (2,4, 5000, "parallel", "exclusive"), # always pending
-    #(2,37, 1000000, "parallel", ""), 
-    #(15,37, 35000000, "parallel", ""), 
-    (20,37, 35000000, "parallel", ""), 
-    #(25,37, 35000000, "parallel", ""), 
-    #(35,37, 35000000, "parallel", ""), 
-    #(30,37, 35000000, "parallel", ""), 
-    #(40,37, 35000000, "parallel", ""),
+    # (1,4, 5000, "parallel", "exclusive"), # always pending
+    (2,37, 1000000, "parallel", ""), 
+    (4,37, 35000000, "parallel", ""), 
+    (6,37, 35000000, "parallel", ""), 
+    (8,37, 35000000, "parallel", ""), 
+    (10,37, 35000000, "parallel", ""), 
+    (12,37, 35000000, "parallel", ""), 
+    (14,37, 35000000, "parallel", ""),
 ]
 
 '''
@@ -76,8 +76,8 @@ for nodes, threads, rows, partition, exclusive in combination:
   #SBATCH --nodes={nodes}
   #SBATCH --ntasks-per-node={threads}
   #SBATCH --time=15:00
-  #SBATCH --output=out-sort-w-{nodes:02d}-{threads:02d}{jobid}.log
-  #SBATCH --error=out-sort-w-{nodes:02d}-{threads:02d}{jobid}.err
+  #SBATCH --output=out-{nodes:02d}-{threads:02d}{jobid}.log
+  #SBATCH --error=out-{nodes:02d}-{threads:02d}{jobid}.err
   #SBATCH --partition=parallel
   #SBATCH -A bii_dsc_community
   {exclusive}
