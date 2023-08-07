@@ -8,10 +8,10 @@ import os
 
 import logging
 
-def environ_or_required(key):
+def environ_or_required(key, required: bool = True):
     return (
         {'default': os.environ.get(key)} if os.environ.get(key)
-        else {'required': True}
+        else {'required': required}
     )
 
 def get_file(file_name, bucket, object_name=None):
@@ -45,9 +45,11 @@ def join(data=None):
     if script is None:
         print(f"unable to retrieve file {data['output_filename']} from AWS S3")
 
-    cmd = data['args'].split()
-    subprocess.call(['python'] + [data['output_filename']] + cmd, shell=False)
-
+    if 'args' in data:
+        cmd = data['args'].split()
+        subprocess.call(['python'] + [data['output_filename']] + cmd, shell=False)
+    else:
+        subprocess.call(['python'] + [data['output_filename']], shell=False)
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="run S3 script")
 
@@ -56,7 +58,7 @@ if __name__ == "__main__":
     parser.add_argument('-f', dest='output_filename', type=str, help="Output filename",
                         **environ_or_required('OUTPUT_FILENAME'))
     parser.add_argument('-a', dest='args', type=str, help="script exec arguments",
-                        **environ_or_required('EXEC_ARGS'))
+                        **environ_or_required('EXEC_ARGS', required=False))
 
 
 
