@@ -606,6 +606,13 @@ void UCXUCCCommunicator::Finalize() {
       ucc_context_destroy(uccContext);
     }
 
+
+    auto uccoobCtx = oobContext.get();
+
+    if (uccoobCtx != nullptr) {
+        uccoobCtx->Finalize();
+    }
+
     ucx_comm_->Finalize(); // this will handle MPI_Finalize
     finalized = true;
   }
