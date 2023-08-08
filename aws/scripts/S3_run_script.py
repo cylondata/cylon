@@ -45,8 +45,9 @@ def join(data=None):
     if script is None:
         print(f"unable to retrieve file {data['output_filename']} from AWS S3")
 
-    if 'args' in data:
-        cmd = data['args'].split()
+    scriptargs = data['args']
+    if scriptargs is not None:
+        cmd = scriptargs.split()
         subprocess.call(['python'] + [data['output_filename']] + cmd, shell=False)
     else:
         subprocess.call(['python'] + [data['output_filename']], shell=False)
