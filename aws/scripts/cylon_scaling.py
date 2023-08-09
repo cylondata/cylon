@@ -263,7 +263,7 @@ if __name__ == "__main__":
     parser.add_argument('-u', dest='unique', type=float, **environ_or_required('UNIQUENESS'), help="unique factor") #0.9
     parser.add_argument('-s', dest='scaling', type=str, **environ_or_required('SCALING'), choices=['s', 'w'],
                         help="s=strong w=weak") #w
-    parser.add_argument('-s', dest='operation', type=str, **environ_or_required('CYLON_OPERATION'), choices=['join', 'sort', 'slice'],
+    parser.add_argument('-o', dest='operation', type=str, **environ_or_required('CYLON_OPERATION'), choices=['join', 'sort', 'slice'],
                         help="s=strong w=weak")  # w
     parser.add_argument('-w', dest='world_size', type=int, help="world size", **environ_or_required('WORLD_SIZE'))
     parser.add_argument("-r", dest='redis_host', type=str, help="redis address, default to 127.0.0.1",
