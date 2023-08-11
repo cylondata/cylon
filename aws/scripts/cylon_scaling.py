@@ -180,8 +180,7 @@ def cylon_sort(data=None):
                     object_name=data['s3_stopwatch_object_name'])
         upload_file(file_name=data['output_summary_filename'], bucket=data['s3_bucket'],
                     object_name=data['s3_summary_object_name'])
-
-    env.finalize()
+        redis_context.clearDB()
 
 
 def cylon_slice(data=None):

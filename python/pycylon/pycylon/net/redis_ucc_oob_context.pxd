@@ -36,6 +36,8 @@ IF CYTHON_UCX & CYTHON_UCC & CYTHON_REDIS:
 
             int getRank()
 
+            void clearDB()
+            
             @ staticmethod
             shared_ptr[CUCCRedisOOBContext] Make(int world_size, string redis_addr);
 
