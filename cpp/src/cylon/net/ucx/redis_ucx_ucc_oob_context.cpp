@@ -138,10 +138,12 @@ namespace cylon {
 
         }
 
-        void UCCRedisOOBContext::clearDB() {
+        Status UCCRedisOOBContext::clearDB() {
             if (this->redis != nullptr) {
                 this->redis->flushdb(false);
+                return Status::OK();
             }
+            return Status(Code::ExecutionError);
         }
 
 #endif

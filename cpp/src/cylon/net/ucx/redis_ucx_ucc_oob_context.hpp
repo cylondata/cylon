@@ -72,7 +72,7 @@ namespace cylon {
 
             OOBType Type() override;
 
-            void clearDB();
+            Status clearDB();
 
             UCCRedisOOBContext(int world_size, std::string redis_addr);
 

@@ -20,6 +20,7 @@ IF CYTHON_UCX & CYTHON_UCC & CYTHON_REDIS:
     from pycylon.net.ucx_oob_context cimport CUCXOOBContext
     from pycylon.net.ucc_oob_context cimport UCCOOBContext
     from pycylon.net.redis_ucx_oob_context cimport CUCXRedisOOBContext
+    from pycylon.common.status cimport CStatus
     from libcpp.string cimport string
 
     cdef extern from "../../../../cpp/src/cylon/net/ucx/redis_ucx_ucc_oob_context.hpp" namespace "cylon::net":
@@ -36,8 +37,8 @@ IF CYTHON_UCX & CYTHON_UCC & CYTHON_REDIS:
 
             int getRank()
 
-            void clearDB()
-            
+            CStatus clearDB()
+
             @ staticmethod
             shared_ptr[CUCCRedisOOBContext] Make(int world_size, string redis_addr);
 
