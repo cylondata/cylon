@@ -49,7 +49,8 @@ RUN conda env create -f $CYLON_HOME/conda/environments/cylon.yml
 RUN . /opt/conda/etc/profile.d/conda.sh && \
     conda activate cylon_dev && \
     conda install -n base conda-libmamba-solver && conda config --set solver libmamba && \
-    conda install -c anaconda boto3 -y && pip install cloudmesh-openstack
+    conda install -c anaconda boto3 -y && pip install cloudmesh-openstack &&\
+    conda install -c conda-forge redis-py -y
 
 
 

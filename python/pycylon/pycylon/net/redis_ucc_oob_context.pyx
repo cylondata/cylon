@@ -45,6 +45,3 @@ IF CYTHON_UCX & CYTHON_UCC & CYTHON_REDIS:
         def oob_rank(self):
             return self.ucc_redis_oob_context_shd_ptr.get().getRank()
 
-        def clearDB(self):
-            self.ucc_redis_oob_context_shd_ptr.get().clearDB()
-

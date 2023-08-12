@@ -72,8 +72,6 @@ namespace cylon {
 
             OOBType Type() override;
 
-            Status clearDB();
-
             UCCRedisOOBContext(int world_size, std::string redis_addr);
 
             static std::shared_ptr<UCCRedisOOBContext> Make(int world_size, std::string redis_addr);
