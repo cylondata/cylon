@@ -2,6 +2,11 @@ import redis
 import argparse
 import os
 
+def environ_or_required(key):
+    return (
+        {'default': os.environ.get(key)} if os.environ.get(key)
+        else {'required': True}
+    )
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="clear redis db")
