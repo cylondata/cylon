@@ -8,6 +8,10 @@ Parameters:
     Type: String
     Default: cylon
 
+  Prefix2:
+    Type: String
+    Default: cylon
+
   Architecture:
     Type: String
     Default: arm64
@@ -74,7 +78,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     "DeletionPolicy" : "Delete"
     Properties:
-      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucketName}/${Prefix}/${Prefix}-elasticache.yaml"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucketName}/${Prefix}/${Prefix2}-elasticache.yaml"
       Parameters:
         AvailabilityZone1: !Ref AvailabilityZone1
         AvailabilityZone2: !Ref AvailabilityZone2
