@@ -31,6 +31,9 @@ Parameters:
   Prefix:
     Type: String
 
+  Prefix2:
+    Type: String
+
   RedisPort:
     Type: Number
 
@@ -42,14 +45,14 @@ Resources:
   SubnetGroup:
     Type: AWS::ElastiCache::SubnetGroup
     Properties:
-      CacheSubnetGroupName: !Sub "${Prefix}-subnetgroup"
-      Description: !Sub "${Prefix}-SubnetGroup"
+      CacheSubnetGroupName: !Sub "${Prefix2}-subnetgroup"
+      Description: !Sub "${Prefix2}-SubnetGroup"
       SubnetIds:
         - !Ref CacheSubnet1
         - !Ref CacheSubnet2
       Tags:
         - Key: "name"
-          Value: !Sub "${Prefix}-Redis SubnetGroup"
+          Value: !Sub "${Prefix2}-Redis SubnetGroup"
 
 
 
@@ -57,7 +60,7 @@ Resources:
   CacheCluster:
     Type: AWS::ElastiCache::CacheCluster
     Properties:
-      ClusterName: !Sub "${Prefix}-Redis"
+      ClusterName: !Sub "${Prefix2}-Redis"
       CacheNodeType: !Ref CacheNodeType
       CacheSubnetGroupName: !Ref SubnetGroup
       Engine: !Ref CacheEngine
@@ -67,5 +70,5 @@ Resources:
         - !Ref CacheSecurityGroup
       Tags:
         - Key: "name"
-          Value: !Sub "${Prefix}-Redis Cluster"
+          Value: !Sub "${Prefix2}-Redis Cluster"
     DependsOn: SubnetGroup

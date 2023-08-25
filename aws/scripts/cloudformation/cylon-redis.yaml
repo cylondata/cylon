@@ -78,7 +78,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     "DeletionPolicy" : "Delete"
     Properties:
-      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucketName}/${Prefix}/${Prefix2}-elasticache.yaml"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucketName}/${Prefix}/${Prefix}-elasticache.yaml"
       Parameters:
         AvailabilityZone1: !Ref AvailabilityZone1
         AvailabilityZone2: !Ref AvailabilityZone2
@@ -90,5 +90,6 @@ Resources:
         CacheSubnet1: !Ref CacheSubnet1
         CacheSubnet2: !Ref CacheSubnet2
         Prefix: !Ref Prefix
+        Prefix2: !Ref Prefix2
         RedisPort: !Ref RedisPort
         ReplicaCount: !Ref ReplicaCount
