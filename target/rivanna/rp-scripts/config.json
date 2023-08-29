@@ -1,0 +1,223 @@
+
+{
+    "local.localhost" : {
+        "project"  : null,
+        "queue"    : null,
+        "schema"   : null,
+        "cores"    : 32,
+        "gpus"     : 0
+    },
+
+    "local.localhost_test" : {
+        "project"  : null,
+        "queue"    : null,
+        "schema"   : null,
+        "cores"    : 1,
+        "gpus"     : 0
+    },
+
+    "local.localhost_flux" : {
+        "project"  : null,
+        "queue"    : null,
+        "schema"   : null,
+        "cores"    : 128,
+        "gpus"     : 0
+    },
+
+    "local.localhost_prte" : {
+        "project"  : null,
+        "queue"    : null,
+        "schema"   : null,
+        "cores"    : 64
+    },
+
+    "local.local" : {
+        "project"  : null,
+        "queue"    : null,
+        "schema"   : null,
+        "cores"    : 64
+    },
+
+    "anl.arcticus" : {
+        "project"  : null,
+        "queue"    : "arcticus",
+        "schema"   : "local",
+        "cores"    : 96,
+        "gpus"     : 2
+    },
+
+    "nersc.edison" : {
+        "project"  : null,
+        "queue"    : "debug",
+        "schema"   : "ssh",
+        "cores"    : 64
+    },
+
+    "access.expanse": {
+        "project"  : "UNC100",
+        "queue"    : "compute",
+        "schema"   : "local",
+        "cores"    : 128
+    },
+
+    "access.supermic_ssh" : {
+        "project"  : "TG-MCB090174",
+        "queue"    : "workq",
+        "schema"   : "gsissh",
+        "cores"    : 64
+    },
+
+    "access.supermic" : {
+        "project"  : "TG-MCB090174",
+        "queue"    : "workq",
+        "schema"   : "gsissh",
+        "cores"    : 80
+    },
+
+    "access.supermic_orte" : {
+        "project"  : "TG-CCR140028",
+        "queue"    : "workq",
+        "schema"   : "gsissh",
+        "cores"    : 80
+    },
+
+    "princeton.traverse" : {
+        "project"  : "tromp",
+        "queue"    : "all",
+        "schema"   : "local",
+        "cores"    : 32,
+        "gpus"     : 4
+    },
+
+    "princeton.tiger_cpu" : {
+        "project"  : "geo",
+        "queue"    : "cpu",
+        "schema"   : "ssh",
+        "cores"    : 40
+    },
+
+    "princeton.tiger_gpu" : {
+        "project"  : "geo",
+        "queue"    : "gpu",
+        "schema"   : "local",
+        "cores"    : 56
+    },
+
+    "tacc.frontera" : {
+        "project"  : "MCB20006",
+        "queue"    : "development",
+        "schema"   : "ssh",
+        "cores"    : 64
+    },
+
+    "access.longhorn" : {
+        "project"  : "FTA-Jha",
+        "queue"    : "development",
+        "schema"   : "local",
+        "cores"    : 40
+    },
+
+    "access.bridges2" : {
+        "project"  : null,
+        "queue"    : "RM",
+        "schema"   : "local",
+        "cores"    : 128
+    },
+
+    "access.wrangler" : {
+        "project"  : "TG-MCB090174",
+        "queue"    : "debug",
+        "schema"   : "gsissh",
+        "cores"    : 24
+    },
+
+    "access.stampede2_ssh"  : {
+        "project"  : "TG-MCB090174",
+        "queue"    : "development",
+        "schema"   : "local",
+        "cores"    : 204
+    },
+
+    "access.stampede2_srun"  : {
+        "project"  : "TG-MCB090174",
+        "queue"    : "development",
+        "schema"   : "local",
+        "cores"    : 204
+    },
+
+    "access.stampede2_ibrun"  : {
+        "project"  : "TG-MCB090174",
+        "queue"    : "development",
+        "schema"   : "local",
+        "cores"    : 204
+    },
+
+    "ncar.cheyenne": {
+        "project"  : "URTG0014",
+        "queue"    : "regular",
+        "schema"   : "local",
+        "cores"    : 72
+    },
+
+    "llnl.lassen"  : {
+        "project"  : "CV_DDMD",
+        "queue"    : "pdebug",
+      # "queue"    : "pbatch",
+        "schema"   : "local",
+        "cores"    : 30,
+        "gpus"     : 0
+    },
+
+    "ornl.spock"  : {
+        "project"  : "csc449",
+        "queue"    : "ecp",
+        "schema"   : "local",
+        "cores"    : 64,
+        "gpus"     : 4
+    },
+
+    "ornl.summit"  : {
+        "project"  : "CSC343",
+        "queue"    : "batch",
+        "schema"   : "local",
+        "cores"    : 168,
+        "gpus"     : 6
+    },
+
+    "ornl.summit_prte" : {
+        "project"  : "geo111",
+        "queue"    : "batch",
+        "schema"   : "local",
+        "cores"    : 168,
+        "gpus"     : 6
+    },
+
+    "ornl.rhea_aprun"   : {
+        "project"  : "BIP149",
+        "queue"    : "batch",
+        "schema"   : "local",
+        "cores"    : 64
+    },
+
+    "radical.three" : {
+        "project"  : null,
+        "queue"    : null,
+        "schema"   : "ssh",
+        "cores"    : 8
+    },
+
+    "rutgers.amarel" : {
+         "project" : null,
+         "queue"   : null,
+         "schema"  : "ssh",
+         "cores"   : 8
+    },
+
+    "uva.rivanna"  : {
+        "project"  : null,
+        "queue"    : "standard",
+        "schema"   : "local",
+        "cores"    : 8
+    }
+}
+
