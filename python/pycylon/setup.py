@@ -43,8 +43,11 @@ GLOO_PREFIX = os.environ.get('GLOO_PREFIX')
 CYLON_UCX = strtobool(os.environ.get('CYLON_UCX') or '0')
 CYLON_UCC = strtobool(os.environ.get('CYLON_UCC') or '0')
 CYLON_REDIS = strtobool(os.environ.get('CYLON_REDIS') or '0')
+UCX_LOCAL_INSTALL = strtobool(os.environ.get('UCX_LOCAL_INSTALL') or '0')
 UCC_PREFIX = os.environ.get('UCC_PREFIX')
+
 REDIS_PREFIX = os.environ.get('REDIS_PREFIX')
+
 
 print("Cylon prefix:", CYLON_PREFIX)
 print("Arrow prefix:", ARROW_PREFIX)
@@ -162,6 +165,16 @@ else:
     macros.append(('GLOO_USE_MPI', '0'))
     macros.append(('BUILD_CYLON_GLOO', '0'))
 
+if UCX_LOCAL_INSTALL:
+    print("UCX Local install")
+    UCX_INSTALL_PREFIX = os.environ.get('UCX_INSTALL_PREFIX')
+    libraries.append('uct')
+    libraries.append('ucs')
+    libraries.append('ucm')
+    libraries.append('ucp')
+    include_dirs.append(os.path.join(UCX_INSTALL_PREFIX, 'include'))
+    library_dirs.append(os.path.join(UCX_INSTALL_PREFIX, 'lib'))
+
 if CYLON_UCC and CYLON_UCX:
     libraries.append('ucc')
     library_dirs.append(os.path.join(UCC_PREFIX, 'lib'))
@@ -170,6 +183,8 @@ if CYLON_UCC and CYLON_UCX:
     macros.append(('BUILD_CYLON_UCC', '1'))
     compile_time_env['CYTHON_UCX'] = True
     compile_time_env['CYTHON_UCC'] = True
+
+
 else:
     macros.append(('BUILD_CYLON_UCX', '0'))
     macros.append(('BUILD_CYLON_UCC', '0'))

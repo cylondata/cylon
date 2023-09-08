@@ -253,13 +253,26 @@ if (CYLON_UCX)
     add_definitions(-DBUILD_CYLON_UCX)
 
     if (CONDA_LINK_DIRS)
-        message("Using Conda UCX")
-        find_library(UCX_UCT uct REQUIRED HINTS ${CONDA_LINK_DIRS})
-        find_library(UCX_UCS ucs REQUIRED HINTS ${CONDA_LINK_DIRS})
-        find_library(UCX_UCM ucm REQUIRED HINTS ${CONDA_LINK_DIRS})
-        find_library(UCX_UCP ucp REQUIRED HINTS ${CONDA_LINK_DIRS})
-        set(UCX_LIBRARIES ${UCX_UCT} ${UCX_UCS} ${UCX_UCM} ${UCX_UCP})
-    else (CONDA_LINK_DIRS)
+        message("Using Conda UCX unless UCX_INCLUDEDIR and UCX_LIBDIR is defined")
+
+        if (UCX_INSTALL_PREFIX)
+            message("setting UCX include and lib directories from install prefix")
+            include_directories(SYSTEM ${UCX_INSTALL_PREFIX}/include)
+            set(UCX_LIBRARIES
+                ${UCX_INSTALL_PREFIX}/lib/libuct.so
+                ${UCX_INSTALL_PREFIX}/lib/libucs.so
+                ${UCX_INSTALL_PREFIX}/lib/libucm.so
+                ${UCX_INSTALL_PREFIX}/lib/libucp.so)
+        else()
+            find_library(UCX_UCT uct REQUIRED HINTS ${CONDA_LINK_DIRS})
+            find_library(UCX_UCS ucs REQUIRED HINTS ${CONDA_LINK_DIRS})
+            find_library(UCX_UCM ucm REQUIRED HINTS ${CONDA_LINK_DIRS})
+            find_library(UCX_UCP ucp REQUIRED HINTS ${CONDA_LINK_DIRS})
+            set(UCX_LIBRARIES ${UCX_UCT} ${UCX_UCS} ${UCX_UCM} ${UCX_UCP})
+        endif ()
+
+
+    else ()
         message("Using locally installed UCX")
 
         # Check if UCX include and lib paths are given

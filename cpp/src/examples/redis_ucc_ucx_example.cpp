@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     //auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
 
 
-    auto redis_ucc_ucx_ctx = cylon::net::UCCRedisOOBContext::Make(4,
+    auto redis_ucc_ucx_ctx = cylon::net::UCCRedisOOBContext::Make(2,
                                                                   "tcp://cylon-redis.mveu6e.0001.use1.cache.amazonaws.com:6379");
 
     auto ucc_config = std::make_shared<cylon::net::UCCConfig>(redis_ucc_ucx_ctx);
