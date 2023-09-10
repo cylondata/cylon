@@ -9,6 +9,7 @@ ENV PATH /opt/conda/bin:$PATH
 ENV CYLON_HOME=/cylon
 ENV CYLON_PREFIX=/cylon/install
 ENV UCC_HOME=/ucc
+ENV UCX_HOME=/ucx
 
 #give ARG EXPOSE_ENV a default value
 ARG EXPOSE_ENV=33000
@@ -44,7 +45,7 @@ RUN cd $CYLON_HOME && git checkout -b aws-docker-support origin/aws-docker-suppo
 
 SHELL ["/bin/bash", "--login", "-c"]
 
-RUN conda env create -f $CYLON_HOME/conda/environments/cylon.yml
+RUN conda env create -f $CYLON_HOME/conda/environments/cylon_NoUCX.yml
 
 RUN . /opt/conda/etc/profile.d/conda.sh && \
     conda activate cylon_dev && \
@@ -57,12 +58,19 @@ RUN . /opt/conda/etc/profile.d/conda.sh && \
 RUN apt-get update &&  apt-get install autoconf -y &&  apt-get install libtool -y && apt-get install cmake -y && \
     apt-get install libnuma-dev -y
 
+#UCX install
+RUN git clone --single-branch -b master https://github.com/openucx/ucx.git $UCX_HOME
+RUN cd $UCX_HOME && \
+   ./autogen.sh && \
+   ./configure --prefix=$UCX_HOME/install && \
+   make install
+
 #UCC install
 
 RUN git clone --single-branch -b master https://github.com/openucx/ucc.git $UCC_HOME
 RUN cd $UCC_HOME && \
    ./autogen.sh && \
-   ./configure --prefix=$UCC_HOME/install --with-ucx=/opt/conda/envs/cylon_dev && \
+   ./configure --prefix=$UCC_HOME/install --with-ucx=$UCX_HOME/install && \
    make install
 
 #REDIS install
@@ -81,7 +89,7 @@ RUN git clone https://github.com/redis/hiredis.git /hiredis && \
 RUN . /opt/conda/etc/profile.d/conda.sh && \
     conda activate cylon_dev && \
     cd $CYLON_HOME && \
-    python build.py -cmake-flags="-DCYLON_UCX=1 -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$UCC_HOME/install -DCYLON_USE_REDIS=1 " -ipath="$CYLON_PREFIX" --cpp --python --test --pytest
+    python build.py -cmake-flags="-DCYLON_UCX=1 -DUCX_INSTALL_PREFIX=$UCX_HOME/install -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$UCC_HOME/install -DCYLON_USE_REDIS=1 " -ipath="$CYLON_PREFIX" --cpp --python --test --pytest
 
 RUN chmod 0755 /cylon/aws/scripts/runCylon.sh
 
