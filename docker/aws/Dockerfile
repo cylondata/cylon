@@ -39,7 +39,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py310_23.3.1-0-L
 
 
 RUN git clone https://github.com/mstaylor/cylon.git $CYLON_HOME
-RUN cd $CYLON_HOME && git checkout -b aws-docker-support origin/aws-docker-support
+RUN cd $CYLON_HOME && git checkout -b ucc-ucx-redis-local-ucx origin/ucc-ucx-redis-local-ucx
 
 
 
