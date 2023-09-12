@@ -36,11 +36,8 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py310_23.3.1-0-L
     echo "export LD_LIBRARY_PATH=$CYLON_PREFIX"/lib >> ~/.bashrc
 
 
-
-
 RUN git clone https://github.com/mstaylor/cylon.git $CYLON_HOME
 RUN cd $CYLON_HOME && git checkout -b ucc-ucx-redis-local-ucx origin/ucc-ucx-redis-local-ucx
-
 
 
 SHELL ["/bin/bash", "--login", "-c"]
@@ -59,8 +56,9 @@ RUN apt-get update &&  apt-get install autoconf -y &&  apt-get install libtool -
     apt-get install libnuma-dev -y
 
 #UCX install
-RUN git clone --single-branch -b master https://github.com/openucx/ucx.git $UCX_HOME
-RUN cd $UCX_HOME && \
+#Note: Includes support for overriding device eth address
+RUN git clone --single-branch -b master https://github.com/mstaylor/ucx.git $UCX_HOME
+RUN cd $UCX_HOME && git checkout -b override-remote-address3 origin/override-remote-address3 \
    ./autogen.sh && \
    ./configure --prefix=$UCX_HOME/install && \
    make install
