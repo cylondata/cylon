@@ -57,8 +57,8 @@ RUN apt-get update &&  apt-get install autoconf -y &&  apt-get install libtool -
 
 #UCX install
 #Note: Includes support for overriding device eth address
-RUN git clone --single-branch -b master https://github.com/mstaylor/ucx.git $UCX_HOME
-RUN cd $UCX_HOME && git checkout -b override-remote-address3 origin/override-remote-address3 \
+RUN git clone --single-branch -b override-remote-address3 https://github.com/mstaylor/ucx.git $UCX_HOME
+RUN cd $UCX_HOME && \
    ./autogen.sh && \
    ./configure --prefix=$UCX_HOME/install && \
    make install
