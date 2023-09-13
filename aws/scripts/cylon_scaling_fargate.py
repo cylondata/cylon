@@ -47,9 +47,13 @@ def upload_file(file_name, bucket, object_name=None):
     return True
 
 
-def cylon_join(data=None):
+def cylon_join(data=None, ipAddress = None):
     global ucc_config
     StopWatch.start(f"join_total_{data['host']}_{data['rows']}_{data['it']}")
+
+    if ipAddress is not None:
+        print("setting UCX_TCP_REMOTE_ADDRESS_OVERRIDE", ipAddress)
+        os.environ['UCX_TCP_REMOTE_ADDRESS_OVERRIDE'] = ipAddress
 
     redis_context = UCCRedisOOBContext(data['world_size'], f"tcp://{data['redis_host']}:{data['redis_port']}")
 
@@ -256,7 +260,6 @@ def cylon_slice(data=None):
 
     env.finalize()
 
-
 def get_service_ips(cluster, tasks):
     client = boto3.client("ecs", region_name="us-east-1")
 
@@ -300,7 +303,6 @@ def get_ecs_task_arn_cluster(host):
     }
     return dict
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="cylon scaling")
     parser.add_argument('-n', dest='rows', type=int, **environ_or_required('ROWS'))
@@ -323,18 +325,9 @@ if __name__ == "__main__":
     parser.add_argument('-o2', dest='s3_summary_object_name', type=str, help="S3 Object Name",
                         **environ_or_required('S3_SUMMARY_OBJECT_NAME'))
 
-
     args = vars(parser.parse_args())
     args['host'] = "aws"
-    #if args['operation'] == 'join':
-    #    print("executing cylon join operation")
-    #    cylon_join(args)
-    #elif args['operation'] == 'sort':
-    #    print("executing cylon sort operation")
-    #    cylon_sort(args)
-    #else:
-    #    print ("executing cylon slice operation")
-    #    cylon_slice(args)
+
     print("Extracting task ID from $ECS_CONTAINER_METADATA_URI_V4")
     print("Inside get_ecs_task_id.py, redirecting logs to stderr")
     print("so that I can pass the task id back in STDOUT")
@@ -344,10 +337,20 @@ if __name__ == "__main__":
     # This print statement passes the string back to the bash wrapper, don't remove
     print("taskARN/Cluster: ", data)
 
-
     ips = get_service_ips(data['Cluster'], [data["TaskARN"]])
 
-    print("aws task ip: ", ips[0])
+
+
+    if args['operation'] == 'join':
+        print("executing cylon join operation")
+        cylon_join(args, ips[0])
+    elif args['operation'] == 'sort':
+        print("executing cylon sort operation")
+        cylon_sort(args)
+    else:
+        print ("executing cylon slice operation")
+        cylon_slice(args)
+
 
     # os.system(f"{git} branch | fgrep '*' ")
     # os.system(f"{git} rev-parse HEAD")
