@@ -40,6 +40,7 @@ RUN git clone https://github.com/mstaylor/cylon.git $CYLON_HOME
 RUN cd $CYLON_HOME && git checkout -b ucc-ucx-redis-local-ucx origin/ucc-ucx-redis-local-ucx
 
 
+
 SHELL ["/bin/bash", "--login", "-c"]
 
 RUN conda env create -f $CYLON_HOME/conda/environments/cylon_NoUCX.yml
@@ -62,13 +63,13 @@ RUN cd $UCX_HOME && \
    ./autogen.sh && \
    ./configure --prefix=$UCX_HOME/install && \
    make install
-
 #UCC install
 
 RUN git clone --single-branch -b master https://github.com/openucx/ucc.git $UCC_HOME
 RUN cd $UCC_HOME && \
    ./autogen.sh && \
    ./configure --prefix=$UCC_HOME/install --with-ucx=$UCX_HOME/install && \
+
    make install
 
 #REDIS install
