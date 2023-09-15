@@ -36,6 +36,8 @@ namespace cylon {
             virtual void InitOOB(int rank) = 0;
 
             virtual void *getCollInfo() = 0;
+
+            virtual Status Finalize() = 0;
         };
 
 #endif

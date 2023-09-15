@@ -29,16 +29,20 @@ IF CYTHON_GLOO:
 IF CYTHON_UCX & CYTHON_UCC:
 	from pycylon.net.ucx_config cimport CUCXConfig
 	from pycylon.net.ucc_config cimport CUCCConfig
+	from pycylon.net.ucc_ucx_communicator cimport CUCXUCCCommunicator
+IF CYTHON_UCX:
+	from pycylon.net.ucx_communicator cimport CUCXCommunicator
+from pycylon.net.mpi_communicator cimport CMPICommunicator
 from pycylon.io.csv_read_config cimport CCSVReadOptions
 from pycylon.io.csv_read_config import CSVReadOptions
 from pycylon.io.csv_read_config cimport CSVReadOptions
 from pycylon.io.csv_write_config cimport CCSVWriteOptions
 from pycylon.io.csv_write_config import CSVWriteOptions
 from pycylon.io.csv_write_config cimport CSVWriteOptions
-from pycylon.data.data_type cimport CType
-from pycylon.data.data_type import Type
-from pycylon.data.data_type cimport CLayout
-from pycylon.data.data_type import Layout
+from pycylon.data.ctype cimport CType
+from pycylon.data.ctype import Type
+from pycylon.data.layout cimport CLayout
+from pycylon.data.layout import Layout
 from pycylon.data.data_type cimport CDataType
 from pycylon.data.data_type import DataType
 from pycylon.common.status cimport CStatus
@@ -69,8 +73,12 @@ IF CYTHON_UCX & CYTHON_UCC:
 	cdef api shared_ptr[CUCXConfig] pycylon_unwrap_ucx_config(object config)
 	cdef api shared_ptr[CUCCConfig] pycylon_unwrap_ucc_config(object config)
 
+	cdef api object pycylon_wrap_ucc_ucx_communicator(const shared_ptr[CUCXUCCCommunicator] & ccommunicator)
 
+IF CYTHON_UCX:
+	cdef api object pycylon_wrap_ucx_communicator(const shared_ptr[CUCXCommunicator] & ccommunicator)
 
+cdef api object pycylon_wrap_mci_communicator(const shared_ptr[CMPICommunicator] & ccomunicator)
 
 cdef api shared_ptr[CTable] pycylon_unwrap_table(object table)
 

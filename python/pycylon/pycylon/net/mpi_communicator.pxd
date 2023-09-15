@@ -13,31 +13,29 @@
  ##
 
 from libcpp.memory cimport shared_ptr
-from pycylon.net.comm_config cimport CCommConfig
 from pycylon.net.comm_type cimport CCommType
 from pycylon.net.reduce_op cimport CReduceOp
 from pycylon.common.status cimport CStatus
 from pycylon.data.scalar cimport CScalar
+from pycylon.net.communicator cimport Communicator
 
 
+cdef extern from "../../../../cpp/src/cylon/net/mpi/mpi_communicator.hpp" namespace "cylon::net":
+    cdef cppclass CMPICommunicator "cylon::net::MPICommunicator":
 
-
-cdef extern from "../../../../cpp/src/cylon/net/communicator.hpp" namespace "cylon::net":
-    cdef cppclass CCommunicator "cylon::net::Communicator":
-
-        # TODO: add create Channel
         int GetRank()
         int GetWorldSize()
         void Finalize()
         void Barrier()
         CCommType GetCommType()
 
-        CStatus AllReduce(const shared_ptr[CScalar] &value,
-                           CReduceOp reduce_op,
-                           shared_ptr[CScalar] *output)
-
-cdef class Communicator:
-    pass
+        CStatus AllReduce(const shared_ptr[CScalar] & value,
+                          CReduceOp reduce_op,
+                          shared_ptr[CScalar] *output)
 
 
+cdef class MPICommunicator(Communicator):
+    cdef:
+        shared_ptr[CMPICommunicator] mpi_comm_shd_ptr
 
+        void init(self, const shared_ptr[CMPICommunicator] & communicator)

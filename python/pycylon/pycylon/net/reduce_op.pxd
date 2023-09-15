@@ -12,14 +12,18 @@
  # limitations under the License.
  ##
 
-from pycylon.net.reduce_op import ReduceOp
+'''
+OOB Type mapping from Cylon C++ API
+'''
 
+cdef extern from "../../../../cpp/src/cylon/net/comm_operations.hpp" namespace "cylon::net":
 
-cdef class Communicator:
-
-    def __cinit__(self):
-        pass
-
-    def allreduce(self, value, reduce_op: ReduceOp):
-        pass
-
+    cdef enum CReduceOp 'cylon::net::ReduceOp':
+        _SUM 'cylon::net::ReduceOp::SUM'
+        _MIN 'cylon::net::ReduceOp::MIN'
+        _MAX 'cylon::net::ReduceOp::MAX'
+        _PROD 'cylon::net::ReduceOp::PROD'
+        _LAND 'cylon::net::ReduceOp::LAND'
+        _LOR 'cylon::net::ReduceOp::LOR'
+        _BAND 'cylon::net::ReduceOp::BAND'
+        _BOR 'cylon::net::ReduceOp::BOR'

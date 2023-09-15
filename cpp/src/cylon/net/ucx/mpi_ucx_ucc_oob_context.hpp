@@ -61,6 +61,8 @@ class UCCMPIOOBContext : public UCCOOBContext {
   static ucc_status_t oob_allgather_test(void *req);
 
   static ucc_status_t oob_allgather_free(void *req);
+
+    Status Finalize() override;
 };
 
 #endif

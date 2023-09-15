@@ -12,14 +12,18 @@
  # limitations under the License.
  ##
 
-from pycylon.net.reduce_op import ReduceOp
+'''
+Mapping Cylon C++ Comm Type with PyCylon CommType
+'''
 
+from pycylon.net.reduce_op cimport CReduceOp
 
-cdef class Communicator:
-
-    def __cinit__(self):
-        pass
-
-    def allreduce(self, value, reduce_op: ReduceOp):
-        pass
-
+cpdef enum ReduceOp:
+    SUM = CReduceOp._SUM
+    MIN = CReduceOp._MIN
+    MAX = CReduceOp._MAX
+    PROD = CReduceOp._PROD
+    LAND = CReduceOp._LAND
+    LOR = CReduceOp._LOR
+    BAND = CReduceOp._BAND
+    BOR = CReduceOp._BOR

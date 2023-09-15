@@ -74,6 +74,11 @@ ucc_status_t UCCMPIOOBContext::oob_allgather_free(void *req) {
   (void)req;
   return UCC_OK;
 }
+
+        Status UCCMPIOOBContext::Finalize() {
+            return Status::OK();
+        }
+
 #endif
 }  // namespace net
 }  // namespace cylon

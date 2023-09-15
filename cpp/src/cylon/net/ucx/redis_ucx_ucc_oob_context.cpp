@@ -132,6 +132,14 @@ namespace cylon {
             return std::make_shared<UCCRedisOOBContext>(world_size, redis_addr);
         }
 
+        Status UCCRedisOOBContext::Finalize() {
+
+            return Status::OK();
+
+        }
+
+
+
 #endif
 
     }
