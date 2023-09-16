@@ -12,7 +12,7 @@
 # limitations under the License.
 ##
 
-from libcpp.memory cimport shared_ptr
+from libcpp.memory cimport shared_ptr, dynamic_pointer_cast
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
@@ -22,13 +22,22 @@ IF CYTHON_GLOO:
     from pycylon.api.lib cimport pycylon_unwrap_gloo_config
 
 IF CYTHON_UCX & CYTHON_UCC:
-    from pycylon.api.lib cimport pycylon_unwrap_ucx_config, pycylon_unwrap_ucc_config
+    from pycylon.api.lib cimport pycylon_unwrap_ucx_config, pycylon_unwrap_ucc_config, pycylon_wrap_ucc_ucx_communicator
+    from pycylon.net.ucc_ucx_communicator cimport CUCXUCCCommunicator, UCXUCCCommunicator
+IF CYTHON_UCX:
+    from pycylon.api.lib cimport pycylon_wrap_ucx_communicator
+    from pycylon.net.ucx_communicator cimport CUCXCommunicator, UCXCommunicator
+from pycylon.net.mpi_communicator cimport CMPICommunicator, MPICommunicator
+from pycylon.api.lib cimport pycylon_wrap_mci_communicator
 from pycylon.net import CommType
 from pycylon.net.mpi_config cimport CMPIConfig
 from pycylon.net.mpi_config import MPIConfig
 from pycylon.net.comm_config cimport CCommConfig
 from pycylon.net.comm_config import CommConfig
 from pycylon.net.comm_config cimport CommConfig
+from pycylon.net.communicator import Communicator
+from pycylon.net.communicator cimport CCommunicator
+
 
 cdef class CylonContext:
     """
@@ -127,6 +136,14 @@ cdef class CylonContext:
 
         '''
         return self.ctx_shd_ptr.get().GetWorldSize()
+
+    def get_communicator(self):
+        IF CYTHON_UCX & CYTHON_UCC:
+            return pycylon_wrap_ucc_ucx_communicator(dynamic_pointer_cast[CUCXUCCCommunicator, CCommunicator](self.ctx_shd_ptr.get().GetCommunicator()))
+        ELIF CYTHON_UCX:
+            return pycylon_wrap_ucx_communicator(
+                dynamic_pointer_cast[CUCXCommunicator, CCommunicator](self.ctx_shd_ptr.get().GetCommunicator()))
+        return pycylon_wrap_mci_communicator(dynamic_pointer_cast[CMPICommunicator, CCommunicator](self.ctx_shd_ptr.get().GetCommunicator()))
 
     def finalize(self):
         '''

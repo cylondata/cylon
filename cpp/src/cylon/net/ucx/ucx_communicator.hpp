@@ -20,7 +20,9 @@
 #include <cylon/net/ucx/ucx_operations.hpp>
 #include <cylon/net/ucx/mpi_ucx_ucc_oob_context.hpp>
 
+
 #include "cylon/util/macros.hpp"
+
 
 #ifdef BUILD_CYLON_UCC
 #include <ucc/api/ucc.h>
@@ -29,8 +31,10 @@
 namespace cylon {
 namespace net {
 class UCXConfig : public CommConfig {
+
+
  public:
-  CommType Type() override;
+    CommType Type() override;
   explicit UCXConfig(std::shared_ptr<UCXOOBContext> oobContext);
   explicit UCXConfig(MPI_Comm comm = MPI_COMM_NULL);
 
@@ -44,34 +48,43 @@ class UCXConfig : public CommConfig {
   MPI_Comm GetMPIComm() const;
 
  private:
-  std::shared_ptr<UCXOOBContext> oobContext_ = nullptr;
-  MPI_Comm comm_ = MPI_COMM_NULL;
+  std::shared_ptr<UCXOOBContext> oobContext = nullptr;
+  MPI_Comm comm_;
 };
 
 #ifdef BUILD_CYLON_UCC
 class UCCConfig : public CommConfig {
 
+
  public:
-  CommType Type() override;
-  explicit UCCConfig(std::shared_ptr<UCCOOBContext> oobContext);
+    CommType Type() override;
+
+    ~UCCConfig() override;
+
+    explicit UCCConfig(std::shared_ptr<UCCOOBContext> oobContext);
   static std::shared_ptr<UCCConfig> Make(
       std::shared_ptr<UCCOOBContext> &oobContext);
   void setOOBContext(std::shared_ptr<UCCOOBContext> oobContext);
   std::shared_ptr<UCCOOBContext> getOOBContext();
 
  private:
-  std::shared_ptr<UCCOOBContext> oobContext_;
+  std::shared_ptr<UCCOOBContext> oobContext;
 };
 #endif
 
 class UCXCommunicator : public Communicator {
  public:
-  explicit UCXCommunicator(MemoryPool *pool);
-  UCXCommunicator(MemoryPool *pool, bool externally_init, MPI_Comm comm);
+    explicit UCXCommunicator(MemoryPool *pool);
+    UCXCommunicator(MemoryPool *pool, bool externally_init, MPI_Comm comm);
 
-  ~UCXCommunicator() override = default;
 
-  std::unique_ptr<Channel> CreateChannel() const override;
+
+
+    ~UCXCommunicator() override = default;
+
+
+
+    std::unique_ptr<Channel> CreateChannel() const override;
   int GetRank() const override;
   int GetWorldSize() const override;
   void Finalize() override;
@@ -99,8 +112,8 @@ class UCXCommunicator : public Communicator {
   static Status Make(const std::shared_ptr<CommConfig> &config,
                      MemoryPool *pool, std::shared_ptr<Communicator> *out);
 
-  static Status MakeOOB(const std::shared_ptr<CommConfig> &config,
-                        MemoryPool *pool, std::shared_ptr<Communicator> *out);
+    static Status MakeOOB(const std::shared_ptr<CommConfig> &config,
+                             MemoryPool *pool, std::shared_ptr<Communicator> *out);
 
   // # UCX specific attributes - These need to be passed to the channels created
   // from the communicator The worker for receiving
@@ -114,8 +127,8 @@ class UCXCommunicator : public Communicator {
 
   std::shared_ptr<UCXOOBContext> oobContext = nullptr;
 
-  bool externally_init = false;
-  MPI_Comm mpi_comm;
+    bool externally_init = false;
+    MPI_Comm mpi_comm;
 
 };
 
@@ -123,12 +136,17 @@ class UCXCommunicator : public Communicator {
 class UCXUCCCommunicator : public Communicator {
  public:
   explicit UCXUCCCommunicator(std::shared_ptr<Communicator> ucx_comm,
-                              std::shared_ptr<UCCOOBContext> oobContext);
+                              std::shared_ptr<UCCOOBContext> &oobContext);
 
-  explicit UCXUCCCommunicator(const std::shared_ptr<Communicator> &ucx_comm);
+  explicit UCXUCCCommunicator(const std::shared_ptr<Communicator>& ucx_comm);
+
+
 
   static Status Make(const std::shared_ptr<CommConfig> &config,
                      MemoryPool *pool, std::shared_ptr<Communicator> *out);
+
+
+
 
   CommType GetCommType() const override;
   std::unique_ptr<Channel> CreateChannel() const override;
@@ -157,9 +175,9 @@ class UCXUCCCommunicator : public Communicator {
   std::shared_ptr<UCXCommunicator> ucx_comm_;
   std::shared_ptr<UCCOOBContext> oobContext;
 
- private:
-  static Status MakeOOB(std::shared_ptr<UCCOOBContext> &ucc_oob_ctx,
-                        MemoryPool *pool, std::shared_ptr<Communicator> *out);
+private:
+    static Status MakeOOB(std::shared_ptr<UCCOOBContext> &ucc_oob_ctx,
+                       MemoryPool *pool, std::shared_ptr<Communicator> *out);
 
 };
 #endif

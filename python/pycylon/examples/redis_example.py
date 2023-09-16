@@ -10,7 +10,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--world_size', "-n", type=int, help="world size")
-    parser.add_argument("--redis_host", "-h", type=str, help="redis address, default to 127.0.0.1",
+    parser.add_argument("--redis_host", "-r", type=str, help="redis address, default to 127.0.0.1",
                         default="127.0.0.1")
     parser.add_argument("--port", "-p", type=int, help="name of redis port", default=6379)
     args = parser.parse_args()

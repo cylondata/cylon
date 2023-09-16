@@ -12,10 +12,14 @@
  # limitations under the License.
  ##
 
-from pycylon.net.communicator cimport CMPICommunicator
+from pycylon.net.reduce_op import ReduceOp
 
 
-cdef class MPICommunicator:
+cdef class Communicator:
 
     def __cinit__(self):
         pass
+
+    def allreduce(self, value, reduce_op: ReduceOp):
+        pass
+

@@ -97,6 +97,8 @@ namespace cylon {
 
             int getRank();
 
+            Status Finalize() override;
+
         private:
             int world_size;
             int rank = -1;
