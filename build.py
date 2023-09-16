@@ -172,11 +172,13 @@ GLOO_PREFIX = parse_cmake_flags('GLOO_INSTALL_PREFIX')
 CYLON_REDIS = parse_cmake_flags("CYLON_USE_REDIS")
 CYLON_UCX = parse_cmake_flags('CYLON_UCX')
 CYLON_UCC = parse_cmake_flags('CYLON_UCC')
+UCX_INSTALL_PREFIX = parse_cmake_flags('UCX_INSTALL_PREFIX')
 UCC_PREFIX = parse_cmake_flags('UCC_INSTALL_PREFIX')
 REDIS_PREFIX = parse_cmake_flags('REDIS_INSTALL_PREFIX')
 
 if CYLON_REDIS and (REDIS_PREFIX is None):
     REDIS_PREFIX = "/usr/local"
+
 
 def print_line():
     logger.info("=================================================================")
@@ -276,12 +278,27 @@ def python_test():
                 env['LD_LIBRARY_PATH'] = os.path.join(GLOO_PREFIX, "lib") + os.pathsep + \
                                          env['LD_LIBRARY_PATH']
 
+            if UCX_INSTALL_PREFIX is not None:
+                env['UCX_LOCAL_INSTALL'] = '1'
+            else:
+                env['UCX_LOCAL_INSTALL'] = '0'
+
+            if UCX_INSTALL_PREFIX is not None:
+                env['UCX_INSTALL_PREFIX'] = UCX_INSTALL_PREFIX
+                env['LD_LIBRARY_PATH'] = os.path.join(UCX_INSTALL_PREFIX, "lib") + os.pathsep + \
+                                         os.path.join(UCX_INSTALL_PREFIX, "lib", "uct") + os.pathsep + \
+                                         os.path.join(UCX_INSTALL_PREFIX, "lib", "ucs") + os.pathsep + \
+                                         os.path.join(UCX_INSTALL_PREFIX, "lib", "ucm") + os.pathsep + \
+                                         os.path.join(UCX_INSTALL_PREFIX, "lib", "ucp") + os.pathsep + \
+                                         env['LD_LIBRARY_PATH']
+
             if CYLON_UCC:
                 env['CYLON_UCC'] = str(CYLON_UCC)
                 env['UCC_PREFIX'] = UCC_PREFIX
                 env['LD_LIBRARY_PATH'] = os.path.join(UCC_PREFIX, "lib") + os.pathsep + \
                                          os.path.join(UCC_PREFIX, "lib", "ucc") + os.pathsep + \
                                          env['LD_LIBRARY_PATH']
+
 
             if CYLON_REDIS:
                 env['CYLON_REDIS'] = str(CYLON_REDIS)
@@ -330,6 +347,13 @@ def build_python():
         env['CYLON_UCX'] = str(CYLON_UCX)
         env['CYLON_UCC'] = str(CYLON_UCC)
         env['UCC_PREFIX'] = UCC_PREFIX
+
+    if UCX_INSTALL_PREFIX is not None:
+        env['UCX_LOCAL_INSTALL'] = '1'
+        env['UCX_INSTALL_PREFIX'] = UCX_INSTALL_PREFIX
+    else:
+        env['UCX_LOCAL_INSTALL'] = '0'
+
 
     if CYLON_REDIS:
         env['CYLON_REDIS'] = str(CYLON_REDIS)
