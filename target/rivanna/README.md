@@ -12,7 +12,17 @@ git clone https://github.com/cylondata/cylon.git
 ````
 
 
-## Decveloping with Cylon
+## Developing with Cylon
+
+### Creating a working directory on Rivanna
+
+First, we create a user directory in Rivanna's file system that is backed up so that we do not lose data/programs:
+
+'''bash
+cd /project/$USER
+'''
+
+Now, continue to follow the documentation on installing Cylon, specified next.
 
 ### Clone Cylon
 
@@ -72,6 +82,8 @@ PWD=`pwd`
 BUILD_PATH=$PWD/build
 
 module load gcc/9.2.0 openmpi/3.1.6 python/3.7.7 cmake/3.23.3
+### We recommend that you use the following updated module versions:
+# module load gcc/11.2.0 openmpi/4.1.4 python/3.11.1 cmake/3.23.3
 
 python -m venv $PWD/cy-rp-env
 
