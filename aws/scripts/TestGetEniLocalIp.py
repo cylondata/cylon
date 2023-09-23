@@ -284,7 +284,7 @@ def get_service_ips(cluster, tasks):
 
     return ips
 
-def get_ecs_task_arn_cluster(host):
+def get_ecs_task_arn(host):
     path = "/task"
     url = host + path
     headers = {"Content-Type": "application/json"}
@@ -292,13 +292,7 @@ def get_ecs_task_arn_cluster(host):
     print(f"r: {r}")
     d_r = json.loads(r.text)
     print(d_r)
-    cluster = d_r["TaskARN"]
-    taskArn = d_r["Cluster"]
-    dict = {
-        "TaskARN": cluster,
-        "Cluster": taskArn
-    }
-    return dict
+    return d_r["TaskARN"]
 
 
 if __name__ == "__main__":
@@ -322,7 +316,8 @@ if __name__ == "__main__":
     parser.add_argument('-o1', dest='s3_stopwatch_object_name', type=str, help="S3 Object Name", **environ_or_required('S3_STOPWATCH_OBJECT_NAME'))
     parser.add_argument('-o2', dest='s3_summary_object_name', type=str, help="S3 Object Name",
                         **environ_or_required('S3_SUMMARY_OBJECT_NAME'))
-
+    parser.add_argument('-c', dest='aws_ecs_cluster', type=str, help="AWS ECS Cluster",
+                        **environ_or_required('ECS_CLUSTER_NAME'))
 
     args = vars(parser.parse_args())
     args['host'] = "aws"
@@ -340,14 +335,14 @@ if __name__ == "__main__":
     print("so that I can pass the task id back in STDOUT")
 
     host = os.environ["ECS_CONTAINER_METADATA_URI_V4"]
-    data = get_ecs_task_arn_cluster(host)
+    ecs_task_arn = get_ecs_task_arn(host)
     # This print statement passes the string back to the bash wrapper, don't remove
-    print("taskARN/Cluster: ", data)
+    print("ecs taskid: ", ecs_task_arn)
 
 
-    ips = get_service_ips(data['Cluster'], [data["TaskARN"]])
+    ips = get_service_ips(args['aws_ecs_cluster'], [ecs_task_arn])
 
-    print("aws task ip: ", ips[0])
+    print("aws task ip: ", ips)
 
     # os.system(f"{git} branch | fgrep '*' ")
     # os.system(f"{git} rev-parse HEAD")

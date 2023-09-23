@@ -40,6 +40,7 @@ RUN git clone https://github.com/mstaylor/cylon.git $CYLON_HOME
 RUN cd $CYLON_HOME && git checkout -b ucc-ucx-redis-local-ucx origin/ucc-ucx-redis-local-ucx
 
 
+
 SHELL ["/bin/bash", "--login", "-c"]
 
 RUN conda env create -f $CYLON_HOME/conda/environments/cylon_NoUCX.yml
