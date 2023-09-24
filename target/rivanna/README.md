@@ -82,8 +82,6 @@ PWD=`pwd`
 BUILD_PATH=$PWD/build
 
 module load gcc/9.2.0 openmpi/3.1.6 python/3.7.7 cmake/3.23.3
-### We recommend that you use the following updated module versions:
-# module load gcc/11.2.0 openmpi/4.1.4 python/3.11.1 cmake/3.23.3
 
 python -m venv $PWD/cy-rp-env
 
