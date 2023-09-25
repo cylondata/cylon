@@ -20,6 +20,7 @@ First, we create a user directory in Rivanna's file system that is backed up so 
 
 ```bash
 cd /project/$USER
+```
 
 Now, continue to follow the documentation on installing Cylon, specified next.
 
