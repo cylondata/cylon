@@ -18,9 +18,8 @@ git clone https://github.com/cylondata/cylon.git
 
 First, we create a user directory in Rivanna's file system that is backed up so that we do not lose data/programs:
 
-'''bash
+```bash
 cd /project/$USER
-'''
 
 Now, continue to follow the documentation on installing Cylon, specified next.
 
