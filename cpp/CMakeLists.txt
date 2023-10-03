@@ -277,9 +277,9 @@ if (CYLON_UCX)
 
 
 
-        #if (NOT UCX_INSTALL_PREFIX)
+        if (NOT UCX_INSTALL_PREFIX)
             message(FATAL_ERROR "CYLON_UCX is set, UCX_INSTALL_PREFIX should also be set")
-        #endif ()
+        endif ()
 
         # Set UCX found as true
         set(UCX_FOUND TRUE)
