@@ -275,27 +275,24 @@ if (CYLON_UCX)
     else ()
         message("Using locally installed UCX")
 
-        # Check if UCX include and lib paths are given
-        if (NOT UCX_INCLUDEDIR)
-            message(FATAL_ERROR "CYLON_UCX is set, UCX_INCLUDEDIR should also be set")
-        endif ()
-        if (NOT UCX_LIBDIR)
-            message(FATAL_ERROR "CYLON_UCX is set, UCX_LIBDIR should also be set")
-        endif ()
+
+
+        #if (NOT UCX_INSTALL_PREFIX)
+            message(FATAL_ERROR "CYLON_UCX is set, UCX_INSTALL_PREFIX should also be set")
+        #endif ()
 
         # Set UCX found as true
         set(UCX_FOUND TRUE)
 
-        # Include UCX
-        include_directories(SYSTEM ${UCX_INCLUDEDIR})
-        # Set library directory for later use
+
+        message("setting UCX include and lib directories from install prefix")
+        include_directories(SYSTEM ${UCX_INSTALL_PREFIX}/include)
         set(UCX_LIBRARIES
-                ${UCX_LIBDIR}/ucx/libuct_cma.so
-                ${UCX_LIBDIR}/ucx/libuct_ib.so
-                ${UCX_LIBDIR}/libuct.so
-                ${UCX_LIBDIR}/libucs.so
-                ${UCX_LIBDIR}/libucm.so
-                ${UCX_LIBDIR}/libucp.so)
+                ${UCX_INSTALL_PREFIX}/lib/libuct.so
+                ${UCX_INSTALL_PREFIX}/lib/libucs.so
+                ${UCX_INSTALL_PREFIX}/lib/libucm.so
+                ${UCX_INSTALL_PREFIX}/lib/libucp.so)
+
     endif (CONDA_LINK_DIRS)
     message(STATUS "UCX libs: ${UCX_LIBRARIES}")
 
