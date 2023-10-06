@@ -17,5 +17,12 @@ rm -rf build
 
 export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/lib64:$BUILD_PATH/lib64:$BUILD_PATH/lib:$LD_LIBRARY_PATH
 
-#time ./build.sh -j$(nproc) -pyenv $PWD/CYLON-ENV -bpath $PWD/build --cpp --python --cython --test --cmake-flags "-DMPI_C_COMPILER=$(which mpicc) -DMPI_CXX_COMPILER=$(which mpicxx) -DCYLON_UCX=1 -DUCX_INSTALL_PREFIX=/scratch/qad5gv/ucx-1.12.1/install -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=/scratch/qad5gv/ucc/install2 -DCYLON_USE_REDIS=1 -DREDIS_INSTALL_PREFIX=/scratch/qad5gv/redis_install"
-time python ./build.py -cmake-flags="-DMPI_C_COMPILER=$(which mpicc) -DMPI_CXX_COMPILER=$(which mpicxx) -DCYLON_UCX=1 -DUCX_INSTALL_PREFIX=/scratch/qad5gv/ucx-1.12.1/install -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=/scratch/qad5gv/ucc/install2 -DCYLON_USE_REDIS=1 -DREDIS_INSTALL_PREFIX=/scratch/qad5gv/redis_install " -ipath="$PWD/build" --cpp --python --test --pytest
+export CYLON_UCX = 1
+export CYLON_UCC = 1
+export UCX_LOCAL_INSTALL = 1
+export UCX_INSTALL_PREFIX = /scratch/qad5gv/ucx-1.12.1/install
+export UCC_PREFIX = /scratch/qad5gv/ucc/install2
+export REDIS_PREFIX = /scratch/qad5gv/redis_install
+
+
+time ./build.sh -j$(nproc) -pyenv $PWD/CYLON-ENV -bpath $PWD/build --cpp --python --cython --test --cmake-flags "-DMPI_C_COMPILER=$(which mpicc) -DMPI_CXX_COMPILER=$(which mpicxx) -DCYLON_UCX=1 -DUCX_INSTALL_PREFIX=/scratch/qad5gv/ucx-1.12.1/install -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=/scratch/qad5gv/ucc/install2 -DCYLON_USE_REDIS=1 -DREDIS_INSTALL_PREFIX=/scratch/qad5gv/redis_install"
