@@ -23,6 +23,7 @@ parser.add_argument('-n', dest='rows', type=int, required=True)
 parser.add_argument('-s', dest='scaling', type=str, default='w', choices=['s', 'w'],
                         help="s=strong w=weak")
 
+
 parser.add_argument('-w', dest='world_size', type=int, help="world size", required=True)
 
 parser.add_argument("-r", dest='redis_host', type=str, help="redis address",
@@ -34,10 +35,10 @@ parser.add_argument("-p1", dest='redis_port', type=int, help="name of redis port
 args = vars(parser.parse_args())
 
 
-# (nodes, threads, rows, partition, "exclusive")
+# (nodes, threads, cores, rows, partition, "exclusive")
 combination = [\
     # (1,4, 5000, "parallel", "exclusive"), # always pending
-    (1,37, args['rows'], "parallel"),
+    (1,6, args['rows'], "parallel"),
     #(2,37, 1000000, "parallel", ""),
     #(4,37, 35000000, "parallel", ""),
     #(6,37, 35000000, "parallel", ""),
