@@ -38,7 +38,7 @@ args = vars(parser.parse_args())
 # (nodes, threads, cores, rows, partition, "exclusive")
 combination = [\
     # (1,4, 5000, "parallel", "exclusive"), # always pending
-    (2,4, args['rows'], "parallel", ""),
+    (2,4, "24G", args['rows'], "parallel", ""),
     #(2,37, 1000000, "parallel", ""),
     #(4,37, 35000000, "parallel", ""),
     #(6,37, 35000000, "parallel", ""),
@@ -60,7 +60,7 @@ jobid="-%j"
 # jobid=""
 
 f = open("submit.log", "w")
-for nodes, threads, rows, partition, exclusive in combination:
+for nodes, threads, memory, rows, partition, exclusive in combination:
   counter = counter + 1
 
   if exclusive == "exclusive":
@@ -95,7 +95,7 @@ for nodes, threads, rows, partition, exclusive in combination:
   #SBATCH --job-name=h-n={nodes:02d}-t={threads:02d}-e={e}
   #SBATCH --nodes={nodes}
   #SBATCH --ntasks={threads}
-  #SBATCH --mem=26G
+  #SBATCH --mem={memory}
   #SBATCH --time=15:00
   #SBATCH --output=out-{nodes:02d}-{threads:02d}{jobid}.log
   #SBATCH --error=out-{nodes:02d}-{threads:02d}{jobid}.err
