@@ -38,7 +38,7 @@ args = vars(parser.parse_args())
 # (nodes, threads, cores, rows, partition, "exclusive")
 combination = [\
     # (1,4, 5000, "parallel", "exclusive"), # always pending
-    (1,1, args['rows'], "parallel", ""),
+    (1,4, args['rows'], "parallel", ""),
     #(2,37, 1000000, "parallel", ""),
     #(4,37, 35000000, "parallel", ""),
     #(6,37, 35000000, "parallel", ""),
@@ -94,7 +94,8 @@ for nodes, threads, rows, partition, exclusive in combination:
   #!/bin/bash
   #SBATCH --job-name=h-n={nodes:02d}-t={threads:02d}-e={e}
   #SBATCH --nodes={nodes}
-  #SBATCH --ntasks-per-node={threads}
+  #SBATCH --ntasks={threads}
+  #SBATCH --mem=26G
   #SBATCH --time=15:00
   #SBATCH --output=out-{nodes:02d}-{threads:02d}{jobid}.log
   #SBATCH --error=out-{nodes:02d}-{threads:02d}{jobid}.err
