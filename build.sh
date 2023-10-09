@@ -50,6 +50,25 @@ while [[ $# -gt 0 ]]; do
     shift # past argument
     shift # past value
     ;;
+  -ucxpath | --ucx_build_path)
+    UCX_INSTALL_PREFIX="$2"
+    UCX_LOCAL_INSTALL="ON"
+    CYLON_UCX="ON"
+    shift # past argument
+    shift # past value
+    ;;
+  -uccpath | --ucc_build_path)
+    UCC_PREFIX="$2"
+    CYLON_UCC="ON"
+    shift # past argument
+    shift # past value
+    ;;
+  -redispath | --redis_build_path)
+    REDIS_PREFIX="$2"
+    CYLON_REDIS="ON"
+    shift # past argument
+    shift # past value
+    ;;
   -ipath | --install_path)
     INSTALL_PATH="$2"
     shift # past argument
@@ -414,7 +433,7 @@ build_python() {
   pushd python/pycylon || exit 1
   pip3 uninstall -y pycylon
   make clean
-  CYLON_PREFIX=${CYLON_PREFIX} ARROW_PREFIX=${BUILD_PATH}/arrow/install python3 setup.py install || exit 1
+  CYLON_PREFIX=${CYLON_PREFIX} ARROW_PREFIX=${BUILD_PATH}/arrow/install CYLON_UCX=${CYLON_UCX} CYLON_UCC=${CYLON_UCC} CYLON_REDIS=${CYLON_REDIS} UCX_LOCAL_INSTALL=${UCX_LOCAL_INSTALL} UCC_PREFIX=${UCC_PREFIX} REDIS_PREFIX=${REDIS_PREFIX} UCX_INSTALL_PREFIX=${UCX_INSTALL_PREFIX} python3 setup.py install || exit 1
   popd || exit 1
   print_line
 }
