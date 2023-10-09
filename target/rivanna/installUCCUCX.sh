@@ -15,6 +15,8 @@ pip install pip -U
 pip install pytest
 pip install -U pytest-mpi
 pip install numpy
+pip install cloudmesh-openstack
+
 # pip install pyarrow==9.0.0
 
 export CC=`which gcc`
