@@ -11,6 +11,15 @@ python -m venv $PWD/CYLON-ENV
 source $PWD/CYLON-ENV/bin/activate
 
 # pip install -r $PWD/requirements.txt
+pip install pip -U
+pip install pytest
+pip install -U pytest-mpi
+pip install numpy
+# pip install pyarrow==9.0.0
+
+export CC=`which gcc`
+export CXX=`which g++`
+CC=gcc MPICC=mpicc pip install --no-binary mpi4py install mpi4py
 
 
 rm -rf build
