@@ -47,7 +47,7 @@ ELSE()
 ENDIF()
 
 if (NOT DEFINED CYLON_SIMD_LEVEL)
-    set("CYLON_SIMD_LEVEL" "SSE4_2") # options: SSE4_1 | SSE4_2| AVX512 | AVX2
+    set("CYLON_SIMD_LEVEL" "SSE4_1") # options: SSE4_1 | SSE4_2| AVX512 | AVX2
 endif ()
 
 # Add common flags
