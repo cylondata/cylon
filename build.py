@@ -159,6 +159,8 @@ def parse_cmake_flags(flag):
     for f in CMAKE_FLAGS.strip().split('-D'):
         if not f.strip():
             continue
+        strip = f.strip()
+
         k, v = f.strip().split('=')
         if k != flag:
             continue
@@ -223,7 +225,8 @@ def build_cpp():
                     f"-DARROW_BUILD_TYPE=SYSTEM " \
                     f"{CPPLINT_COMMAND} " \
                     f"-DCMAKE_INSTALL_PREFIX={INSTALL_DIR} " \
-                    f"{verb} {CMAKE_FLAGS} {CPP_SOURCE_DIR}"
+                    f"{verb} {CMAKE_FLAGS} {CPP_SOURCE_DIR}" \
+                    f"-permissive"
 
     logger.info(f"Generate command: {cmake_command}")
     res = subprocess.call(cmake_command, cwd=BUILD_DIR, shell=True)
