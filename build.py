@@ -225,7 +225,7 @@ def build_cpp():
                     f"-DARROW_BUILD_TYPE=SYSTEM " \
                     f"{CPPLINT_COMMAND} " \
                     f"-DCMAKE_INSTALL_PREFIX={INSTALL_DIR} " \
-                    f"{verb} {CMAKE_FLAGS} -permissive {CPP_SOURCE_DIR}"
+                    f"{verb} {CMAKE_FLAGS} {CPP_SOURCE_DIR}"
 
     logger.info(f"Generate command: {cmake_command}")
     res = subprocess.call(cmake_command, cwd=BUILD_DIR, shell=True)
