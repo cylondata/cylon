@@ -196,6 +196,7 @@ if CYLON_REDIS:
     compile_time_env['CYTHON_REDIS'] = True
     library_dirs.append(os.path.join(REDIS_PREFIX, 'lib'))
     library_dirs.append(os.path.join(REDIS_PREFIX, 'lib64'))
+    include_dirs.append(os.path.join(REDIS_PREFIX, 'include'))
     include_dirs.append(os.path.join(REDIS_PREFIX, 'include', 'sw'))
     include_dirs.append(os.path.join(REDIS_PREFIX, 'include', 'hiredis'))
 else:
