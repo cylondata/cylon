@@ -221,7 +221,7 @@ def build_cpp():
 
     cmake_command = f"cmake -DPYCYLON_BUILD={on_off(BUILD_PYTHON)} {win_cmake_args} " \
                     f"-DCMAKE_BUILD_TYPE={CPP_BUILD_MODE} " \
-                    f"-DCYLON_WITH_TEST={on_off(RUN_CPP_TESTS)} " \ 
+                    f"-DCYLON_WITH_TEST={on_off(RUN_CPP_TESTS)} " \
                     f"{CPPLINT_COMMAND} " \
                     f"-DCMAKE_INSTALL_PREFIX={INSTALL_DIR} " \
                     f"{verb} {CMAKE_FLAGS} {CPP_SOURCE_DIR}"
