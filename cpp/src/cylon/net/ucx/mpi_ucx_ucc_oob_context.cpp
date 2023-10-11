@@ -55,7 +55,7 @@ void *UCCMPIOOBContext::getCollInfo() {
 ucc_status_t UCCMPIOOBContext::oob_allgather(void *sbuf, void *rbuf,
                                              size_t msglen, void *coll_info,
                                              void **req) {
-  auto comm = reinterpret_cast<MPI_Comm>(coll_info);
+  auto comm = (MPI_Comm)static_cast<int>(reinterpret_cast<long>(coll_info));
   MPI_Request request;
 
   MPI_Iallgather(sbuf, (int)msglen, MPI_BYTE, rbuf, (int)msglen, MPI_BYTE, comm,
