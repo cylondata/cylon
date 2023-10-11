@@ -65,7 +65,7 @@ ucc_status_t UCCMPIOOBContext::oob_allgather(void *sbuf, void *rbuf,
 }
 
 ucc_status_t UCCMPIOOBContext::oob_allgather_test(void *req) {
-  auto request = (MPI_Request)req;
+  auto request = (MPI_Request)static_cast<int>(reinterpret_cast<long>(req));
   int completed;
 
   MPI_Test(&request, &completed, MPI_STATUS_IGNORE);
