@@ -49,23 +49,23 @@ std::shared_ptr<UCXOOBContext> UCCMPIOOBContext::makeUCXOOBContext() {
 OOBType UCCMPIOOBContext::Type() { return OOBType::OOB_MPI; }
 
 void *UCCMPIOOBContext::getCollInfo() {
-    return static_cast<void*>(MPI_COMM_WORLD);
+    return reinterpret_cast<void*>(MPI_COMM_WORLD);
 }
 
 ucc_status_t UCCMPIOOBContext::oob_allgather(void *sbuf, void *rbuf,
                                              size_t msglen, void *coll_info,
                                              void **req) {
-  auto comm = static_cast<MPI_Comm>(coll_info);
+  auto comm = reinterpret_cast<MPI_Comm>(coll_info);
   MPI_Request request;
 
   MPI_Iallgather(sbuf, (int)msglen, MPI_BYTE, rbuf, (int)msglen, MPI_BYTE, comm,
                  &request);
-  *req = static_cast<void *>(request);
+  *req = reinterpret_cast<void *>(request);
   return UCC_OK;
 }
 
 ucc_status_t UCCMPIOOBContext::oob_allgather_test(void *req) {
-  auto request = static_cast<MPI_Request>(req);
+  auto request = (MPI_Request)req;
   int completed;
 
   MPI_Test(&request, &completed, MPI_STATUS_IGNORE);
