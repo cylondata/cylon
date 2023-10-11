@@ -390,7 +390,7 @@ static ucc_status_t oob_allgather(void *sbuf, void *rbuf, size_t msglen,
 }
 
 static ucc_status_t oob_allgather_test(void *req) {
-  auto request = static_cast<MPI_Request>(req);
+  auto request = (MPI_Request)static_cast<int>(reinterpret_cast<long>(req));
   int completed;
 
   MPI_Test(&request, &completed, MPI_STATUS_IGNORE);
