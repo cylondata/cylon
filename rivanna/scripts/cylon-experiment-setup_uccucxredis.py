@@ -95,6 +95,7 @@ for nodes, threads, memory, rows, partition, exclusive in combination:
   #SBATCH --job-name=h-n={nodes:02d}-t={threads:02d}-e={e}
   #SBATCH --nodes={nodes}
   #SBATCH --ntasks={threads}
+  #SBATCH --mem={memory}
   #SBATCH --time=15:00
   #SBATCH --output=out-{nodes:02d}-{threads:02d}{jobid}.log
   #SBATCH --error=out-{nodes:02d}-{threads:02d}{jobid}.err
