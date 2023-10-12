@@ -35,10 +35,10 @@ parser.add_argument("-p1", dest='redis_port', type=int, help="name of redis port
 args = vars(parser.parse_args())
 
 
-# (nodes, threads, cores, rows, partition, "exclusive")
+# (nodes, threads, cpus, rows, partition, "exclusive")
 combination = [\
     # (1,4, 5000, "parallel", "exclusive"), # always pending
-    (16,16, "24G", args['rows'], "parallel", ""),
+    (2,4, "24G", 1, 8, args['rows'], "parallel", ""),
     #(2,37, 1000000, "parallel", ""),
     #(4,37, 35000000, "parallel", ""),
     #(6,37, 35000000, "parallel", ""),
@@ -60,7 +60,7 @@ jobid="-%j"
 # jobid=""
 
 f = open("submit.log", "w")
-for nodes, threads, memory, rows, partition, exclusive in combination:
+for nodes, threads, cpus, memory, rows, partition, exclusive in combination:
   counter = counter + 1
 
   if exclusive == "exclusive":
@@ -96,6 +96,7 @@ for nodes, threads, memory, rows, partition, exclusive in combination:
   #SBATCH --nodes={nodes}
   #SBATCH --ntasks={threads}
   #SBATCH --mem={memory}
+  #SBATCH --cpus-per-task={cpus}
   #SBATCH --time=15:00
   #SBATCH --output=out-{nodes:02d}-{threads:02d}{jobid}.log
   #SBATCH --error=out-{nodes:02d}-{threads:02d}{jobid}.err
