@@ -38,7 +38,7 @@ args = vars(parser.parse_args())
 # (nodes, threads, cores, rows, partition, "exclusive")
 combination = [\
     # (1,4, 5000, "parallel", "exclusive"), # always pending
-    (2,4, "24G", args['rows'], "parallel", ""),
+    (2,2, "24G", args['rows'], "parallel", ""),
     #(2,37, 1000000, "parallel", ""),
     #(4,37, 35000000, "parallel", ""),
     #(6,37, 35000000, "parallel", ""),
@@ -109,7 +109,7 @@ for nodes, threads, memory, rows, partition, exclusive in combination:
   echo "..............................................................." 
   BUILD_PATH=/scratch/qad5gv/cylon/build
   echo "..............................................................."  
-  export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/lib64:$BUILD_PATH/lib64:$BUILD_PATH/lib:$LD_LIBRARY_PATH
+  export LD_LIBRARY_PATH=$BUILD_PATH/install/lib:/scratch/qad5gv/ucc/install2/lib:/scratch/qad5gv/redis_install/lib:/scratch/qad5gv/redis_install/lib64:$LD_LIBRARY_PATH
   echo "..............................................................."  
   which python gcc g++
   echo "..............................................................."  
