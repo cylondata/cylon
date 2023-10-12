@@ -38,7 +38,7 @@ args = vars(parser.parse_args())
 # (nodes, threads, cores, rows, partition, "exclusive")
 combination = [\
     # (1,4, 5000, "parallel", "exclusive"), # always pending
-    (2,2, "24G", args['rows'], "parallel", ""),
+    (2,4, "24G", args['rows'], "parallel", ""),
     #(2,37, 1000000, "parallel", ""),
     #(4,37, 35000000, "parallel", ""),
     #(6,37, 35000000, "parallel", ""),
@@ -94,6 +94,7 @@ for nodes, threads, memory, rows, partition, exclusive in combination:
   #!/bin/bash
   #SBATCH --job-name=h-n={nodes:02d}-t={threads:02d}-e={e}
   #SBATCH --nodes={nodes}
+  #SBATCH --ntasks={threads}
   #SBATCH --mem={memory}
   #SBATCH --time=15:00
   #SBATCH --output=out-{nodes:02d}-{threads:02d}{jobid}.log
@@ -102,13 +103,16 @@ for nodes, threads, memory, rows, partition, exclusive in combination:
   #SBATCH -A bii_dsc_community
   {exclusive}
   echo "..............................................................."
-  module load gcc/9.2.0 cmake/3.23.3 python/3.7.7
+  module load gcc/9.2.0 openmpi/3.1.6 python/3.7.7 cmake/3.23.3
   echo "..............................................................."
   source /scratch/qad5gv/cylon/CYLON-ENV/bin/activate
   echo "..............................................................." 
   BUILD_PATH=/scratch/qad5gv/cylon/build
+  UCC_INSTALL=/scratch/qad5gv/ucc/install
+  UCX_INSTALL=/scratch/qad5gv/ucx/install
+  REDIS_INSTALL=/scratch/qad5gv/redis_install
   echo "..............................................................."  
-  export LD_LIBRARY_PATH=$BUILD_PATH/install/lib:/scratch/qad5gv/ucc/install2/lib:/scratch/qad5gv/redis_install/lib:/scratch/qad5gv/redis_install/lib64:$LD_LIBRARY_PATH
+  export LD_LIBRARY_PATH=$BUILD_PATH/install/lib:$UCX_INSTALL/lib:$UCC_INSTALL/lib:$REDIS_INSTALL/lib:$REDIS_INSTALL/lib64:$LD_LIBRARY_PATH
   echo "..............................................................."  
   which python gcc g++
   echo "..............................................................."  
