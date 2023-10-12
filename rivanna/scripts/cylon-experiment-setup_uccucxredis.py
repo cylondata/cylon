@@ -105,7 +105,7 @@ for nodes, threads, memory, rows, partition, exclusive in combination:
   echo "..............................................................."
   module load gcc/9.2.0 openmpi/3.1.6 cmake/3.23.3 python/3.7.7
   echo "..............................................................."
-  source /scratch/qad5gv/cylon/target/rivanna/CYLON-ENV/bin/activate
+  source /scratch/qad5gv/cylon/CYLON-ENV/bin/activate
   echo "..............................................................." 
   BUILD_PATH=/scratch/qad5gv/cylon/build
   echo "..............................................................."  
