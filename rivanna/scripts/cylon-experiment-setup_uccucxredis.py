@@ -103,7 +103,7 @@ for nodes, threads, memory, rows, partition, exclusive in combination:
   #SBATCH -A bii_dsc_community
   {exclusive}
   echo "..............................................................."
-  module load gcc/9.2.0 openmpi/3.1.6 cmake/3.23.3 python/3.7.7
+  module load gcc/9.2.0 cmake/3.23.3 python/3.7.7
   echo "..............................................................."
   source /scratch/qad5gv/cylon/CYLON-ENV/bin/activate
   echo "..............................................................." 
