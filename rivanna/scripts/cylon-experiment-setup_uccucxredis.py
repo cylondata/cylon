@@ -27,6 +27,8 @@ parser.add_argument('-s', dest='scaling', type=str, default='w', choices=['s', '
 parser.add_argument('-w', dest='world_size', type=int, help="world size", required=True)
 
 
+parser.add_argument("-p1", dest='redis_port', type=int, help="name of redis port",
+                        default=6379)  # 6379
 
 args = vars(parser.parse_args())
 
