@@ -26,11 +26,7 @@ parser.add_argument('-s', dest='scaling', type=str, default='w', choices=['s', '
 
 parser.add_argument('-w', dest='world_size', type=int, help="world size", required=True)
 
-parser.add_argument("-r", dest='redis_host', type=str, help="redis address",
-                        required=True)
 
-parser.add_argument("-p1", dest='redis_port', type=int, help="name of redis port",
-                        default=6379)  # 6379
 
 args = vars(parser.parse_args())
 
@@ -38,7 +34,10 @@ args = vars(parser.parse_args())
 # (nodes, threads, cpus, rows, partition, "exclusive")
 combination = [\
     # (1,4, 5000, "parallel", "exclusive"), # always pending
-    (8,16, 8, "24G", args['rows'], "parallel", ""),
+    ("54.84.214.80", 16,32, 8, "24G", args['rows'], "parallel", ""),
+    ("3.238.116.229", 16,32, 8, "24G", args['rows'], "parallel", ""),
+    ("54.157.181.17", 16,32, 8, "24G", args['rows'], "parallel", ""),
+    ("34.228.29.43", 16,32, 8, "24G", args['rows'], "parallel", ""),
     #(2,37, 1000000, "parallel", ""),
     #(4,37, 35000000, "parallel", ""),
     #(6,37, 35000000, "parallel", ""),
@@ -60,7 +59,7 @@ jobid="-%j"
 # jobid=""
 
 f = open("submit.log", "w")
-for nodes, threads, cpus, memory, rows, partition, exclusive in combination:
+for redis, nodes, threads, cpus, memory, rows, partition, exclusive in combination:
   counter = counter + 1
 
   if exclusive == "exclusive":
@@ -119,7 +118,7 @@ for nodes, threads, cpus, memory, rows, partition, exclusive in combination:
   echo "..............................................................."  
   lscpu
   echo "..............................................................."
-  time srun --exact --nodes {nodes} python cylon_scaling_uccucxredis.py -n {rows} -s {args["scaling"]}  -w {args["world_size"]} -r {args["redis_host"]} -p1 {args["redis_port"]}
+  time srun --exact --nodes {nodes} python cylon_scaling_uccucxredis.py -n {rows} -s {args["scaling"]}  -w {args["world_size"]} -r {redis} -p1 {args["redis_port"]}
   echo "..............................................................."
   """).strip()
 
