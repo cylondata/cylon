@@ -36,10 +36,10 @@ args = vars(parser.parse_args())
 # (nodes, threads, cpus, rows, partition, "exclusive")
 combination = [\
     # (1,4, 5000, "parallel", "exclusive"), # always pending
-    ("54.84.214.80", 2,4, 8, "64G", args['rows'], "parallel", ""),
-    ("3.238.116.229", 2,4, 8, "64G", args['rows'], "parallel", ""),
-    ("54.157.181.17", 2,4, 8, "64G", args['rows'], "parallel", ""),
-    ("34.228.29.43", 2,4, 8, "64G", args['rows'], "parallel", ""),
+    ("54.84.214.80", 2,4, 8, args['rows'], "parallel", ""),
+    ("3.238.116.229", 2,4, 8, args['rows'], "parallel", ""),
+    ("54.157.181.17", 2,4, 8, args['rows'], "parallel", ""),
+    ("34.228.29.43", 2,4, 8, args['rows'], "parallel", ""),
     #(2,37, 1000000, "parallel", ""),
     #(4,37, 35000000, "parallel", ""),
     #(6,37, 35000000, "parallel", ""),
@@ -61,7 +61,7 @@ jobid="-%j"
 # jobid=""
 
 f = open("submit.log", "w")
-for redis, nodes, threads, cpus, memory, rows, partition, exclusive in combination:
+for redis, nodes, threads, cpus, rows, partition, exclusive in combination:
   counter = counter + 1
 
   if exclusive == "exclusive":
@@ -96,7 +96,6 @@ for redis, nodes, threads, cpus, memory, rows, partition, exclusive in combinati
   #SBATCH --job-name=h-n={nodes:02d}-t={threads:02d}-e={e}
   #SBATCH --nodes={nodes}
   #SBATCH --ntasks={threads}
-  #SBATCH --mem={memory}
   #SBATCH --cpus-per-task={cpus}
   #SBATCH --time=15:00
   #SBATCH --output=out-{nodes:02d}-{threads:02d}{jobid}.log
