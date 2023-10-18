@@ -36,10 +36,10 @@ args = vars(parser.parse_args())
 # (nodes, threads, cpus, rows, partition, "exclusive")
 combination = [\
     # (1,4, 5000, "parallel", "exclusive"), # always pending
-    ("44.192.99.54", 4,4, 8, args['rows'], "parallel", ""),
-    ("3.82.235.0", 4,4, 8, args['rows'], "parallel", ""),
-    ("54.157.153.213", 4,4, 8, args['rows'], "parallel", ""),
-    ("44.192.25.12", 4,4, 8, args['rows'], "parallel", ""),
+    ("44.203.168.165", 4,8, 16, args['rows'], "parallel", ""),
+    ("34.203.29.223", 4,8, 16, args['rows'], "parallel", ""),
+    ("35.170.75.64", 4,8, 16, args['rows'], "parallel", ""),
+    ("35.175.178.248", 4,8, 16, args['rows'], "parallel", ""),
     #(2,37, 1000000, "parallel", ""),
     #(4,37, 35000000, "parallel", ""),
     #(6,37, 35000000, "parallel", ""),
