@@ -60,7 +60,7 @@ total = len(combination)
 jobid="-%j"
 # jobid=""
 
-f = open("submit.log", "w")
+f = open("../scripts/submit.log", "w")
 for redis, nodes, threads, cpus, rows, partition, exclusive in combination:
   counter = counter + 1
 

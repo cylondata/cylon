@@ -62,8 +62,6 @@ def cylon_join(data=None):
         env.barrier()
         t2 = time.time()
         t = (t2 - t1)
-        #sum_t = comm.reduce(t)
-        #tot_l = comm.reduce(len(df3))
 
         sum_t = communicator.allreduce(t, ReduceOp.SUM)
 
