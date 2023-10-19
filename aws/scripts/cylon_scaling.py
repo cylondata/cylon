@@ -168,6 +168,8 @@ def cylon_sort(data=None):
     if env.rank == 0:
         print("Task# ", data['task'])
 
+    timing = {'scaling': [], 'world': [], 'rows': [], 'max_value': [], 'rank': [], 'avg_t': [], 'tot_l': []}
+
     for i in range(data['it']):
         env.barrier()
         StopWatch.start(f"sort_{i}_{data['host']}_{data['rows']}_{data['it']}")
@@ -183,8 +185,15 @@ def cylon_sort(data=None):
         if env.rank == 0:
             avg_t = sum_t / env.world_size
             print("### ", data['scaling'], env.world_size, num_rows, max_val, i, avg_t, tot_l)
-            print("### ", data['scaling'], env.world_size, num_rows, max_val, i, avg_t, tot_l,
-                  file=open(data['output_summary_filename'], 'a'))
+            timing['scaling'].append(data['scaling'])
+            timing['world'].append(env.world_size)
+            timing['rows'].append(num_rows)
+            timing['max_value'].append(max_val)
+            timing['rank'].append(i)
+            timing['avg_t'].append(avg_t)
+            timing['tot_l'].append(tot_l)
+            #print("### ", data['scaling'], env.world_size, num_rows, max_val, i, avg_t, tot_l,
+            #      file=open(data['output_summary_filename'], 'a'))
 
 
             StopWatch.stop(f"sort_{i}_{data['host']}_{data['rows']}_{data['it']}")
@@ -195,9 +204,14 @@ def cylon_sort(data=None):
         StopWatch.benchmark(tag=str(data), filename=data['output_scaling_filename'])
         upload_file(file_name=data['output_scaling_filename'], bucket=data['s3_bucket'],
                     object_name=data['s3_stopwatch_object_name'])
+
+        if os.path.exists(data['output_summary_filename']):
+            pd.DataFrame(timing).to_csv(data['output_summary_filename'], mode='a', index=False, header=False)
+        else:
+            pd.DataFrame(timing).to_csv(data['output_summary_filename'], mode='w', index=False, header=True)
+
         upload_file(file_name=data['output_summary_filename'], bucket=data['s3_bucket'],
                     object_name=data['s3_summary_object_name'])
-        redis_context.clearDB()
 
 
 def cylon_slice(data=None):
@@ -239,6 +253,7 @@ def cylon_slice(data=None):
     if env.rank == 0:
         print("Task# ", data['task'])
 
+    timing = {'scaling': [], 'world': [], 'rows': [], 'max_value': [], 'rank': [], 'avg_t': [], 'tot_l': []}
     for i in range(data['it']):
         env.barrier()
         StopWatch.start(f"slice_{i}_{data['host']}_{data['rows']}_{data['it']}")
@@ -256,8 +271,15 @@ def cylon_slice(data=None):
         if env.rank == 0:
             avg_t = sum_t / env.world_size
             print("### ", data['scaling'], env.world_size, num_rows, max_val, i, avg_t, tot_l)
-            print("### ", data['scaling'], env.world_size, num_rows, max_val, i, avg_t, tot_l,
-                  file=open(data['output_summary_filename'], 'a'))
+            #print("### ", data['scaling'], env.world_size, num_rows, max_val, i, avg_t, tot_l,
+            #      file=open(data['output_summary_filename'], 'a'))
+            timing['scaling'].append(data['scaling'])
+            timing['world'].append(env.world_size)
+            timing['rows'].append(num_rows)
+            timing['max_value'].append(max_val)
+            timing['rank'].append(i)
+            timing['avg_t'].append(avg_t)
+            timing['tot_l'].append(tot_l)
             StopWatch.stop(f"slice_{i}_{data['host']}_{data['rows']}_{data['it']}")
 
     StopWatch.stop(f"slice_total_{data['host']}_{data['rows']}_{data['it']}")
@@ -266,6 +288,12 @@ def cylon_slice(data=None):
         StopWatch.benchmark(tag=str(data), filename=data['output_scaling_filename'])
         upload_file(file_name=data['output_scaling_filename'], bucket=data['s3_bucket'],
                     object_name=data['s3_stopwatch_object_name'])
+
+        if os.path.exists(data['output_summary_filename']):
+            pd.DataFrame(timing).to_csv(data['output_summary_filename'], mode='a', index=False, header=False)
+        else:
+            pd.DataFrame(timing).to_csv(data['output_summary_filename'], mode='w', index=False, header=True)
+
         upload_file(file_name=data['output_summary_filename'], bucket=data['s3_bucket'],
                     object_name=data['s3_summary_object_name'])
 
