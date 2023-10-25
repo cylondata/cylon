@@ -109,7 +109,6 @@ def cylon_join(data=None):
             timing['rank'].append(i)
             timing['avg_t'].append(avg_t)
             timing['tot_l'].append(tot_l)
-            #print("### ", data['scaling'], env.world_size, num_rows, max_val, i, avg_t, tot_l, file=open(data['output_summary_filename'], 'a'))
             StopWatch.stop(f"join_{i}_{data['host']}_{data['rows']}_{data['it']}")
 
     StopWatch.stop(f"join_total_{data['host']}_{data['rows']}_{data['it']}")
