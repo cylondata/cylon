@@ -60,7 +60,7 @@ total = len(combination)
 jobid="-%j"
 # jobid=""
 
-f = open("../scripts/submit.log", "w")
+f = open("../../../../rivanna/scripts/submit.log", "w")
 for redis, nodes, threads, cpus, rows, partition, exclusive in combination:
   counter = counter + 1
 
@@ -100,7 +100,7 @@ for redis, nodes, threads, cpus, rows, partition, exclusive in combination:
   #SBATCH --time=15:00
   #SBATCH --output=out-{nodes:02d}-{threads:02d}{jobid}.log
   #SBATCH --error=out-{nodes:02d}-{threads:02d}{jobid}.err
-  #SBATCH --partition={partition}
+  #SBATCH --partition=parallel
   #SBATCH -A bii_dsc_community
   {exclusive}
   echo "..............................................................."
@@ -119,7 +119,7 @@ for redis, nodes, threads, cpus, rows, partition, exclusive in combination:
   echo "..............................................................."  
   lscpu
   echo "..............................................................."
-  time python cylon_scaling.py -n {rows} -s {args["scaling"]}  -w {args["world_size"]} -r {redis} -p1 {args["redis_port"]}
+  time srun --exact --nodes {nodes} python cylon_scaling_uccucxredis.py -n {rows} -s {args["scaling"]}  -w {args["world_size"]} -r {redis} -p1 {args["redis_port"]}
   echo "..............................................................."
   """).strip()
 
