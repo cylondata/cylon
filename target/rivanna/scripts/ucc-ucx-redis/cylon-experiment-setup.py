@@ -119,7 +119,7 @@ for redis, nodes, threads, cpus, rows, partition, exclusive in combination:
   echo "..............................................................."  
   lscpu
   echo "..............................................................."
-  time srun --exact --nodes {nodes} python cylon_scaling_uccucxredis.py -n {rows} -s {args["scaling"]}  -w {args["world_size"]} -r {redis} -p1 {args["redis_port"]}
+  time srun --exact --nodes {nodes} python cylon_scaling.py -n {rows} -s {args["scaling"]}  -w {args["world_size"]} -r {redis} -p1 {args["redis_port"]}
   echo "..............................................................."
   """).strip()
 
