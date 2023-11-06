@@ -36,7 +36,7 @@ args = vars(parser.parse_args())
 # (nodes, threads, cpus, rows, partition, "exclusive")
 combination = [\
     # (1,4, 5000, "parallel", "exclusive"), # always pending
-    ("dev-cylon-redis3.aws-cylondata.com", 1,1, 1, args['rows'], "standard", ""),
+    ("dev-cylon-redis4.aws-cylondata.com", 1,1, 1, args['rows'], "standard", ""),
     #("54.227.18.138", 4,8, 16, args['rows'], "parallel", ""),
     #("44.213.71.107", 4,8, 16, args['rows'], "parallel", ""),
     #("52.90.116.44", 4,8, 16, args['rows'], "parallel", ""),
