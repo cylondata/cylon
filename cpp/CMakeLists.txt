@@ -278,11 +278,30 @@ if (CYLON_UCX)
             set(UCX_LIBRARIES ${UCX_UCT} ${UCX_UCS} ${UCX_UCM} ${UCX_UCP})
         endif ()
 
+    elseif (NOT UCX_INSTALL_PREFIX)
+        message("Using locally installed UCX without install prefix")
 
+        # Check if UCX include and lib paths are given
+        if (NOT UCX_INCLUDEDIR)
+            message(FATAL_ERROR "CYLON_UCX is set, UCX_INCLUDEDIR should also be set")
+        endif ()
+        if (NOT UCX_LIBDIR)
+            message(FATAL_ERROR "CYLON_UCX is set, UCX_LIBDIR should also be set")
+        endif ()
+
+        # Set UCX found as true
+        set(UCX_FOUND TRUE)
+
+        # Include UCX
+        include_directories(SYSTEM ${UCX_INCLUDEDIR})
+        # Set library directory for later use
+        set(UCX_LIBRARIES
+                ${UCX_LIBDIR}/libuct.so
+                ${UCX_LIBDIR}/libucs.so
+                ${UCX_LIBDIR}/libucm.so
+                ${UCX_LIBDIR}/libucp.so)
     else ()
         message("Using locally installed UCX")
-
-
 
         if (NOT UCX_INSTALL_PREFIX)
             message(FATAL_ERROR "CYLON_UCX is set, UCX_INSTALL_PREFIX should also be set")
