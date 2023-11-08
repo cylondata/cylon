@@ -57,7 +57,7 @@ jobs:
           git clone --single-branch -b ${{ matrix.ucx }} https://github.com/mstaylor/ucx.git $HOME/ucx
           cd $HOME/ucx
           ./autogen.sh
-          ./configure --prefix=$HOME/ucx/install 
+          ./configure --prefix=$HOME/ucx/install --without-go
           make install      
 
       - name: Install UCC
