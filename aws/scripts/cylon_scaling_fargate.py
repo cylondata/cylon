@@ -14,6 +14,8 @@ from pycylon.net.reduce_op import ReduceOp
 import boto3
 from botocore.exceptions import ClientError
 import os
+import requests
+import json
 
 import logging
 
@@ -45,9 +47,13 @@ def upload_file(file_name, bucket, object_name=None):
     return True
 
 
-def cylon_join(data=None):
+def cylon_join(data=None, ipAddress = None):
     global ucc_config
     StopWatch.start(f"join_total_{data['host']}_{data['rows']}_{data['it']}")
+
+    if ipAddress is not None:
+        print("setting UCX_TCP_REMOTE_ADDRESS_OVERRIDE", ipAddress)
+        os.environ['UCX_TCP_REMOTE_ADDRESS_OVERRIDE'] = ipAddress
 
     redis_context = UCCRedisOOBContext(data['world_size'], f"tcp://{data['redis_host']}:{data['redis_port']}")
 
@@ -84,7 +90,7 @@ def cylon_join(data=None):
     df1 = DataFrame(pd.DataFrame(data1).add_prefix("col"))
     df2 = DataFrame(pd.DataFrame(data2).add_prefix("col"))
 
-    timing = {'scaling': [], 'world': [], 'rows': [], 'max_value': [], 'rank': [], 'avg_t':[], 'tot_l':[]}
+    timing = {'scaling': [], 'world': [], 'rows': [], 'max_value': [], 'rank': [], 'avg_t': [], 'tot_l': []}
 
     for i in range(data['it']):
         env.barrier()
@@ -109,20 +115,20 @@ def cylon_join(data=None):
             timing['rank'].append(i)
             timing['avg_t'].append(avg_t)
             timing['tot_l'].append(tot_l)
+            #print("### ", data['scaling'], env.world_size, num_rows, max_val, i, avg_t, tot_l, file=open(data['output_summary_filename'], 'a'))
             StopWatch.stop(f"join_{i}_{data['host']}_{data['rows']}_{data['it']}")
 
     StopWatch.stop(f"join_total_{data['host']}_{data['rows']}_{data['it']}")
 
     if env.rank == 0:
         StopWatch.benchmark(tag=str(data), filename=data['output_scaling_filename'])
-        upload_file(file_name=data['output_scaling_filename'], bucket=data['s3_bucket'], object_name=data['s3_stopwatch_object_name'])
-
+        upload_file(file_name=data['output_scaling_filename'], bucket=data['s3_bucket'],
+                    object_name=data['s3_stopwatch_object_name'])
 
         if os.path.exists(data['output_summary_filename']):
             pd.DataFrame(timing).to_csv(data['output_summary_filename'], mode='a', index=False, header=False)
         else:
             pd.DataFrame(timing).to_csv(data['output_summary_filename'], mode='w', index=False, header=True)
-
 
         upload_file(file_name=data['output_summary_filename'], bucket=data['s3_bucket'],
                     object_name=data['s3_summary_object_name'])
@@ -167,8 +173,6 @@ def cylon_sort(data=None):
     if env.rank == 0:
         print("Task# ", data['task'])
 
-    timing = {'scaling': [], 'world': [], 'rows': [], 'max_value': [], 'rank': [], 'avg_t': [], 'tot_l': []}
-
     for i in range(data['it']):
         env.barrier()
         StopWatch.start(f"sort_{i}_{data['host']}_{data['rows']}_{data['it']}")
@@ -184,15 +188,8 @@ def cylon_sort(data=None):
         if env.rank == 0:
             avg_t = sum_t / env.world_size
             print("### ", data['scaling'], env.world_size, num_rows, max_val, i, avg_t, tot_l)
-            timing['scaling'].append(data['scaling'])
-            timing['world'].append(env.world_size)
-            timing['rows'].append(num_rows)
-            timing['max_value'].append(max_val)
-            timing['rank'].append(i)
-            timing['avg_t'].append(avg_t)
-            timing['tot_l'].append(tot_l)
-            #print("### ", data['scaling'], env.world_size, num_rows, max_val, i, avg_t, tot_l,
-            #      file=open(data['output_summary_filename'], 'a'))
+            print("### ", data['scaling'], env.world_size, num_rows, max_val, i, avg_t, tot_l,
+                  file=open(data['output_summary_filename'], 'a'))
 
 
             StopWatch.stop(f"sort_{i}_{data['host']}_{data['rows']}_{data['it']}")
@@ -203,14 +200,9 @@ def cylon_sort(data=None):
         StopWatch.benchmark(tag=str(data), filename=data['output_scaling_filename'])
         upload_file(file_name=data['output_scaling_filename'], bucket=data['s3_bucket'],
                     object_name=data['s3_stopwatch_object_name'])
-
-        if os.path.exists(data['output_summary_filename']):
-            pd.DataFrame(timing).to_csv(data['output_summary_filename'], mode='a', index=False, header=False)
-        else:
-            pd.DataFrame(timing).to_csv(data['output_summary_filename'], mode='w', index=False, header=True)
-
         upload_file(file_name=data['output_summary_filename'], bucket=data['s3_bucket'],
                     object_name=data['s3_summary_object_name'])
+        redis_context.clearDB()
 
 
 def cylon_slice(data=None):
@@ -252,7 +244,6 @@ def cylon_slice(data=None):
     if env.rank == 0:
         print("Task# ", data['task'])
 
-    timing = {'scaling': [], 'world': [], 'rows': [], 'max_value': [], 'rank': [], 'avg_t': [], 'tot_l': []}
     for i in range(data['it']):
         env.barrier()
         StopWatch.start(f"slice_{i}_{data['host']}_{data['rows']}_{data['it']}")
@@ -270,15 +261,8 @@ def cylon_slice(data=None):
         if env.rank == 0:
             avg_t = sum_t / env.world_size
             print("### ", data['scaling'], env.world_size, num_rows, max_val, i, avg_t, tot_l)
-            #print("### ", data['scaling'], env.world_size, num_rows, max_val, i, avg_t, tot_l,
-            #      file=open(data['output_summary_filename'], 'a'))
-            timing['scaling'].append(data['scaling'])
-            timing['world'].append(env.world_size)
-            timing['rows'].append(num_rows)
-            timing['max_value'].append(max_val)
-            timing['rank'].append(i)
-            timing['avg_t'].append(avg_t)
-            timing['tot_l'].append(tot_l)
+            print("### ", data['scaling'], env.world_size, num_rows, max_val, i, avg_t, tot_l,
+                  file=open(data['output_summary_filename'], 'a'))
             StopWatch.stop(f"slice_{i}_{data['host']}_{data['rows']}_{data['it']}")
 
     StopWatch.stop(f"slice_total_{data['host']}_{data['rows']}_{data['it']}")
@@ -287,17 +271,53 @@ def cylon_slice(data=None):
         StopWatch.benchmark(tag=str(data), filename=data['output_scaling_filename'])
         upload_file(file_name=data['output_scaling_filename'], bucket=data['s3_bucket'],
                     object_name=data['s3_stopwatch_object_name'])
-
-        if os.path.exists(data['output_summary_filename']):
-            pd.DataFrame(timing).to_csv(data['output_summary_filename'], mode='a', index=False, header=False)
-        else:
-            pd.DataFrame(timing).to_csv(data['output_summary_filename'], mode='w', index=False, header=True)
-
         upload_file(file_name=data['output_summary_filename'], bucket=data['s3_bucket'],
                     object_name=data['s3_summary_object_name'])
 
     env.finalize()
 
+def get_service_ips(cluster, tasks):
+    client = boto3.client("ecs", region_name="us-east-1")
+
+    tasks_detail = client.describe_tasks(
+        cluster=cluster,
+        tasks=tasks
+    )
+
+    # first get the ENIs
+    enis = []
+    for task in tasks_detail.get("tasks", []):
+        for attachment in task.get("attachments", []):
+            for detail in attachment.get("details", []):
+                if detail.get("name") == "networkInterfaceId":
+                    enis.append(detail.get("value"))
+
+    # now the ips
+
+    print("eni: ", enis)
+    ips = []
+    for eni in enis:
+        eni_resource = boto3.resource("ec2").NetworkInterface(eni)
+        print("eni_resource", eni_resource)
+        ips.append(eni_resource.private_ip_address)
+
+    return ips
+
+def get_ecs_task_arn_cluster(host):
+    path = "/task"
+    url = host + path
+    headers = {"Content-Type": "application/json"}
+    r = requests.get(url, headers=headers)
+    print(f"r: {r}")
+    d_r = json.loads(r.text)
+    print(d_r)
+    cluster = d_r["TaskARN"]
+    taskArn = d_r["Cluster"]
+    dict = {
+        "TaskARN": cluster,
+        "Cluster": taskArn
+    }
+    return dict
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="cylon scaling")
@@ -338,9 +358,16 @@ if __name__ == "__main__":
 
     args['host'] = "aws"
 
+    host = os.environ["ECS_CONTAINER_METADATA_URI_V4"]
+    data = get_ecs_task_arn_cluster(host)
+    # This print statement passes the string back to the bash wrapper, don't remove
+    print("taskARN/Cluster: ", data)
+
+    ips = get_service_ips(data['Cluster'], [data["TaskARN"]])
+
     if args['operation'] == 'join':
         print("executing cylon join operation")
-        cylon_join(args)
+        cylon_join(args, ips[0])
     elif args['operation'] == 'sort':
         print("executing cylon sort operation")
         cylon_sort(args)
