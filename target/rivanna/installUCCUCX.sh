@@ -10,7 +10,7 @@ python -m venv $PWD/CYLON-ENV
 
 source $PWD/CYLON-ENV/bin/activate
 
-# pip install -r $PWD/requirements.txt
+#pip install -r $PWD/requirements.txt
 #pip install pip -U
 #pip install pytest
 #pip install -U pytest-mpi
@@ -32,4 +32,4 @@ source $PWD/CYLON-ENV/bin/activate
 
 #export LD_LIBRARY_PATH=$BUILD_PATH/install/lib:$UCX_INSTALL/lib:$UCC_INSTALL/lib:$REDIS_INSTALL/lib:$REDIS_INSTALL/lib64:$LD_LIBRARY_PATH
 
-time ./build.sh -j$(nproc) -pyenv $PWD/CYLON-ENV -bpath $PWD/build -ucxpath $UCX_INSTALL -uccpath $UCC_INSTALL -redispath $REDIS_INSTALL --cpp --python --cython --pytest --cmake-flags "-DMPI_C_COMPILER=$(which mpicc) -DMPI_CXX_COMPILER=$(which mpicxx) -DCYLON_UCX=1 -DUCX_INSTALL_PREFIX=$UCX_INSTALL -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$UCC_INSTALL -DCYLON_USE_REDIS=1 -DREDIS_INSTALL_PREFIX=$REDIS_INSTALL"
+#time ./build.sh -j$(nproc) -pyenv $PWD/CYLON-ENV -bpath $PWD/build -ucxpath $UCX_INSTALL -uccpath $UCC_INSTALL -redispath $REDIS_INSTALL --cpp --python --cython --pytest --cmake-flags "-DMPI_C_COMPILER=$(which mpicc) -DMPI_CXX_COMPILER=$(which mpicxx) -DCYLON_UCX=1 -DUCX_INSTALL_PREFIX=$UCX_INSTALL -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$UCC_INSTALL -DCYLON_USE_REDIS=1 -DREDIS_INSTALL_PREFIX=$REDIS_INSTALL"
