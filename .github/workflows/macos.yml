@@ -1,0 +1,44 @@
+name: MacOS C++/Python - Clang,OpenMPI
+
+on:
+  push:
+    branches:
+      - main
+      - 0.**
+  pull_request:
+    branches: 
+      - main
+      - 0.**
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -l {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-11
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Remove link for preventing an error
+        run: rm -f /usr/local/bin/2to3
+      - name: Install dependencies
+        run: brew install re2 automake boost brotli c-ares ccache flatbuffers grpc llvm lz4 minio ninja openssl@1.1 protobuf rapidjson snappy thrift wget zstd
+
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: cylon_dev
+          environment-file: conda/environments/cylon_MacOS.yml
+
+      - name: activate conda
+        run: conda activate cylon_dev
+
+      - name: Build cylon, pycylon and run cpp test
+        run: python build.py --cpp --python --test
+
+      - name: Run pytest
+        run: python build.py --pytest
