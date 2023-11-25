@@ -49,7 +49,7 @@ pip install openssl-python
 python3 -m pip install urllib3==1.26.6
 ```
 
-We will slum script to run the scaling operation.
+We will use a slurm script to run the scaling operation.
 
 ```shell
 sbatch rivanna/scripts/scaling_job.slurm
