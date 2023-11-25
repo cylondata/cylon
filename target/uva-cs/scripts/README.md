@@ -3,7 +3,7 @@
 ```
 pip install cloudmesh-common
 pip install openssl-python
-python3 -m pip install urllib3==1.26.6
+
 ```
 
 2. Make change in the ```cylon-experiment-setup.py ``` or ```rp-experiment-setup.py ``` for the configurations changes.
@@ -25,8 +25,13 @@ combination = [\
 3. Load module and activate the python virtual environment
 
 ```
-module load gcc/9.2.0 openmpi/3.1.6 cmake/3.23.3 python/3.7.7 
-source /path_to_virtual_environment/cylon_rp_venv/bin/activate
+DIR=$HOME/anaconda3/envs/cylon_dev
+
+module load gcc-11.2.0 openmpi-4.1.4
+conda activate cylon_dev
+
+
+export PATH=$DIR/bin:$PATH LD_LIBRARY_PATH=$DIR/lib:$LD_LIBRARY_PATH PYTHONPATH=$DIR/lib/python3.9/site-packages
 ```
 4. Run the scripts  as follows.
 
