@@ -38,7 +38,7 @@ pip install cloudmesh-common
 pip install openssl-python
 ```
 
-We will use a slum script to run the scaling operation.
+We will use a slurm script to run the scaling operation.
 
 ```shell
 cd target/uva-cs/scripts/
