@@ -25,6 +25,7 @@ jobs:
           - os: ubuntu-20.04
             gcc: 9
             ucc: "master"
+            ucx: "override-remote-address3"
 
     steps:
       - uses: actions/checkout@v2
@@ -39,7 +40,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: cylon_dev
-          environment-file: conda/environments/cylon.yml
+          environment-file: conda/environments/cylon_NoUCX.yml
 
       - name: Activate conda
         run: conda activate cylon_dev
@@ -51,17 +52,24 @@ jobs:
           cmake .. -DBUILD_SHARED_LIBS=1 -DUSE_MPI=1 -DCMAKE_INSTALL_PREFIX=$HOME/gloo/install
           make install
 
+      - name: Install UCX
+        run: |
+          git clone --single-branch -b ${{ matrix.ucx }} https://github.com/mstaylor/ucx.git $HOME/ucx
+          cd $HOME/ucx
+          ./autogen.sh
+          ./configure --prefix=$HOME/ucx/install --without-go
+          make install      
+
       - name: Install UCC
         run: |
           git clone --single-branch -b ${{ matrix.ucc }} https://github.com/openucx/ucc.git $HOME/ucc
           cd $HOME/ucc
-          echo "conda ucx: $(conda list | grep ucx)"
           ./autogen.sh
-          ./configure --prefix=$HOME/ucc/install --with-ucx=$CONDA/envs/cylon_dev
+          ./configure --prefix=$HOME/ucc/install --with-ucx=$HOME/ucx/install
           make install
 
       - name: Build cylon, pycylon and run cpp test
-        run: python build.py -cmake-flags="-DCYLON_UCX=1 -DCYLON_GLOO=1 -DGLOO_INSTALL_PREFIX=$HOME/gloo/install -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$HOME/ucc/install" -ipath="$HOME/cylon/install" --cpp --python --test
+        run: python build.py -cmake-flags="-DCYLON_UCX=1 -DCYLON_GLOO=1 -DGLOO_INSTALL_PREFIX=$HOME/gloo/install -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$HOME/ucc/install -DUCX_INSTALL_PREFIX=$HOME/ucx/install" -ipath="$HOME/cylon/install" --cpp --python --test
 
       - name: Run pytest
         run: python build.py -ipath="$HOME/cylon/install" --pytest

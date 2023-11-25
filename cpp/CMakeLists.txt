@@ -89,7 +89,12 @@ if ("$ENV{CONDA_BUILD}" STREQUAL "1")
     set(CMAKE_SYSTEM_PREFIX_PATH "$ENV{BUILD_PREFIX};$ENV{PREFIX};${CMAKE_SYSTEM_PREFIX_PATH}")
     set(CONDA_INCLUDE_DIRS "$ENV{BUILD_PREFIX}/include" "$ENV{PREFIX}/include")
     set(CONDA_LINK_DIRS "$ENV{BUILD_PREFIX}/lib" "$ENV{PREFIX}/lib")
-    set(ARROW_BUILD_TYPE "SYSTEM")
+
+    if (NOT ARROW_BUILD_TYPE)
+        set(ARROW_BUILD_TYPE "SYSTEM")
+    endif()
+
+
     set(CMAKE_INSTALL_INCLUDEDIR "$ENV{BUILD_PREFIX}/include")
 
     message(STATUS "Conda build detected, CMAKE_SYSTEM_PREFIX_PATH set to: ${CMAKE_SYSTEM_PREFIX_PATH}")
@@ -106,7 +111,9 @@ elseif (DEFINED ENV{CONDA_PREFIX})
     set(CMAKE_SYSTEM_PREFIX_PATH "$ENV{CONDA_PREFIX};${CMAKE_SYSTEM_PREFIX_PATH}")
     set(CONDA_INCLUDE_DIRS "$ENV{CONDA_PREFIX}/include")
     set(CONDA_LINK_DIRS "$ENV{CONDA_PREFIX}/lib" "$ENV{CONDA_PREFIX}/Library/lib")
-    set(ARROW_BUILD_TYPE "SYSTEM")
+    if (NOT ARROW_BUILD_TYPE)
+        set(ARROW_BUILD_TYPE "SYSTEM")
+    endif()
 
     message(STATUS "Conda environment detected, CMAKE_SYSTEM_PREFIX_PATH set to: ${CMAKE_SYSTEM_PREFIX_PATH}")
     message(STATUS "CONDA_INCLUDE_DIRS set to: ${CONDA_INCLUDE_DIRS}")
@@ -271,9 +278,8 @@ if (CYLON_UCX)
             set(UCX_LIBRARIES ${UCX_UCT} ${UCX_UCS} ${UCX_UCM} ${UCX_UCP})
         endif ()
 
-
-    else ()
-        message("Using locally installed UCX")
+    elseif (NOT UCX_INSTALL_PREFIX)
+        message("Using locally installed UCX without install prefix")
 
         # Check if UCX include and lib paths are given
         if (NOT UCX_INCLUDEDIR)
@@ -290,12 +296,29 @@ if (CYLON_UCX)
         include_directories(SYSTEM ${UCX_INCLUDEDIR})
         # Set library directory for later use
         set(UCX_LIBRARIES
-                ${UCX_LIBDIR}/ucx/libuct_cma.so
-                ${UCX_LIBDIR}/ucx/libuct_ib.so
                 ${UCX_LIBDIR}/libuct.so
                 ${UCX_LIBDIR}/libucs.so
                 ${UCX_LIBDIR}/libucm.so
                 ${UCX_LIBDIR}/libucp.so)
+    else ()
+        message("Using locally installed UCX")
+
+        if (NOT UCX_INSTALL_PREFIX)
+            message(FATAL_ERROR "CYLON_UCX is set, UCX_INSTALL_PREFIX should also be set")
+        endif ()
+
+        # Set UCX found as true
+        set(UCX_FOUND TRUE)
+
+
+        message("setting UCX include and lib directories from install prefix")
+        include_directories(SYSTEM ${UCX_INSTALL_PREFIX}/include)
+        set(UCX_LIBRARIES
+                ${UCX_INSTALL_PREFIX}/lib/libuct.so
+                ${UCX_INSTALL_PREFIX}/lib/libucs.so
+                ${UCX_INSTALL_PREFIX}/lib/libucm.so
+                ${UCX_INSTALL_PREFIX}/lib/libucp.so)
+
     endif (CONDA_LINK_DIRS)
     message(STATUS "UCX libs: ${UCX_LIBRARIES}")
 
@@ -322,7 +345,7 @@ if (CYLON_UCX)
 
 
         find_library(HIREDIS_LIB hiredis HINTS ${REDIS_INSTALL_PREFIX}/lib)
-        find_library(REDIS_PLUS_PLUS_LIB redis++ HINTS ${REDIS_INSTALL_PREFIX}/lib)
+        find_library(REDIS_PLUS_PLUS_LIB redis++ HINTS ${REDIS_INSTALL_PREFIX}/lib64)
         set(REDIS_LIBRARIES
                 ${HIREDIS_LIB}
                 ${REDIS_PLUS_PLUS_LIB})
