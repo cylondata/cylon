@@ -1,12 +1,20 @@
-1. Install Cloudmesh
+1. Load module and activate the python virtual environment
+
+```
+module load gcc/9.2.0 openmpi/3.1.6 cmake/3.23.3 python/3.7.7 
+source /path_to_virtual_environment/cylon_rp_venv/bin/activate
+```
+
+2. Install Cloudmesh and Radical-Pilot
 
 ```
 pip install cloudmesh-common
 pip install openssl-python
 python3 -m pip install urllib3==1.26.6
+pip install radical.pilot
 ```
 
-2. Make change in the ```cylon-experiment-setup.py ``` or ```cylon-experiment-setup.py ``` for the configurations changes.
+3. Make change in the ```cylon-experiment-setup.py ``` or ```rp-experiment-setup.py ``` for the configurations changes.
 
 ```
 combination = [\
@@ -22,12 +30,6 @@ combination = [\
 ```
 
 
-3. Load module and activate the python virtual environment
-
-```
-module load gcc/9.2.0 openmpi/3.1.6 cmake/3.23.3 python/3.7.7 
-source /path_to_virtual_environment/cylon_rp_venv/bin/activate
-```
 4. Run the scripts  as follows.
 
 ```bash
