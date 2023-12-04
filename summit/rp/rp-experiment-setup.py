@@ -87,7 +87,7 @@ for nodes, threads, rows, partition, exclusive in combination:
   echo "..............................................................." 
   export RADICAL_LOG_LVL="DEBUG"
   export RADICAL_PROFILE="TRUE"
-  export RADICAL_PILOT_DBURL="mongodb://arup:your_password@95.217.193.116:27017/arup"
+  export RADICAL_PILOT_DBURL="mongodb://rct-tutorial:HXH7vExF7GvCeMWn@95.217.193.116:27017/rct-tutorial"
   echo "..............................................................."  
   lscpu
   echo "..............................................................."
