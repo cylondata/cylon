@@ -1,0 +1,511 @@
+
+Lmod is automatically replacing "xl/16.1.1-10" with "gcc/9.3.0".
+
+
+Due to MODULEPATH changes, the following have been reloaded:
+  1) spectrum-mpi/10.4.0.3-20210112
+
+
+[93] (727756) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n14:2640963] Error: common_pami.c:1094 - ompi_common_pami_init() 43: Unable to create 1 PAMI communication context(s) rc=1
+[107] (727770) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[152] (708261) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[136] (708239) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[113] (727777) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n14:2640972] Error: common_pami.c:1094 - ompi_common_pami_init() 52: Unable to create 1 PAMI communication context(s) rc=1
+[142] (708246) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[85] (727748) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620533] Error: common_pami.c:1094 - ompi_common_pami_init() 32: Unable to create 1 PAMI communication context(s) rc=1
+[87] (727750) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[128] (708231) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[88] (727751) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[129] (708232) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[91] (727754) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[130] (708233) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[92] (727755) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[132] (708235) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[133] (708236) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620540] Error: common_pami.c:1094 - ompi_common_pami_init() 36: Unable to create 1 PAMI communication context(s) rc=1
+[126] (727790) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[94] (727757) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[135] (708238) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[95] (727758) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[138] (708241) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[65] (2640986) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[96] (727759) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[140] (708247) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620506] Error: common_pami.c:1094 - ompi_common_pami_init() 6: Unable to create 1 PAMI communication context(s) rc=1
+[99] (727760) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[144] (708251) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620516] Error: common_pami.c:1094 - ompi_common_pami_init() 14: Unable to create 1 PAMI communication context(s) rc=1
+[100] (727763) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[145] (708249) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[101] (727766) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[147] (708248) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[102] (727768) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[149] (708253) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[105] (727769) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[150] (708254) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[67] (2640984) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620502] Error: common_pami.c:1094 - ompi_common_pami_init() 2: Unable to create 1 PAMI communication context(s) rc=1
+[106] (727772) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[151] (708252) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620505] Error: common_pami.c:1094 - ompi_common_pami_init() 5: Unable to create 1 PAMI communication context(s) rc=1
+[108] (727771) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[153] (708256) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[69] (2640990) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620513] Error: common_pami.c:1094 - ompi_common_pami_init() 12: Unable to create 1 PAMI communication context(s) rc=1
+[109] (727773) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[154] (708258) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[155] (708255) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[70] (2640995) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620517] Error: common_pami.c:1094 - ompi_common_pami_init() 15: Unable to create 1 PAMI communication context(s) rc=1
+[110] (727776) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[156] (708264) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[71] (2640989) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620521] Error: common_pami.c:1094 - ompi_common_pami_init() 19: Unable to create 1 PAMI communication context(s) rc=1
+[111] (727774) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[72] (2640997) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620520] Error: common_pami.c:1094 - ompi_common_pami_init() 20: Unable to create 1 PAMI communication context(s) rc=1
+[112] (727775) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[157] (708259) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[74] (2641000) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620518] Error: common_pami.c:1094 - ompi_common_pami_init() 21: Unable to create 1 PAMI communication context(s) rc=1
+[114] (727780) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[158] (708262) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[75] (2640991) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620525] Error: common_pami.c:1094 - ompi_common_pami_init() 22: Unable to create 1 PAMI communication context(s) rc=1
+[115] (727778) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[159] (708260) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[76] (2641001) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620527] Error: common_pami.c:1094 - ompi_common_pami_init() 23: Unable to create 1 PAMI communication context(s) rc=1
+[116] (727779) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[127] (708230) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[77] (2640996) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620524] Error: common_pami.c:1094 - ompi_common_pami_init() 24: Unable to create 1 PAMI communication context(s) rc=1
+[117] (727781) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[148] (708257) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[78] (2641002) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620528] Error: common_pami.c:1094 - ompi_common_pami_init() 26: Unable to create 1 PAMI communication context(s) rc=1
+[118] (727784) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[160] (708265) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[81] (2640999) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620526] Error: common_pami.c:1094 - ompi_common_pami_init() 29: Unable to create 1 PAMI communication context(s) rc=1
+[119] (727782) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[137] (708243) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[120] (727783) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[141] (708244) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[82] (2641004) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620532] Error: common_pami.c:1094 - ompi_common_pami_init() 30: Unable to create 1 PAMI communication context(s) rc=1
+[84] (2641005) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620535] Error: common_pami.c:1094 - ompi_common_pami_init() 31: Unable to create 1 PAMI communication context(s) rc=1
+[121] (727786) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[161] (708263) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[134] (708237) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n14:2640964] Error: common_pami.c:1094 - ompi_common_pami_init() 44: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n13:2620530] Error: common_pami.c:1094 - ompi_common_pami_init() 33: Unable to create 1 PAMI communication context(s) rc=1
+[122] (727788) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n14:2640965] Error: common_pami.c:1094 - ompi_common_pami_init() 45: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n13:2620536] Error: common_pami.c:1094 - ompi_common_pami_init() 34: Unable to create 1 PAMI communication context(s) rc=1
+[123] (727785) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[143] (708245) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+[124] (727787) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[146] (708250) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n14:2640966] Error: common_pami.c:1094 - ompi_common_pami_init() 46: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n13:2620534] Error: common_pami.c:1094 - ompi_common_pami_init() 37: Unable to create 1 PAMI communication context(s) rc=1
+[125] (727789) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[131] (708234) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n14:2640967] Error: common_pami.c:1094 - ompi_common_pami_init() 47: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n13:2620542] Error: common_pami.c:1094 - ompi_common_pami_init() 40: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n14:2640969] Error: common_pami.c:1094 - ompi_common_pami_init() 49: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n13:2620537] Error: common_pami.c:1094 - ompi_common_pami_init() 41: Unable to create 1 PAMI communication context(s) rc=1
+[97] (727762) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[139] (708242) Warning: Could not find key qpn0:0:2:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n14:2640970] Error: common_pami.c:1094 - ompi_common_pami_init() 50: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n13:2620531] Error: common_pami.c:1094 - ompi_common_pami_init() 27: Unable to create 1 PAMI communication context(s) rc=1
+[98] (727764) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n14:2640971] Error: common_pami.c:1094 - ompi_common_pami_init() 51: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n13:2620543] Error: common_pami.c:1094 - ompi_common_pami_init() 42: Unable to create 1 PAMI communication context(s) rc=1
+[86] (727749) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n14:2640973] Error: common_pami.c:1094 - ompi_common_pami_init() 53: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n13:2620538] Error: common_pami.c:1094 - ompi_common_pami_init() 35: Unable to create 1 PAMI communication context(s) rc=1
+[104] (727767) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n14:2640974] Error: common_pami.c:1094 - ompi_common_pami_init() 54: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n13:2620539] Error: common_pami.c:1094 - ompi_common_pami_init() 38: Unable to create 1 PAMI communication context(s) rc=1
+[90] (727753) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n14:2640975] Error: common_pami.c:1094 - ompi_common_pami_init() 55: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n13:2620541] Error: common_pami.c:1094 - ompi_common_pami_init() 39: Unable to create 1 PAMI communication context(s) rc=1
+[103] (727765) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n14:2640978] Error: common_pami.c:1094 - ompi_common_pami_init() 56: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n13:2620503] Error: common_pami.c:1094 - ompi_common_pami_init() 3: Unable to create 1 PAMI communication context(s) rc=1
+[89] (727752) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n14:2640977] Error: common_pami.c:1094 - ompi_common_pami_init() 57: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n13:2620507] Error: common_pami.c:1094 - ompi_common_pami_init() 7: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n14:2640979] Error: common_pami.c:1094 - ompi_common_pami_init() 58: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n13:2620509] Error: common_pami.c:1094 - ompi_common_pami_init() 8: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n14:2640976] Error: common_pami.c:1094 - ompi_common_pami_init() 59: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n13:2620511] Error: common_pami.c:1094 - ompi_common_pami_init() 11: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n14:2640982] Error: common_pami.c:1094 - ompi_common_pami_init() 60: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n13:2620512] Error: common_pami.c:1094 - ompi_common_pami_init() 13: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n14:2640983] Error: common_pami.c:1094 - ompi_common_pami_init() 62: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n13:2620514] Error: common_pami.c:1094 - ompi_common_pami_init() 17: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n13:2620510] Error: common_pami.c:1094 - ompi_common_pami_init() 10: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n14:2640980] Error: common_pami.c:1094 - ompi_common_pami_init() 63: Unable to create 1 PAMI communication context(s) rc=1
+[64] (2640987) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620519] Error: common_pami.c:1094 - ompi_common_pami_init() 18: Unable to create 1 PAMI communication context(s) rc=1
+[80] (2641003) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620508] Error: common_pami.c:1094 - ompi_common_pami_init() 9: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n14:2640968] Error: common_pami.c:1094 - ompi_common_pami_init() 48: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n13:2620529] Error: common_pami.c:1094 - ompi_common_pami_init() 28: Unable to create 1 PAMI communication context(s) rc=1
+[68] (2640993) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620504] Error: common_pami.c:1094 - ompi_common_pami_init() 4: Unable to create 1 PAMI communication context(s) rc=1
+[79] (2640994) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620515] Error: common_pami.c:1094 - ompi_common_pami_init() 16: Unable to create 1 PAMI communication context(s) rc=1
+[66] (2640988) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n14:2640981] Error: common_pami.c:1094 - ompi_common_pami_init() 61: Unable to create 1 PAMI communication context(s) rc=1
+[73] (2640992) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+[83] (2640998) Warning: Could not find key qpn0:0:1:0 in cache <=========================
+Unable to connect queue-pairs
+[a20n13:2620523] Error: common_pami.c:1094 - ompi_common_pami_init() 25: Unable to create 1 PAMI communication context(s) rc=1
+--------------------------------------------------------------------------
+No components were able to be opened in the pml framework.
+
+This typically means that either no components of this type were
+installed, or none of the installed components can be loaded.
+Sometimes this means that shared libraries required by these
+components are unable to be found/loaded.
+
+  Host:      a20n14
+  Framework: pml
+--------------------------------------------------------------------------
+[a20n14:2640968] PML pami cannot be selected
+[a20n14:2640981] PML pami cannot be selected
+[a20n14:2640966] PML pami cannot be selected
+[a20n14:2640969] PML pami cannot be selected
+[a20n14:2640970] PML pami cannot be selected
+[a20n14:2640963] PML pami cannot be selected
+[a20n14:2640973] PML pami cannot be selected
+[a20n14:2640974] PML pami cannot be selected
+[a20n14:2640975] PML pami cannot be selected
+[a20n14:2640978] PML pami cannot be selected
+[a20n14:2640977] PML pami cannot be selected
+[a20n14:2640979] PML pami cannot be selected
+[a20n14:2640976] PML pami cannot be selected
+[a20n14:2640982] PML pami cannot be selected
+[a20n14:2640983] PML pami cannot be selected
+[a20n14:2640980] PML pami cannot be selected
+[a20n14:2640972] PML pami cannot be selected
+[a20n14:2640964] PML pami cannot be selected
+[a20n14:2640965] PML pami cannot be selected
+[a20n14:2640967] PML pami cannot be selected
+[a20n14:2640971] PML pami cannot be selected
+[a20n13:2620519] PML pami cannot be selected
+[a20n13:2620513] PML pami cannot be selected
+[a20n13:2620517] PML pami cannot be selected
+[a20n13:2620520] PML pami cannot be selected
+[a20n13:2620527] PML pami cannot be selected
+[a20n13:2620524] PML pami cannot be selected
+[a20n13:2620508] PML pami cannot be selected
+[a20n13:2620528] PML pami cannot be selected
+[a20n13:2620526] PML pami cannot be selected
+[a20n13:2620532] PML pami cannot be selected
+[a20n13:2620531] PML pami cannot be selected
+[a20n13:2620543] PML pami cannot be selected
+[a20n13:2620536] PML pami cannot be selected
+[a20n13:2620539] PML pami cannot be selected
+[a20n13:2620542] PML pami cannot be selected
+[a20n13:2620523] PML pami cannot be selected
+[a20n13:2620516] PML pami cannot be selected
+[a20n13:2620541] PML pami cannot be selected
+[a20n13:2620529] PML pami cannot be selected
+[a20n13:2620502] PML pami cannot be selected
+[a20n13:2620540] PML pami cannot be selected
+[a20n13:2620503] PML pami cannot be selected
+[a20n13:2620507] PML pami cannot be selected
+[a20n13:2620514] PML pami cannot be selected
+[a20n13:2620509] PML pami cannot be selected
+[a20n13:2620505] PML pami cannot be selected
+[a20n13:2620511] PML pami cannot be selected
+[a20n13:2620506] PML pami cannot be selected
+[a20n13:2620504] PML pami cannot be selected
+[a20n13:2620512] PML pami cannot be selected
+[a20n13:2620510] PML pami cannot be selected
+[a20n13:2620521] PML pami cannot be selected
+[a20n13:2620518] PML pami cannot be selected
+[a20n13:2620525] PML pami cannot be selected
+[a20n13:2620515] PML pami cannot be selected
+[a20n13:2620537] PML pami cannot be selected
+[a20n13:2620535] PML pami cannot be selected
+[a20n13:2620530] PML pami cannot be selected
+[a20n13:2620533] PML pami cannot be selected
+[a20n13:2620538] PML pami cannot be selected
+[a20n13:2620534] PML pami cannot be selected
+[1] (2620501) Warning: Could not find key lid0:0:2 in cache <=========================
+[133] (708236) Warning: Could not find key qpn0:0:2:1 in cache <=========================
+Unable to connect queue-pairs
+[a20n16:708261] Error: common_pami.c:1094 - ompi_common_pami_init() 152: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708265] Error: common_pami.c:1094 - ompi_common_pami_init() 160: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708238] Error: common_pami.c:1094 - ompi_common_pami_init() 135: Unable to create 1 PAMI communication context(s) rc=1
+[131] (708234) Warning: Could not find key qpn0:0:2:1 in cache <=========================
+Unable to connect queue-pairs
+[a20n16:708241] Error: common_pami.c:1094 - ompi_common_pami_init() 138: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708243] Error: common_pami.c:1094 - ompi_common_pami_init() 137: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708239] Error: common_pami.c:1094 - ompi_common_pami_init() 136: Unable to create 1 PAMI communication context(s) rc=1
+[134] (708237) Warning: Could not find key qpn0:0:2:1 in cache <=========================
+Unable to connect queue-pairs
+[a20n16:708247] Error: common_pami.c:1094 - ompi_common_pami_init() 140: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708251] Error: common_pami.c:1094 - ompi_common_pami_init() 144: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708245] Error: common_pami.c:1094 - ompi_common_pami_init() 143: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708249] Error: common_pami.c:1094 - ompi_common_pami_init() 145: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708230] Error: common_pami.c:1094 - ompi_common_pami_init() 127: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708248] Error: common_pami.c:1094 - ompi_common_pami_init() 147: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708253] Error: common_pami.c:1094 - ompi_common_pami_init() 149: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708254] Error: common_pami.c:1094 - ompi_common_pami_init() 150: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708244] Error: common_pami.c:1094 - ompi_common_pami_init() 141: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708252] Error: common_pami.c:1094 - ompi_common_pami_init() 151: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708256] Error: common_pami.c:1094 - ompi_common_pami_init() 153: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708258] Error: common_pami.c:1094 - ompi_common_pami_init() 154: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708255] Error: common_pami.c:1094 - ompi_common_pami_init() 155: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708264] Error: common_pami.c:1094 - ompi_common_pami_init() 156: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708259] Error: common_pami.c:1094 - ompi_common_pami_init() 157: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708262] Error: common_pami.c:1094 - ompi_common_pami_init() 158: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708257] Error: common_pami.c:1094 - ompi_common_pami_init() 148: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708242] Error: common_pami.c:1094 - ompi_common_pami_init() 139: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708260] Error: common_pami.c:1094 - ompi_common_pami_init() 159: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n16:708246] Error: common_pami.c:1094 - ompi_common_pami_init() 142: Unable to create 1 PAMI communication context(s) rc=1
+[128] (708231) Warning: Could not find key qpn0:0:2:1 in cache <=========================
+[129] (708232) Warning: Could not find key qpn0:0:2:1 in cache <=========================
+Unable to connect queue-pairs
+[a20n16:708250] Error: common_pami.c:1094 - ompi_common_pami_init() 146: Unable to create 1 PAMI communication context(s) rc=1
+[130] (708233) Warning: Could not find key qpn0:0:2:1 in cache <=========================
+[132] (708235) Warning: Could not find key qpn0:0:2:1 in cache <=========================
+Unable to connect queue-pairs
+[a20n16:708263] Error: common_pami.c:1094 - ompi_common_pami_init() 161: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n14:2640991] Error: common_pami.c:1094 - ompi_common_pami_init() 75: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n14:2640994] Error: common_pami.c:1094 - ompi_common_pami_init() 79: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n14:2641003] Error: common_pami.c:1094 - ompi_common_pami_init() 80: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n14:2640989] Error: common_pami.c:1094 - ompi_common_pami_init() 71: Unable to create 1 PAMI communication context(s) rc=1
+[68] (2640993) Warning: Could not find key qpn0:0:1:1 in cache <=========================
+Unable to connect queue-pairs
+[a20n14:2641001] Error: common_pami.c:1094 - ompi_common_pami_init() 76: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n14:2641002] Error: common_pami.c:1094 - ompi_common_pami_init() 78: Unable to create 1 PAMI communication context(s) rc=1
+[64] (2640987) Warning: Could not find key qpn0:0:1:1 in cache <=========================
+[65] (2640986) Warning: Could not find key qpn0:0:1:1 in cache <=========================
+Unable to connect queue-pairs
+[a20n14:2641000] Error: common_pami.c:1094 - ompi_common_pami_init() 74: Unable to create 1 PAMI communication context(s) rc=1
+[67] (2640984) Warning: Could not find key qpn0:0:1:1 in cache <=========================
+[69] (2640990) Warning: Could not find key qpn0:0:1:1 in cache <=========================
+[66] (2640988) Warning: Could not find key qpn0:0:1:1 in cache <=========================
+[70] (2640995) Warning: Could not find key qpn0:0:1:1 in cache <=========================
+Unable to connect queue-pairs
+[a20n14:2640996] Error: common_pami.c:1094 - ompi_common_pami_init() 77: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n14:2641004] Error: common_pami.c:1094 - ompi_common_pami_init() 82: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n14:2640998] Error: common_pami.c:1094 - ompi_common_pami_init() 83: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n14:2641005] Error: common_pami.c:1094 - ompi_common_pami_init() 84: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n14:2640992] Error: common_pami.c:1094 - ompi_common_pami_init() 73: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n14:2640997] Error: common_pami.c:1094 - ompi_common_pami_init() 72: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n14:2640999] Error: common_pami.c:1094 - ompi_common_pami_init() 81: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727779] Error: common_pami.c:1094 - ompi_common_pami_init() 116: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727781] Error: common_pami.c:1094 - ompi_common_pami_init() 117: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727784] Error: common_pami.c:1094 - ompi_common_pami_init() 118: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727782] Error: common_pami.c:1094 - ompi_common_pami_init() 119: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727783] Error: common_pami.c:1094 - ompi_common_pami_init() 120: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727786] Error: common_pami.c:1094 - ompi_common_pami_init() 121: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727788] Error: common_pami.c:1094 - ompi_common_pami_init() 122: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727785] Error: common_pami.c:1094 - ompi_common_pami_init() 123: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727787] Error: common_pami.c:1094 - ompi_common_pami_init() 124: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727752] Error: common_pami.c:1094 - ompi_common_pami_init() 89: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727777] Error: common_pami.c:1094 - ompi_common_pami_init() 113: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727764] Error: common_pami.c:1094 - ompi_common_pami_init() 98: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727748] Error: common_pami.c:1094 - ompi_common_pami_init() 85: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727750] Error: common_pami.c:1094 - ompi_common_pami_init() 87: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727765] Error: common_pami.c:1094 - ompi_common_pami_init() 103: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727767] Error: common_pami.c:1094 - ompi_common_pami_init() 104: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727751] Error: common_pami.c:1094 - ompi_common_pami_init() 88: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727754] Error: common_pami.c:1094 - ompi_common_pami_init() 91: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727755] Error: common_pami.c:1094 - ompi_common_pami_init() 92: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727790] Error: common_pami.c:1094 - ompi_common_pami_init() 126: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727757] Error: common_pami.c:1094 - ompi_common_pami_init() 94: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727758] Error: common_pami.c:1094 - ompi_common_pami_init() 95: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727789] Error: common_pami.c:1094 - ompi_common_pami_init() 125: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727762] Error: common_pami.c:1094 - ompi_common_pami_init() 97: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727759] Error: common_pami.c:1094 - ompi_common_pami_init() 96: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727760] Error: common_pami.c:1094 - ompi_common_pami_init() 99: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727763] Error: common_pami.c:1094 - ompi_common_pami_init() 100: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727766] Error: common_pami.c:1094 - ompi_common_pami_init() 101: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727753] Error: common_pami.c:1094 - ompi_common_pami_init() 90: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727749] Error: common_pami.c:1094 - ompi_common_pami_init() 86: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727768] Error: common_pami.c:1094 - ompi_common_pami_init() 102: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727769] Error: common_pami.c:1094 - ompi_common_pami_init() 105: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727756] Error: common_pami.c:1094 - ompi_common_pami_init() 93: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727772] Error: common_pami.c:1094 - ompi_common_pami_init() 106: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727771] Error: common_pami.c:1094 - ompi_common_pami_init() 108: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727773] Error: common_pami.c:1094 - ompi_common_pami_init() 109: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727776] Error: common_pami.c:1094 - ompi_common_pami_init() 110: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727774] Error: common_pami.c:1094 - ompi_common_pami_init() 111: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727770] Error: common_pami.c:1094 - ompi_common_pami_init() 107: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727775] Error: common_pami.c:1094 - ompi_common_pami_init() 112: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727780] Error: common_pami.c:1094 - ompi_common_pami_init() 114: Unable to create 1 PAMI communication context(s) rc=1
+Unable to connect queue-pairs
+[a20n15:727778] Error: common_pami.c:1094 - ompi_common_pami_init() 115: Unable to create 1 PAMI communication context(s) rc=1
+[batch3:829101] 145 more processes have sent help message help-mca-base.txt / find-available:none found
+[batch3:829101] Set MCA parameter "orte_base_help_aggregate" to 0 to see all help / error messages
+
+real	0m19.688s
+user	0m0.767s
+sys	0m0.464s
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@batch3>
+Subject: Job 3272277: <cylonrun-w-4> in cluster <summit> Done
+
+Job <cylonrun-w-4> was submitted from host <login2> by user <arupcseuva> in cluster <summit> at Fri Dec  1 20:44:22 2023
+Job was executed on host(s) <1*batch3>, in queue <batch>, as user <arupcseuva> in cluster <summit> at Fri Dec  1 20:44:49 2023
+                            <42*a20n13>
+                            <42*a20n14>
+                            <42*a20n15>
+                            <42*a20n16>
+</ccs/home/arupcseuva> was used as the home directory.
+</ccs/home/arupcseuva/project/dev/cylon/summit/scripts/weak_scaling> was used as the working directory.
+Started at Fri Dec  1 20:44:49 2023
+Terminated at Fri Dec  1 20:45:42 2023
+Results reported at Fri Dec  1 20:45:42 2023
+
+The output (if any) is above this job summary.
+

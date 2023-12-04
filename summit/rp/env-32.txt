@@ -1,0 +1,211 @@
+LSB_EXEC_CLUSTER=summit
+LS_COLORS=rs=0:di=38;5;33:ln=38;5;51:mh=00:pi=40;38;5;11:so=38;5;13:do=38;5;5:bd=48;5;232;38;5;11:cd=48;5;232;38;5;3:or=48;5;232;38;5;9:mi=01;05;37;41:su=48;5;196;38;5;15:sg=48;5;11;38;5;16:ca=48;5;196;38;5;226:tw=48;5;10;38;5;16:ow=48;5;10;38;5;21:st=48;5;21;38;5;15:ex=38;5;40:*.tar=38;5;9:*.tgz=38;5;9:*.arc=38;5;9:*.arj=38;5;9:*.taz=38;5;9:*.lha=38;5;9:*.lz4=38;5;9:*.lzh=38;5;9:*.lzma=38;5;9:*.tlz=38;5;9:*.txz=38;5;9:*.tzo=38;5;9:*.t7z=38;5;9:*.zip=38;5;9:*.z=38;5;9:*.dz=38;5;9:*.gz=38;5;9:*.lrz=38;5;9:*.lz=38;5;9:*.lzo=38;5;9:*.xz=38;5;9:*.zst=38;5;9:*.tzst=38;5;9:*.bz2=38;5;9:*.bz=38;5;9:*.tbz=38;5;9:*.tbz2=38;5;9:*.tz=38;5;9:*.deb=38;5;9:*.rpm=38;5;9:*.jar=38;5;9:*.war=38;5;9:*.ear=38;5;9:*.sar=38;5;9:*.rar=38;5;9:*.alz=38;5;9:*.ace=38;5;9:*.zoo=38;5;9:*.cpio=38;5;9:*.7z=38;5;9:*.rz=38;5;9:*.cab=38;5;9:*.wim=38;5;9:*.swm=38;5;9:*.dwm=38;5;9:*.esd=38;5;9:*.jpg=38;5;13:*.jpeg=38;5;13:*.mjpg=38;5;13:*.mjpeg=38;5;13:*.gif=38;5;13:*.bmp=38;5;13:*.pbm=38;5;13:*.pgm=38;5;13:*.ppm=38;5;13:*.tga=38;5;13:*.xbm=38;5;13:*.xpm=38;5;13:*.tif=38;5;13:*.tiff=38;5;13:*.png=38;5;13:*.svg=38;5;13:*.svgz=38;5;13:*.mng=38;5;13:*.pcx=38;5;13:*.mov=38;5;13:*.mpg=38;5;13:*.mpeg=38;5;13:*.m2v=38;5;13:*.mkv=38;5;13:*.webm=38;5;13:*.ogm=38;5;13:*.mp4=38;5;13:*.m4v=38;5;13:*.mp4v=38;5;13:*.vob=38;5;13:*.qt=38;5;13:*.nuv=38;5;13:*.wmv=38;5;13:*.asf=38;5;13:*.rm=38;5;13:*.rmvb=38;5;13:*.flc=38;5;13:*.avi=38;5;13:*.fli=38;5;13:*.flv=38;5;13:*.gl=38;5;13:*.dl=38;5;13:*.xcf=38;5;13:*.xwd=38;5;13:*.yuv=38;5;13:*.cgm=38;5;13:*.emf=38;5;13:*.ogv=38;5;13:*.ogx=38;5;13:*.aac=38;5;45:*.au=38;5;45:*.flac=38;5;45:*.m4a=38;5;45:*.mid=38;5;45:*.midi=38;5;45:*.mka=38;5;45:*.mp3=38;5;45:*.mpc=38;5;45:*.ogg=38;5;45:*.ra=38;5;45:*.wav=38;5;45:*.oga=38;5;45:*.opus=38;5;45:*.spx=38;5;45:*.xspf=38;5;45:
+LD_LIBRARY_PATH=/ccs/home/arupcseuva/project/dev/cylon/build/arrow/install/lib64:/ccs/home/arupcseuva/project/dev/cylon/build/glog/install/lib64:/ccs/home/arupcseuva/project/dev/cylon/build/lib64:/ccs/home/arupcseuva/project/dev/cylon/build/lib:/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/lib:/sw/summit/gcc/9.3.0-2/lib64:/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib:/opt/ibm/spectrumcomputing/lsf/10.1.0.11/linux3.10-glibc2.17-ppc64le-csm/lib:/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/darshan-runtime-3.4.0-kjycgqekqo72q2f4xzrpwcnb6j4kl4ed/lib
+HOSTTYPE=LINUXPPC64LE
+LSB_UNIXGROUP_INT=arupcseuva
+LSB_JOBINDEX=0
+LSB_JOBEXIT_STAT=0
+__LMOD_REF_COUNT_PATH=/sw/summit/xalt/1.2.1/bin:1;/sw/sources/lsf-tools/2.0/summit/bin:2;/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/bin:1;/sw/summit/gcc/9.3.0-2/bin:1;/ccs/home/arupcseuva/CYLON/bin:2;/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/bin:1;/opt/ibm/spectrumcomputing/lsf/10.1.0.11/linux3.10-glibc2.17-ppc64le-csm/bin:1;/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/darshan-runtime-3.4.0-kjycgqekqo72q2f4xzrpwcnb6j4kl4ed/bin:2;/sw/sources/hpss/bin:1;/opt/ibm/spectrumcomputing/lsf/10.1.0.11/linux3.10-glibc2.17-ppc64le-csm/etc:1;/opt/ibm/csm/bin:1;/usr/local/bin:1;/usr/bin:1;/usr/local/sbin:1;/usr/sbin:1;/opt/ibm/flightlog/bin:1;/opt/ibm/jsm/bin:1;/sw/sources/cgroup_tool/bin:1;/opt/puppetlabs/bin:1;/usr/lpp/mmfs/bin:1
+_ModuleTable002_=Ii9zdy9zdW1taXQvc3BhY2stZW52cy9iYXNlL21vZHVsZXMvc3BhY2svbGludXgtcmhlbDgtcHBjNjRsZS9Db3JlL2RhcnNoYW4tcnVudGltZS8zLjQuMC1saXRlLmx1YSIsCmZ1bGxOYW1lID0gImRhcnNoYW4tcnVudGltZS8zLjQuMC1saXRlIiwKbG9hZE9yZGVyID0gMywKcHJvcFQgPSB7fSwKc3RhY2tEZXB0aCA9IDEsCnN0YXR1cyA9ICJhY3RpdmUiLAp1c2VyTmFtZSA9ICJkYXJzaGFuLXJ1bnRpbWUvMy40LjAtbGl0ZSIsCndWID0gInMwMDAwMDAwMy4wMDAwMDAwMDQuKmxpdGUuKnpmaW5hbCIsCn0sCmdjYyA9IHsKZm4gPSAiL3N3L3N1bW1pdC9zcGFjay1lbnZzL2Jhc2UvbW9kdWxlcy9zaXRlL0NvcmUvZ2NjLzkuMy4wLmx1YSIsCmZ1bGxOYW1lID0gImdjYy85LjMu
+SSH_CONNECTION=199.111.226.164 4356 128.219.134.74 22
+LSB_ECHKPNT_RSH_CMD=ssh -o 'PasswordAuthentication no' -o 'StrictHostKeyChecking no'
+LS_EXECCWD=/ccs/home/arupcseuva/project/dev/cylon/summit/rp
+LS_EXEC_T=START
+LMOD_FAMILY_MPI_VERSION=10.4.0.3-20210112
+LMOD_SYSTEM_NAME=summit
+HISTCONTROL=ignoredups
+MEMBERWORK=/gpfs/alpine/scratch/arupcseuva
+BINARY_TYPE_HPC=
+_ModuleTable008_=aXRlL0NvcmU6L3N3L3N1bW1pdC9tb2R1bGVmaWxlcy9jb3JlIiwKfQo=
+JSM_JSRUN_NO_WARN_TOPOLOGY=1
+OMPI_MCA_io=romio321
+LMOD_FAMILY_COMPILER_VERSION=9.3.0
+HOSTNAME=batch1
+LMOD_SYSTEM_DEFAULT_MODULES=DefApps
+OLDPWD=/ccs/home/arupcseuva
+LS_SUBCWD=/ccs/home/arupcseuva/project/dev/cylon/summit/rp
+LSB_EXIT_PRE_ABORT=99
+LSB_CHKFILENAME=/ccs/home/arupcseuva/.lsbatch/1699538479.3243033
+LSB_EEXEC_REAL_GID=
+LSB_TRAPSIGS=trap # 15 10 12 2 1
+LSB_JOBRES_CALLBACK=43421@batch1
+PAMI_ENABLE_STRIPING=0
+OLCF_DARSHAN_RUNTIME_ROOT=/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/darshan-runtime-3.4.0-kjycgqekqo72q2f4xzrpwcnb6j4kl4ed
+LSB_JOBNAME=cylonrun-w-32
+_ModuleTable007_=NC4wLjMtMjAyMTAxMTItNmRlcGV4dC9nY2MvOS4zLjAiCiwgIi9zdy9zdW1taXQvc3BhY2stZW52cy9iYXNlL21vZHVsZXMvc3BhY2svbGludXgtcmhlbDgtcHBjNjRsZS9nY2MvOS4zLjAiCiwgIi9zdy9zdW1taXQvc3BhY2stZW52cy9iYXNlL21vZHVsZXMvc3BhY2svbGludXgtcmhlbDgtcHBjNjRsZS9Db3JlIgosICIvc3cvc3VtbWl0L3NwYWNrLWVudnMvYmFzZS9tb2R1bGVzL3NpdGUvQ29yZSIsICIvc3cvc3VtbWl0L21vZHVsZWZpbGVzL2NvcmUiLAp9LApzeXN0ZW1CYXNlTVBBVEggPSAiL3N3L3N1bW1pdC9zcGFjay1lbnZzL2Jhc2UvbW9kdWxlcy9zcGFjay9saW51eC1yaGVsOC1wcGM2NGxlL0NvcmU6L3N3L3N1bW1pdC9zcGFjay1lbnZzL2Jhc2UvbW9kdWxlcy9z
+LSB_EEXEC_REAL_UID=
+MAKE_TERMOUT=/dev/pts/23
+LSB_JOBFILENAME=/ccs/home/arupcseuva/.lsbatch/1699538479.3243033
+OMPI_DIR=/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi
+LSF_JOB_TIMESTAMP_VALUE=1699539092
+LSF_RLIMIT_STACK_ORIG=-1 2147483647 -1 2147483647
+LSB_OUTPUTFILE=cylonrun-w-32.3243033
+LSB_MCPU_HOSTS=batch1 1 b26n02 42 b26n03 42 b26n04 42 b26n05 42 b27n05 42 b27n06 42 b27n07 42 b27n08 42 b27n09 42 b27n10 42 b27n11 42 b27n12 42 b28n03 42 b28n04 42 b28n05 42 b28n06 42 b28n07 42 b28n08 42 b28n09 42 b28n10 42 b28n11 42 b28n12 42 b28n13 42 b28n14 42 b28n15 42 b28n16 42 b28n17 42 b28n18 42 b29n01 42 b29n02 42 b29n03 42 b29n04 42 
+OLCF_GCC_ROOT=/sw/summit/gcc/9.3.0-2
+__LMOD_REF_COUNT_LD_LIBRARY_PATH=/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/lib:1;/sw/summit/gcc/9.3.0-2/lib64:1;/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib:1;/opt/ibm/spectrumcomputing/lsf/10.1.0.11/linux3.10-glibc2.17-ppc64le-csm/lib:1;/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/darshan-runtime-3.4.0-kjycgqekqo72q2f4xzrpwcnb6j4kl4ed/lib:1
+__LMOD_REF_COUNT_PKG_CONFIG_PATH=/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/pkgconfig:1;/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/darshan-runtime-3.4.0-kjycgqekqo72q2f4xzrpwcnb6j4kl4ed/lib/pkgconfig:2
+__LMOD_Priority_PATH=/sw/sources/lsf-tools/2.0/summit/bin:-9999;/sw/summit/xalt/1.2.1/bin:-9999
+LSB_DJOB_RANKFILE=/ccs/home/arupcseuva/.lsbatch/1699538479.3243033.hostfile
+LSB_EFFECTIVE_RSRCREQ=1*{select[((LN) && (type == any))] order[r15s:pg] span[hosts=1] cu[type=rack:pref=config]}+1344*{select[((CN) && (type == any))] order[r15s:pg] span[ptile=42] cu[type=rack:pref=config]}
+LSB_DOCKER_JOB_STARTTS=1699539092
+LSF_SERVERDIR=/opt/ibm/spectrumcomputing/lsf/10.1.0.11/linux3.10-glibc2.17-ppc64le-csm/etc
+LSB_JOBRES_PID=3479426
+SBD_KRB5CCNAME_VAL=
+_ModuleTable004_=bHNmLXRvb2xzIl0gPSB7CmZuID0gIi9zdy9zdW1taXQvc3BhY2stZW52cy9iYXNlL21vZHVsZXMvc2l0ZS9Db3JlL2xzZi10b29scy8yLjAubHVhIiwKZnVsbE5hbWUgPSAibHNmLXRvb2xzLzIuMCIsCmxvYWRPcmRlciA9IDEsCnByb3BUID0ge30sCnN0YWNrRGVwdGggPSAxLApzdGF0dXMgPSAiYWN0aXZlIiwKdXNlck5hbWUgPSAibHNmLXRvb2xzIiwKd1YgPSAiMDAwMDAwMDAyLip6ZmluYWwiLAp9LApweXRob24gPSB7CmZuID0gIi9zdy9zdW1taXQvc3BhY2stZW52cy9iYXNlL21vZHVsZXMvc3BhY2svbGludXgtcmhlbDgtcHBjNjRsZS9Db3JlL3B5dGhvbi8zLjcuNy5sdWEiLApmdWxsTmFtZSA9ICJweXRob24vMy43LjciLApsb2FkT3JkZXIgPSA2LApwcm9wVCA9IHt9
+VIRTUAL_ENV=/ccs/home/arupcseuva/CYLON
+MFLAGS=
+LSB_SUB_RES_REQ=1*{select[LN]span[hosts=1]} + 1344*{select[CN]span[ptile=42]}
+__LMOD_REF_COUNT_PYTHONPATH=/sw/summit/xalt/1.2.1/site:1;/sw/summit/xalt/1.2.1/libexec:1
+LSB_AFFINITY_HOSTFILE=/ccs/home/arupcseuva/.lsbatch/1699538479.3243033.hostAffinityFile
+LSB_APPLICATION_NAME=small
+JOB_TERMINATE_INTERVAL=10
+LSFUSER=arupcseuva
+LSF_ENVDIR=/opt/ibm/spectrumcomputing/lsf/conf
+XDG_SESSION_ID=2947
+PAMI_IBV_ADAPTER_AFFINITY=1
+USER=arupcseuva
+OLCF_PYTHON_ROOT=/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3
+OMPI_CXX=g++
+LSF_LOGDIR=/var/log/lsf
+__LMOD_REF_COUNT_MODULEPATH=/sw/summit/spack-envs/base/modules/spack/linux-rhel8-ppc64le/spectrum-mpi/10.4.0.3-20210112-6depext/gcc/9.3.0:1;/sw/summit/spack-envs/base/modules/spack/linux-rhel8-ppc64le/gcc/9.3.0:1;/sw/summit/spack-envs/base/modules/spack/linux-rhel8-ppc64le/Core:1;/sw/summit/spack-envs/base/modules/site/Core:1;/sw/summit/modulefiles/core:1
+LSB_JOBID=3243033
+OLCF_FAMILY_MPI_VERSION=10.4.0.3-20210112
+PAMI_IBV_QP_SERVICE_LEVEL=8
+PWD=/ccs/home/arupcseuva/project/dev/cylon/summit/rp
+OLCF_FAMILY_COMPILER_VERSION=9.3.0
+HOME=/ccs/home/arupcseuva
+RADICAL_PROFILE=TRUE
+LSF_RLIMIT_NOFILE_ORIG=-1 2147483647 -1 2147483647
+LC_CTYPE=C.UTF-8
+CMAKE_PREFIX_PATH=/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi:/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3:/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/darshan-runtime-3.4.0-kjycgqekqo72q2f4xzrpwcnb6j4kl4ed
+SSH_CLIENT=199.111.226.164 4356 22
+LMOD_VERSION=8.6.14
+OPAL_PREFIX=/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi
+CPATH=/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/include:/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/include/python3.7m:/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/include:/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/darshan-runtime-3.4.0-kjycgqekqo72q2f4xzrpwcnb6j4kl4ed/include
+OPAL_LIBDIR=/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/lib
+BASH_ENV=/sw/summit/lmod/8.6.14/init/bash
+LMOD_MPI_VERSION=10.4.0.3-20210112-6depext
+LSB_XFER_OP=
+LSB_JOB_EXECUSER=arupcseuva
+OLCF_FAMILY_MPI=spectrum-mpi
+LSF_BINDIR=/opt/ibm/spectrumcomputing/lsf/10.1.0.11/linux3.10-glibc2.17-ppc64le-csm/bin
+LSB_DJOB_NUMPROC=1345
+PAMI_IBV_ENABLE_DCT=1
+__LMOD_REF_COUNT_LIBRARY_PATH=/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/lib:1;/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib:1;/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/darshan-runtime-3.4.0-kjycgqekqo72q2f4xzrpwcnb6j4kl4ed/lib:1
+LSF_CGROUP_TOPDIR_KEY=summit
+LIBRARY_PATH=/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/lib:/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib:/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/darshan-runtime-3.4.0-kjycgqekqo72q2f4xzrpwcnb6j4kl4ed/lib
+__LMOD_REF_COUNT_CMAKE_PREFIX_PATH=/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi:1;/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3:1;/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/darshan-runtime-3.4.0-kjycgqekqo72q2f4xzrpwcnb6j4kl4ed:2
+BSUB_BLOCK_EXEC_HOST=
+LMOD_sys=Linux
+LSF_INVOKE_CMD=bsub
+LSF_RLIMIT_CORE_ORIG=-1 2147483647 -1 2147483647
+_ModuleTable001_=X01vZHVsZVRhYmxlXyA9IHsKTVR2ZXJzaW9uID0gMywKY19yZWJ1aWxkVGltZSA9IGZhbHNlLApjX3Nob3J0VGltZSA9IGZhbHNlLApkZXB0aFQgPSB7fSwKZmFtaWx5ID0gewpjb21waWxlciA9ICJnY2MiLAptcGkgPSAic3BlY3RydW0tbXBpIiwKfSwKbVQgPSB7CkRlZkFwcHMgPSB7CmZuID0gIi9zdy9zdW1taXQvc3BhY2stZW52cy9iYXNlL21vZHVsZXMvc2l0ZS9Db3JlL0RlZkFwcHMubHVhIiwKZnVsbE5hbWUgPSAiRGVmQXBwcyIsCmxvYWRPcmRlciA9IDUsCnByb3BUID0ge30sCnN0YWNrRGVwdGggPSAwLApzdGF0dXMgPSAiYWN0aXZlIiwKdXNlck5hbWUgPSAiRGVmQXBwcyIsCndWID0gIk0uKnpmaW5hbCIsCn0sClsiZGFyc2hhbi1ydW50aW1lIl0gPSB7CmZuID0g
+LOADEDMODULES=lsf-tools/2.0:hsi/5.0.2.p5:darshan-runtime/3.4.0-lite:xalt/1.2.1:DefApps:python/3.7.7:gcc/9.3.0:spectrum-mpi/10.4.0.3-20210112
+LSB_EXEC_HOSTTYPE=LINUXPPC64LE
+CSM_ALLOCATION_ID=4558218
+HWLOC_KEEP_NVIDIA_GPU_NUMA_NODES=1
+__LMOD_REF_COUNT_MANPATH=/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/share/man:1;/sw/summit/gcc/9.3.0-2/share/man:1;/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/share/man:1;/sw/sources/hpss/man:1;/sw/summit/lmod/8.6.14/share/man:1;/opt/ibm/spectrumcomputing/lsf/10.1.0.11/man:1;/opt/puppetlabs/puppet/share/man:1
+_ModuleTable006_=ID0gInMwMDAwMDAxMC4wMDAwMDAwMDQuMDAwMDAwMDAwLjAwMDAwMDAwMy4qemZpbmFsLS4wMjAyMTAxMTIuKnpmaW5hbCIsCn0sCnhhbHQgPSB7CmZuID0gIi9zdy9zdW1taXQvbW9kdWxlZmlsZXMvY29yZS94YWx0LzEuMi4xLmx1YSIsCmZ1bGxOYW1lID0gInhhbHQvMS4yLjEiLApsb2FkT3JkZXIgPSA0LApwcm9wVCA9IHt9LApzdGFja0RlcHRoID0gMSwKc3RhdHVzID0gImFjdGl2ZSIsCnVzZXJOYW1lID0gInhhbHQiLAp3ViA9ICJeMDAwMDAwMDEuMDAwMDAwMDAyLjAwMDAwMDAwMS4qemZpbmFsIiwKfSwKfSwKbXBhdGhBID0gewoKIi9zdy9zdW1taXQvc3BhY2stZW52cy9iYXNlL21vZHVsZXMvc3BhY2svbGludXgtcmhlbDgtcHBjNjRsZS9zcGVjdHJ1bS1tcGkvMTAu
+_ModuleTable003_=MCIsCmxvYWRPcmRlciA9IDcsCnByb3BUID0ge30sCnN0YWNrRGVwdGggPSAwLApzdGF0dXMgPSAiYWN0aXZlIiwKdXNlck5hbWUgPSAiZ2NjLzkuMy4wIiwKd1YgPSAiMDAwMDAwMDA5LjAwMDAwMDAwMy4qemZpbmFsIiwKfSwKaHNpID0gewpmbiA9ICIvc3cvc3VtbWl0L3NwYWNrLWVudnMvYmFzZS9tb2R1bGVzL3NpdGUvQ29yZS9oc2kvNS4wLjIucDUubHVhIiwKZnVsbE5hbWUgPSAiaHNpLzUuMC4yLnA1IiwKbG9hZE9yZGVyID0gMiwKcHJvcFQgPSB7fSwKc3RhY2tEZXB0aCA9IDEsCnN0YXR1cyA9ICJhY3RpdmUiLAp1c2VyTmFtZSA9ICJoc2kiLAp3ViA9ICJeMDAwMDAwMDUuMDAwMDAwMDAwLjAwMDAwMDAwMi4qemZpbmFsLS4wMDAwMDAwMDUuKnpmaW5hbCIsCn0sClsi
+LMOD_ROOT=/sw/summit/lmod
+SSH_TTY=/dev/pts/23
+LSB_PROJECT_NAME=GEN150_BENCH
+MAIL=/var/spool/mail/arupcseuva
+OLCF_MODULEPATH_ROOT=/sw/summit/modulefiles
+__Init_Default_Modules=1
+SHELL=/bin/bash
+LSF_RLIMIT_CPU_ORIG=-1 2147483647 -1 2147483647
+_ModuleTable_Sz_=8
+OMPI_LD_PRELOAD_PREPEND=/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/darshan-runtime-3.4.0-kjycgqekqo72q2f4xzrpwcnb6j4kl4ed/lib/libdarshan.so
+__LMOD_REF_COUNT_CPATH=/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/include:1;/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/include/python3.7m:1;/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/include:1;/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/darshan-runtime-3.4.0-kjycgqekqo72q2f4xzrpwcnb6j4kl4ed/include:1
+LSB_SUB_HOST=login4
+OLCF_SPECTRUM_MPI_ROOT=/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi
+XLSF_UIDDIR=/opt/ibm/spectrumcomputing/lsf/10.1.0.11/linux3.10-glibc2.17-ppc64le-csm/lib/uid
+LMOD_FAMILY_COMPILER=gcc
+LSB_BATCH_JID=3243033
+OMPI_FC=gfortran
+MAKELEVEL=1
+OLCF_LMOD_ROOT=/sw/summit
+PROJWORK=/gpfs/alpine/proj-shared
+RADICAL_LOG_LVL=DEBUG
+SHLVL=6
+LSB_ACCT_FILE=/tmp/3243033.tmpdir/.1699538479.3243033.acct
+PYTHONPATH=/sw/summit/xalt/1.2.1/site:/sw/summit/xalt/1.2.1/libexec
+LSB_QUEUE=batch
+LSB_OUTDIR=/ccs/home/arupcseuva/project/dev/cylon/summit/rp
+MAKE_TERMERR=/dev/pts/23
+XL_LINKER=/sw/summit/xalt/1.2.1/bin/ld
+MANPATH=/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/share/man:/sw/summit/gcc/9.3.0-2/share/man:/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/share/man:/sw/sources/hpss/man:/sw/summit/lmod/8.6.14/share/man:/opt/ibm/spectrumcomputing/lsf/10.1.0.11/man::/opt/puppetlabs/puppet/share/man
+LSF_LIBDIR=/opt/ibm/spectrumcomputing/lsf/10.1.0.11/linux3.10-glibc2.17-ppc64le-csm/lib
+LSF_VERSION=34
+PAMI_CUDA_AWARE_THRESH=320000
+MODULEPATH=/sw/summit/spack-envs/base/modules/spack/linux-rhel8-ppc64le/spectrum-mpi/10.4.0.3-20210112-6depext/gcc/9.3.0:/sw/summit/spack-envs/base/modules/spack/linux-rhel8-ppc64le/gcc/9.3.0:/sw/summit/spack-envs/base/modules/spack/linux-rhel8-ppc64le/Core:/sw/summit/spack-envs/base/modules/site/Core:/sw/summit/modulefiles/core
+OMPI_CC=gcc
+OLCF_HSI_ROOT=/sw/sources/hpss
+LSB_SUB_USER=arupcseuva
+LOGNAME=arupcseuva
+LSF_RLIMIT_FSIZE_ORIG=-1 2147483647 -1 2147483647
+DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/18476/bus
+XDG_RUNTIME_DIR=/run/user/18476
+XALT_OLCF=1
+LSF_LIM_API_NTRIES=1
+MODULEPATH_ROOT=/sw/summit/modulefiles
+LS_JOBPID=3479426
+LSB_MAX_NUM_PROCESSORS=1345
+LSF_RLIMIT_DATA_ORIG=-1 2147483647 -1 2147483647
+PAMI_IBV_ENABLE_OOO_AR=1
+LMOD_MPI_NAME=spectrum-mpi
+PATH=/sw/summit/xalt/1.2.1/bin:/sw/sources/lsf-tools/2.0/summit/bin:/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi/bin:/sw/summit/gcc/9.3.0-2/bin:/ccs/home/arupcseuva/CYLON/bin:/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/bin:/opt/ibm/spectrumcomputing/lsf/10.1.0.11/linux3.10-glibc2.17-ppc64le-csm/bin:/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/darshan-runtime-3.4.0-kjycgqekqo72q2f4xzrpwcnb6j4kl4ed/bin:/sw/sources/hpss/bin:/opt/ibm/spectrumcomputing/lsf/10.1.0.11/linux3.10-glibc2.17-ppc64le-csm/etc:/opt/ibm/csm/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/opt/ibm/flightlog/bin:/opt/ibm/jsm/bin:/sw/sources/cgroup_tool/bin:/opt/puppetlabs/bin:/usr/lpp/mmfs/bin
+_LMFILES_=/sw/summit/spack-envs/base/modules/site/Core/lsf-tools/2.0.lua:/sw/summit/spack-envs/base/modules/site/Core/hsi/5.0.2.p5.lua:/sw/summit/spack-envs/base/modules/spack/linux-rhel8-ppc64le/Core/darshan-runtime/3.4.0-lite.lua:/sw/summit/modulefiles/core/xalt/1.2.1.lua:/sw/summit/spack-envs/base/modules/site/Core/DefApps.lua:/sw/summit/spack-envs/base/modules/spack/linux-rhel8-ppc64le/Core/python/3.7.7.lua:/sw/summit/spack-envs/base/modules/site/Core/gcc/9.3.0.lua:/sw/summit/spack-envs/base/modules/spack/linux-rhel8-ppc64le/gcc/9.3.0/spectrum-mpi/10.4.0.3-20210112.lua
+RADICAL_PILOT_DBURL=mongodb://arup:igB8^gQihaxbYqew@95.217.193.116:27017/arup
+LSB_DJOB_HOSTFILE=/ccs/home/arupcseuva/.lsbatch/1699538479.3243033.hostfile
+OLCF_FAMILY_COMPILER=gcc
+PS1=(CYLON) 
+__LSF_JOB_TMPDIR__=/tmp/3243033.tmpdir
+MODULESHOME=/sw/summit/lmod/8.6.14
+PKG_CONFIG_PATH=/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/python-3.7.7-eltc6cgcm244fpfjhfbshd5qfpynj2i3/lib/pkgconfig:/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-8.3.1/darshan-runtime-3.4.0-kjycgqekqo72q2f4xzrpwcnb6j4kl4ed/lib/pkgconfig
+LMOD_SETTARG_FULL_SUPPORT=no
+XALT_ETC_DIR=/sw/summit/xalt/1.2.1/etc
+MAKEFLAGS=
+HISTSIZE=1000
+LMOD_PKG=/sw/summit/lmod/8.6.14
+LSB_RES_GET_FANOUT_INFO=Y
+_ModuleTable005_=LApzdGFja0RlcHRoID0gMCwKc3RhdHVzID0gImFjdGl2ZSIsCnVzZXJOYW1lID0gInB5dGhvbi8zLjcuNyIsCndWID0gIjAwMDAwMDAwMy4wMDAwMDAwMDcuMDAwMDAwMDA3Lip6ZmluYWwiLAp9LApbInNwZWN0cnVtLW1waSJdID0gewpmbiA9ICIvc3cvc3VtbWl0L3NwYWNrLWVudnMvYmFzZS9tb2R1bGVzL3NwYWNrL2xpbnV4LXJoZWw4LXBwYzY0bGUvZ2NjLzkuMy4wL3NwZWN0cnVtLW1waS8xMC40LjAuMy0yMDIxMDExMi5sdWEiLApmdWxsTmFtZSA9ICJzcGVjdHJ1bS1tcGkvMTAuNC4wLjMtMjAyMTAxMTIiLApsb2FkT3JkZXIgPSA4LApwcm9wVCA9IHt9LApzdGFja0RlcHRoID0gMCwKc3RhdHVzID0gImFjdGl2ZSIsCnVzZXJOYW1lID0gInNwZWN0cnVtLW1waSIsCndW
+LMOD_CMD=/sw/summit/lmod/8.6.14/libexec/lmod
+WORLDWORK=/gpfs/alpine/world-shared
+MPI_ROOT=/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.3.0/spectrum-mpi-10.4.0.3-20210112-6depextb6p6ulrvmehgtbskbmcsyhtdi
+CVS_RSH=ssh
+LESSOPEN=||/usr/bin/lesspipe.sh %s
+LSF_RLIMIT_RSS_ORIG=-1 2147483647 -1 2147483647
+LMOD_DIR=/sw/summit/lmod/8.6.14/libexec
+LMOD_FAMILY_MPI=spectrum-mpi
+BASH_FUNC_module%%=() {  local __lmod_my_status;
+ local __lmod_sh_dbg;
+ if [ -z "${LMOD_SH_DBG_ON+x}" ]; then
+ case "$-" in 
+ *v*x*)
+ __lmod_sh_dbg='vx'
+ ;;
+ *v*)
+ __lmod_sh_dbg='v'
+ ;;
+ *x*)
+ __lmod_sh_dbg='x'
+ ;;
+ esac;
+ fi;
+ if [ -n "${__lmod_sh_dbg:-}" ]; then
+ set +$__lmod_sh_dbg;
+ echo "Shell debugging temporarily silenced: export LMOD_SH_DBG_ON=1 for Lmod's output" 1>&2;
+ fi;
+ eval "$($LMOD_CMD bash "$@")" && eval $(${LMOD_SETTARG_CMD:-:} -s sh);
+ __lmod_my_status=$?;
+ if [ -n "${__lmod_sh_dbg:-}" ]; then
+ echo "Shell debugging restarted" 1>&2;
+ set -$__lmod_sh_dbg;
+ fi;
+ return $__lmod_my_status
+}
+BASH_FUNC_ml%%=() {  eval "$($LMOD_DIR/ml_cmd "$@")"
+}
+_=/usr/bin/env

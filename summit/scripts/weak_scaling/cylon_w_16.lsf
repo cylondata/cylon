@@ -14,14 +14,14 @@ source $HOME/CYLON/bin/activate
 
 module load gcc/9.3.0
 
-BUILD_PATH=$HOME/cylon/build
+BUILD_PATH=$HOME/project/dev/cylon/build
 export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/lib64:$BUILD_PATH/lib64:$BUILD_PATH/lib:$LD_LIBRARY_PATH
 
 
 echo ################## 16 case
-time jsrun -n $((16*42)) -c 1 python $HOME/cylon/summit/scripts/cylon_scaling.py -n 50000000 -s w
+time jsrun -n $((16*42)) -c 1 python $HOME/project/dev/cylon/summit/scripts/cylon_scaling.py -n 35000000 -s w
 
 
 if ((0)); then
-    time jsrun -n 1 -c 1 python $HOME/cylon/summit/scripts/cylon_scaling.py -n 50000000 -s w
+    time jsrun -n 1 -c 1 python $HOME/project/dev/cylon/summit/scripts/cylon_scaling.py -n 35000000 -s w
 fi

@@ -1,0 +1,369 @@
+
+Lmod is automatically replacing "xl/16.1.1-10" with "gcc/9.3.0".
+
+
+Due to MODULEPATH changes, the following have been reloaded:
+  1) spectrum-mpi/10.4.0.3-20210112
+
+
+Task#  0
+###  s 10752 325520 3500000000 0 54.49867334278921 3499991040
+###  s 10752 325520 3500000000 1 53.65274654501783 3499991040
+###  s 10752 325520 3500000000 2 53.745963730428016 3499991040
+###  s 10752 325520 3500000000 3 53.86916087665374 3499991040
+###  s 10752 325520 3500000000 4 53.93492668745152 3499991040
+###  s 10752 325520 3500000000 5 53.89457756143418 3499991040
+###  s 10752 325520 3500000000 6 53.89181696353037 3499991040
+###  s 10752 325520 3500000000 7 53.7223276062425 3499991040
+###  s 10752 325520 3500000000 8 53.72114400935936 3499991040
+###  s 10752 325520 3500000000 9 53.701907189917705 3499991040
+
++---------------------------------+--------------------------------------------------+
+| Attribute                       | Value                                            |
+|---------------------------------+--------------------------------------------------|
+| ANSI_COLOR                      | "0;31"                                           |
+| BUG_REPORT_URL                  | "https://bugzilla.redhat.com/"                   |
+| CPE_NAME                        | "cpe:/o:redhat:enterprise_linux:8.2:GA"          |
+| HOME_URL                        | "https://www.redhat.com/"                        |
+| ID                              | "rhel"                                           |
+| ID_LIKE                         | "fedora"                                         |
+| NAME                            | "Red Hat Enterprise Linux"                       |
+| PLATFORM_ID                     | "platform:el8"                                   |
+| PRETTY_NAME                     | "Red Hat Enterprise Linux 8.2 (Ootpa)"           |
+| REDHAT_BUGZILLA_PRODUCT         | "Red Hat Enterprise Linux 8"                     |
+| REDHAT_BUGZILLA_PRODUCT_VERSION | 8.2                                              |
+| REDHAT_SUPPORT_PRODUCT          | "Red Hat Enterprise Linux"                       |
+| REDHAT_SUPPORT_PRODUCT_VERSION  | "8.2"                                            |
+| VERSION                         | "8.2 (Ootpa)"                                    |
+| VERSION_ID                      | "8.2"                                            |
+| cpu                             |                                                  |
+| cpu_cores                       | 44                                               |
+| cpu_count                       | 50                                               |
+| cpu_threads                     | 50                                               |
+| date                            | 2023-09-25 19:39:31.809833                       |
+| frequency                       | scpufreq(current=3800.0, min=2300.0, max=3800.0) |
+| mem.active                      | 57.2 GiB                                         |
+| mem.available                   | 513.9 GiB                                        |
+| mem.free                        | 509.2 GiB                                        |
+| mem.inactive                    | 6.5 GiB                                          |
+| mem.percent                     | 14.6 %                                           |
+| mem.total                       | 601.7 GiB                                        |
+| mem.used                        | 77.8 GiB                                         |
+| platform.version                | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| python                          | 3.7.7 (default, May 28 2021, 19:38:18)           |
+|                                 | [GCC 8.3.1 20191121 (Red Hat 8.3.1-5)]           |
+| python.pip                      | 23.2.1                                           |
+| python.version                  | 3.7.7                                            |
+| sys.platform                    | linux                                            |
+| uname.machine                   | ppc64le                                          |
+| uname.node                      | c06n07                                           |
+| uname.processor                 | ppc64le                                          |
+| uname.release                   | 4.18.0-193.46.1.el8_2.ppc64le                    |
+| uname.system                    | Linux                                            |
+| uname.version                   | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| user                            | None                                             |
++---------------------------------+--------------------------------------------------+
+
++----------------------------------+----------+---------+---------+---------------------+---------------------------------------------------------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+| Name                             | Status   |    Time |     Sum | Start               | tag                                                                                         | msg   | Node   | User   | OS    | Version                             |
+|----------------------------------+----------+---------+---------+---------------------+---------------------------------------------------------------------------------------------+-------+--------+--------+-------+-------------------------------------|
+| sort_total_rivanna_3500000000_10 | ok       | 543.117 | 543.117 | 2023-09-25 19:30:28 | {'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0} |       | c06n07 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_0_rivanna_3500000000_10     | ok       |  54.744 |  54.744 | 2023-09-25 19:30:32 | {'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0} |       | c06n07 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_1_rivanna_3500000000_10     | ok       |  53.661 |  53.661 | 2023-09-25 19:31:27 | {'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0} |       | c06n07 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_2_rivanna_3500000000_10     | ok       |  53.755 |  53.755 | 2023-09-25 19:32:21 | {'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0} |       | c06n07 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_3_rivanna_3500000000_10     | ok       |  53.878 |  53.878 | 2023-09-25 19:33:14 | {'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0} |       | c06n07 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_4_rivanna_3500000000_10     | ok       |  53.943 |  53.943 | 2023-09-25 19:34:08 | {'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0} |       | c06n07 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_5_rivanna_3500000000_10     | ok       |  53.903 |  53.903 | 2023-09-25 19:35:02 | {'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0} |       | c06n07 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_6_rivanna_3500000000_10     | ok       |  53.901 |  53.901 | 2023-09-25 19:35:56 | {'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0} |       | c06n07 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_7_rivanna_3500000000_10     | ok       |  53.731 |  53.731 | 2023-09-25 19:36:50 | {'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0} |       | c06n07 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_8_rivanna_3500000000_10     | ok       |  53.73  |  53.73  | 2023-09-25 19:37:44 | {'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0} |       | c06n07 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_9_rivanna_3500000000_10     | ok       |  53.718 |  53.718 | 2023-09-25 19:38:38 | {'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0} |       | c06n07 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
++----------------------------------+----------+---------+---------+---------------------+---------------------------------------------------------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+# csv,timer,status,time,sum,start,tag,msg,uname.node,user,uname.system,platform.version
+# csv,sort_total_rivanna_3500000000_10,ok,543.117,543.117,2023-09-25 19:30:28,{'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0},None,c06n07,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_0_rivanna_3500000000_10,ok,54.744,54.744,2023-09-25 19:30:32,{'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0},None,c06n07,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_1_rivanna_3500000000_10,ok,53.661,53.661,2023-09-25 19:31:27,{'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0},None,c06n07,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_2_rivanna_3500000000_10,ok,53.755,53.755,2023-09-25 19:32:21,{'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0},None,c06n07,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_3_rivanna_3500000000_10,ok,53.878,53.878,2023-09-25 19:33:14,{'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0},None,c06n07,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_4_rivanna_3500000000_10,ok,53.943,53.943,2023-09-25 19:34:08,{'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0},None,c06n07,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_5_rivanna_3500000000_10,ok,53.903,53.903,2023-09-25 19:35:02,{'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0},None,c06n07,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_6_rivanna_3500000000_10,ok,53.901,53.901,2023-09-25 19:35:56,{'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0},None,c06n07,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_7_rivanna_3500000000_10,ok,53.731,53.731,2023-09-25 19:36:50,{'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0},None,c06n07,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_8_rivanna_3500000000_10,ok,53.73,53.73,2023-09-25 19:37:44,{'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0},None,c06n07,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_9_rivanna_3500000000_10,ok,53.718,53.718,2023-09-25 19:38:38,{'rows': 3500000000, 'it': 10, 'unique': 0.9, 'scaling': 's', 'host': 'rivanna', 'task': 0},None,c06n07,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+
+
+real	10m18.699s
+user	0m0.480s
+sys	0m0.184s
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@batch5>
+Subject: Job 3176937: <cylonrun-s-256> in cluster <summit> Done
+
+Job <cylonrun-s-256> was submitted from host <batch2> by user <arupcseuva> in cluster <summit> at Mon Sep 25 09:14:20 2023
+Job was executed on host(s) <1*batch5>, in queue <batch>, as user <arupcseuva> in cluster <summit> at Mon Sep 25 15:28:31 2023
+                            <42*c06n07>
+                            <42*c06n08>
+                            <42*c06n09>
+                            <42*c06n10>
+                            <42*c06n11>
+                            <42*c06n12>
+                            <42*c06n13>
+                            <42*c06n14>
+                            <42*c06n15>
+                            <42*c06n16>
+                            <42*c06n17>
+                            <42*c06n18>
+                            <42*c09n01>
+                            <42*c09n02>
+                            <42*c09n03>
+                            <42*c09n04>
+                            <42*c09n05>
+                            <42*c09n06>
+                            <42*c09n07>
+                            <42*c09n08>
+                            <42*c09n09>
+                            <42*c09n10>
+                            <42*c09n11>
+                            <42*c09n12>
+                            <42*c09n13>
+                            <42*c09n14>
+                            <42*c09n15>
+                            <42*c09n16>
+                            <42*c09n17>
+                            <42*c09n18>
+                            <42*d12n06>
+                            <42*d12n07>
+                            <42*d12n08>
+                            <42*d12n09>
+                            <42*d12n10>
+                            <42*d12n11>
+                            <42*d12n12>
+                            <42*d12n13>
+                            <42*d12n14>
+                            <42*d12n15>
+                            <42*d12n16>
+                            <42*d12n17>
+                            <42*d12n18>
+                            <42*d13n03>
+                            <42*d13n04>
+                            <42*d13n05>
+                            <42*d13n06>
+                            <42*d13n07>
+                            <42*d13n08>
+                            <42*d13n09>
+                            <42*d13n10>
+                            <42*d13n11>
+                            <42*d13n12>
+                            <42*d13n13>
+                            <42*d13n14>
+                            <42*d13n15>
+                            <42*d13n16>
+                            <42*d13n17>
+                            <42*d13n18>
+                            <42*d14n01>
+                            <42*d14n02>
+                            <42*d14n03>
+                            <42*d14n04>
+                            <42*d14n05>
+                            <42*d14n06>
+                            <42*d14n07>
+                            <42*d14n08>
+                            <42*d14n09>
+                            <42*d14n10>
+                            <42*d14n11>
+                            <42*d14n12>
+                            <42*d14n13>
+                            <42*d14n14>
+                            <42*d14n15>
+                            <42*d14n16>
+                            <42*d14n17>
+                            <42*d14n18>
+                            <42*d16n01>
+                            <42*e13n10>
+                            <42*f03n15>
+                            <42*f03n16>
+                            <42*f03n17>
+                            <42*f03n18>
+                            <42*f04n16>
+                            <42*f05n01>
+                            <42*f05n02>
+                            <42*f05n03>
+                            <42*f05n04>
+                            <42*f05n05>
+                            <42*f05n06>
+                            <42*f05n07>
+                            <42*f05n08>
+                            <42*f05n09>
+                            <42*f05n10>
+                            <42*f05n11>
+                            <42*f05n12>
+                            <42*f05n13>
+                            <42*f06n02>
+                            <42*f06n03>
+                            <42*f06n05>
+                            <42*f08n05>
+                            <42*f08n06>
+                            <42*f08n12>
+                            <42*f08n13>
+                            <42*f09n07>
+                            <42*f09n14>
+                            <42*f09n17>
+                            <42*f09n18>
+                            <42*f10n01>
+                            <42*f10n02>
+                            <42*f10n03>
+                            <42*f10n04>
+                            <42*f10n05>
+                            <42*f10n06>
+                            <42*f10n07>
+                            <42*f10n08>
+                            <42*f10n09>
+                            <42*f10n10>
+                            <42*f10n11>
+                            <42*f10n12>
+                            <42*f10n13>
+                            <42*f10n14>
+                            <42*f10n15>
+                            <42*f10n16>
+                            <42*f10n17>
+                            <42*f10n18>
+                            <42*f11n02>
+                            <42*f11n05>
+                            <42*f11n11>
+                            <42*f21n18>
+                            <42*f22n01>
+                            <42*f22n02>
+                            <42*f22n03>
+                            <42*f37n10>
+                            <42*f37n11>
+                            <42*f37n12>
+                            <42*f37n15>
+                            <42*f37n17>
+                            <42*f37n18>
+                            <42*g01n01>
+                            <42*g01n02>
+                            <42*g01n03>
+                            <42*g01n04>
+                            <42*g01n05>
+                            <42*g01n06>
+                            <42*g01n07>
+                            <42*g01n08>
+                            <42*g01n09>
+                            <42*g01n10>
+                            <42*g01n11>
+                            <42*g01n12>
+                            <42*g01n13>
+                            <42*g01n14>
+                            <42*g01n15>
+                            <42*g01n16>
+                            <42*g01n17>
+                            <42*g01n18>
+                            <42*g02n01>
+                            <42*g02n02>
+                            <42*g02n03>
+                            <42*g02n04>
+                            <42*g02n05>
+                            <42*g02n06>
+                            <42*g02n07>
+                            <42*g02n08>
+                            <42*g02n09>
+                            <42*g02n10>
+                            <42*g02n11>
+                            <42*g02n12>
+                            <42*g04n06>
+                            <42*g04n10>
+                            <42*g04n11>
+                            <42*g04n12>
+                            <42*g26n12>
+                            <42*g26n17>
+                            <42*g26n18>
+                            <42*g27n15>
+                            <42*g27n16>
+                            <42*g27n17>
+                            <42*g27n18>
+                            <42*g28n01>
+                            <42*g28n02>
+                            <42*g28n03>
+                            <42*g28n04>
+                            <42*g28n05>
+                            <42*g28n06>
+                            <42*g28n07>
+                            <42*g28n08>
+                            <42*g32n13>
+                            <42*g32n14>
+                            <42*g32n15>
+                            <42*g32n16>
+                            <42*g32n17>
+                            <42*g32n18>
+                            <42*g33n01>
+                            <42*g33n02>
+                            <42*g33n03>
+                            <42*g33n04>
+                            <42*g33n05>
+                            <42*g33n06>
+                            <42*g33n07>
+                            <42*g33n08>
+                            <42*g33n09>
+                            <42*g33n10>
+                            <42*g33n11>
+                            <42*g33n12>
+                            <42*g33n13>
+                            <42*g33n14>
+                            <42*g33n15>
+                            <42*g33n16>
+                            <42*g33n17>
+                            <42*g33n18>
+                            <42*g34n01>
+                            <42*g34n14>
+                            <42*g34n15>
+                            <42*g34n18>
+                            <42*h23n18>
+                            <42*h25n06>
+                            <42*h26n16>
+                            <42*h26n17>
+                            <42*h26n18>
+                            <42*h27n01>
+                            <42*h27n02>
+                            <42*h27n03>
+                            <42*h27n05>
+                            <42*h27n06>
+                            <42*h27n13>
+                            <42*h27n14>
+                            <42*h27n15>
+                            <42*h27n16>
+                            <42*h27n17>
+                            <42*h27n18>
+                            <42*h28n03>
+                            <42*h28n04>
+                            <42*h28n05>
+                            <42*h28n06>
+                            <42*h28n07>
+                            <42*h28n08>
+                            <42*h28n09>
+                            <42*h28n10>
+                            <42*h28n11>
+                            <42*h28n12>
+                            <42*h28n13>
+                            <42*h28n14>
+                            <42*h29n01>
+                            <42*h29n02>
+                            <42*h29n03>
+                            <42*h29n04>
+                            <42*h29n05>
+                            <42*h29n06>
+                            <42*h29n07>
+                            <42*h29n08>
+                            <42*h29n09>
+                            <42*h29n10>
+                            <42*h29n11>
+                            <42*h29n12>
+</ccs/home/arupcseuva> was used as the home directory.
+</ccs/home/arupcseuva/project/dev/cylon/summit/scripts/strong_scaling> was used as the working directory.
+Started at Mon Sep 25 15:28:31 2023
+Terminated at Mon Sep 25 15:39:39 2023
+Results reported at Mon Sep 25 15:39:39 2023
+
+The output (if any) is above this job summary.
+

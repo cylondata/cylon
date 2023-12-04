@@ -1,0 +1,393 @@
+
+Lmod is automatically replacing "xl/16.1.1-10" with "gcc/9.3.0".
+
+
+Due to MODULEPATH changes, the following have been reloaded:
+  1) spectrum-mpi/10.4.0.3-20210112
+
+
+Task#  0
+###  w 168 35000000 5880000000 0 23.616007958139694 6533285425
+###  w 168 35000000 5880000000 1 27.230191799856367 6533285425
+###  w 168 35000000 5880000000 2 26.909919687679835 6533285425
+###  w 168 35000000 5880000000 3 27.25917785366376 6533285425
+###  w 168 35000000 5880000000 4 26.693054368098576 6533285425
+###  w 168 35000000 5880000000 5 25.87655828680311 6533285425
+###  w 168 35000000 5880000000 6 26.47634471314294 6533285425
+###  w 168 35000000 5880000000 7 25.26917872542427 6533285425
+###  w 168 35000000 5880000000 8 26.515267301173438 6533285425
+###  w 168 35000000 5880000000 9 25.872062003328686 6533285425
+
++---------------------------------+--------------------------------------------------+
+| Attribute                       | Value                                            |
+|---------------------------------+--------------------------------------------------|
+| ANSI_COLOR                      | "0;31"                                           |
+| BUG_REPORT_URL                  | "https://bugzilla.redhat.com/"                   |
+| CPE_NAME                        | "cpe:/o:redhat:enterprise_linux:8.2:GA"          |
+| HOME_URL                        | "https://www.redhat.com/"                        |
+| ID                              | "rhel"                                           |
+| ID_LIKE                         | "fedora"                                         |
+| NAME                            | "Red Hat Enterprise Linux"                       |
+| PLATFORM_ID                     | "platform:el8"                                   |
+| PRETTY_NAME                     | "Red Hat Enterprise Linux 8.2 (Ootpa)"           |
+| REDHAT_BUGZILLA_PRODUCT         | "Red Hat Enterprise Linux 8"                     |
+| REDHAT_BUGZILLA_PRODUCT_VERSION | 8.2                                              |
+| REDHAT_SUPPORT_PRODUCT          | "Red Hat Enterprise Linux"                       |
+| REDHAT_SUPPORT_PRODUCT_VERSION  | "8.2"                                            |
+| VERSION                         | "8.2 (Ootpa)"                                    |
+| VERSION_ID                      | "8.2"                                            |
+| cpu                             |                                                  |
+| cpu_cores                       | 44                                               |
+| cpu_count                       | 50                                               |
+| cpu_threads                     | 50                                               |
+| date                            | 2023-12-01 18:55:25.364676                       |
+| frequency                       | scpufreq(current=3800.0, min=2300.0, max=3800.0) |
+| mem.active                      | 210.4 GiB                                        |
+| mem.available                   | 363.0 GiB                                        |
+| mem.free                        | 335.7 GiB                                        |
+| mem.inactive                    | 28.3 GiB                                         |
+| mem.percent                     | 39.7 %                                           |
+| mem.total                       | 601.7 GiB                                        |
+| mem.used                        | 228.0 GiB                                        |
+| platform.version                | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| python                          | 3.7.7 (default, May 28 2021, 19:38:18)           |
+|                                 | [GCC 8.3.1 20191121 (Red Hat 8.3.1-5)]           |
+| python.pip                      | 23.3.1                                           |
+| python.version                  | 3.7.7                                            |
+| sys.platform                    | linux                                            |
+| uname.machine                   | ppc64le                                          |
+| uname.node                      | h36n02                                           |
+| uname.processor                 | ppc64le                                          |
+| uname.release                   | 4.18.0-193.46.1.el8_2.ppc64le                    |
+| uname.system                    | Linux                                            |
+| uname.version                   | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| user                            | None                                             |
++---------------------------------+--------------------------------------------------+
+
++--------------------------------+----------+---------+---------+---------------------+-------------------------------------------------------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+| Name                           | Status   |    Time |     Sum | Start               | tag                                                                                       | msg   | Node   | User   | OS    | Version                             |
+|--------------------------------+----------+---------+---------+---------------------+-------------------------------------------------------------------------------------------+-------+--------+--------+-------+-------------------------------------|
+| join_total_rivanna_35000000_10 | ok       | 263.41  | 263.41  | 2023-12-01 18:51:01 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_0_rivanna_35000000_10     | ok       |  23.619 |  23.619 | 2023-12-01 18:51:03 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_1_rivanna_35000000_10     | ok       |  27.231 |  27.231 | 2023-12-01 18:51:27 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_2_rivanna_35000000_10     | ok       |  26.911 |  26.911 | 2023-12-01 18:51:54 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_3_rivanna_35000000_10     | ok       |  27.26  |  27.26  | 2023-12-01 18:52:21 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_4_rivanna_35000000_10     | ok       |  26.694 |  26.694 | 2023-12-01 18:52:48 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_5_rivanna_35000000_10     | ok       |  25.877 |  25.877 | 2023-12-01 18:53:15 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_6_rivanna_35000000_10     | ok       |  26.477 |  26.477 | 2023-12-01 18:53:41 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_7_rivanna_35000000_10     | ok       |  25.27  |  25.27  | 2023-12-01 18:54:07 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_8_rivanna_35000000_10     | ok       |  26.516 |  26.516 | 2023-12-01 18:54:32 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_9_rivanna_35000000_10     | ok       |  25.873 |  25.873 | 2023-12-01 18:54:59 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
++--------------------------------+----------+---------+---------+---------------------+-------------------------------------------------------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+# csv,timer,status,time,sum,start,tag,msg,uname.node,user,uname.system,platform.version
+# csv,join_total_rivanna_35000000_10,ok,263.41,263.41,2023-12-01 18:51:01,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_0_rivanna_35000000_10,ok,23.619,23.619,2023-12-01 18:51:03,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_1_rivanna_35000000_10,ok,27.231,27.231,2023-12-01 18:51:27,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_2_rivanna_35000000_10,ok,26.911,26.911,2023-12-01 18:51:54,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_3_rivanna_35000000_10,ok,27.26,27.26,2023-12-01 18:52:21,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_4_rivanna_35000000_10,ok,26.694,26.694,2023-12-01 18:52:48,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_5_rivanna_35000000_10,ok,25.877,25.877,2023-12-01 18:53:15,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_6_rivanna_35000000_10,ok,26.477,26.477,2023-12-01 18:53:41,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_7_rivanna_35000000_10,ok,25.27,25.27,2023-12-01 18:54:07,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_8_rivanna_35000000_10,ok,26.516,26.516,2023-12-01 18:54:32,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_9_rivanna_35000000_10,ok,25.873,25.873,2023-12-01 18:54:59,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+
+Task#  0
+###  w 168 35000000 5880000000 0 21.894425027427218 5880000000
+###  w 168 35000000 5880000000 1 21.887757341066997 5880000000
+###  w 168 35000000 5880000000 2 21.878108152321406 5880000000
+###  w 168 35000000 5880000000 3 21.851010207618987 5880000000
+###  w 168 35000000 5880000000 4 21.859188460168383 5880000000
+###  w 168 35000000 5880000000 5 21.89662909933499 5880000000
+###  w 168 35000000 5880000000 6 21.884305776584718 5880000000
+###  w 168 35000000 5880000000 7 21.866790103060858 5880000000
+###  w 168 35000000 5880000000 8 21.885483838263013 5880000000
+###  w 168 35000000 5880000000 9 ### Batch Execution Total time:  485.0195150375366
+### Batch Execution Total time:  485.02615761756897
+### Batch Execution Total time:  485.02709197998047
+### Batch Execution Total time:  485.02816891670227
+### Batch Execution Total time:  485.0241205692291
+### Batch Execution Total time:  483.8743808269501
+21.910770931414195 5880000000
+
++---------------------------------+--------------------------------------------------+
+| Attribute                       | Value                                            |
+|---------------------------------+--------------------------------------------------|
+| ANSI_COLOR                      | "0;31"                                           |
+| BUG_REPORT_URL                  | "https://bugzilla.redhat.com/"                   |
+| CPE_NAME                        | "cpe:/o:redhat:enterprise_linux:8.2:GA"          |
+| HOME_URL                        | "https://www.redhat.com/"                        |
+| ID                              | "rhel"                                           |
+| ID_LIKE                         | "fedora"                                         |
+| NAME                            | "Red Hat Enterprise Linux"                       |
+| PLATFORM_ID                     | "platform:el8"                                   |
+| PRETTY_NAME                     | "Red Hat Enterprise Linux 8.2 (Ootpa)"           |
+| REDHAT_BUGZILLA_PRODUCT         | "Red Hat Enterprise Linux 8"                     |
+| REDHAT_BUGZILLA_PRODUCT_VERSION | 8.2                                              |
+| REDHAT_SUPPORT_PRODUCT          | "Red Hat Enterprise Linux"                       |
+| REDHAT_SUPPORT_PRODUCT_VERSION  | "8.2"                                            |
+| VERSION                         | "8.2 (Ootpa)"                                    |
+| VERSION_ID                      | "8.2"                                            |
+| cpu                             |                                                  |
+| cpu_cores                       | 44                                               |
+| cpu_count                       | 50                                               |
+| cpu_threads                     | 50                                               |
+| date                            | 2023-12-01 18:59:05.362452                       |
+| frequency                       | scpufreq(current=3800.0, min=2300.0, max=3800.0) |
+| mem.active                      | 140.3 GiB                                        |
+| mem.available                   | 433.0 GiB                                        |
+| mem.free                        | 405.7 GiB                                        |
+| mem.inactive                    | 28.3 GiB                                         |
+| mem.percent                     | 28.0 %                                           |
+| mem.total                       | 601.7 GiB                                        |
+| mem.used                        | 158.1 GiB                                        |
+| platform.version                | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| python                          | 3.7.7 (default, May 28 2021, 19:38:18)           |
+|                                 | [GCC 8.3.1 20191121 (Red Hat 8.3.1-5)]           |
+| python.pip                      | 23.3.1                                           |
+| python.version                  | 3.7.7                                            |
+| sys.platform                    | linux                                            |
+| uname.machine                   | ppc64le                                          |
+| uname.node                      | h36n02                                           |
+| uname.processor                 | ppc64le                                          |
+| uname.release                   | 4.18.0-193.46.1.el8_2.ppc64le                    |
+| uname.system                    | Linux                                            |
+| uname.version                   | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| user                            | None                                             |
++---------------------------------+--------------------------------------------------+
+
++--------------------------------+----------+---------+---------+---------------------+--------------------------------------------------------------### Batch Execution Total time:  483.87605810165405
+### Batch Execution Total time:  483.47434258461
+### Batch Execution Total time: ### Batch Execution Total time:  483.46850419044495
+### Batch Execution Total time:  483.4685432910919
+ 483.8805329799652### Batch Execution Total time:  483.45628452301025
+### Batch Execution Total time:  483.46164321899414
+### Batch Execution Total time:  483.4511647224426
+-----------------------------+-------+--------+--------+-------+-------------------------------------+
+| Name                           | Status   |    Time |     Sum | Start               | tag                                                                                       | msg   | Node   | User   | OS    | Version                             |
+|--------------------------------+----------+---------+---------+---------------------+-------------------------------------------------------------------------------------------+-------+--------+--------+-------+-------------------------------------|
+| join_total_rivanna_35000000_10 | ok       | 263.41  | 263.41  | 2023-12-01 18:51:01 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_0_rivanna_35000000_10     | ok       |  23.619 |  23.619 | 2023-12-01 18:51:03 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_1_rivanna_35000000_10     | ok       |  27.231 |  27.231 | 2023-12-01 18:51:27 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_2_rivanna_35000000_10     | ok       |  26.911 |  26.911 | 2023-12-01 18:51:54 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_3_rivanna_35000000_10     | ok       |  27.26  |  27.26  | 2023-12-01 18:52:21 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_4_rivanna_35000000_10     | ok       |  26.694 |  26.694 | 2023-12-01 18:52:48 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_5_rivanna_35000000_10     | ok       |  25.877 |  25.877 | 2023-12-01 18:53:15 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_6_rivanna_35000000_10     | ok       |  26.477 |  26.477 | 2023-12-01 18:53:41 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_7_rivanna_35000000_10     | ok       |  25.27  |  25.27  | 2023-12-01 18:54:07 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_8_rivanna_35000000_10     | ok       |  26.516 |  26.516 | 2023-12-01 18:54:32 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| join_9_rivanna_35000000_10     | ok       |  25.873 |  25.873 | 2023-12-01 18:54:59 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_total_rivanna_35000000_10 | ok       | 219.736 | 219.736 | 2023-12-01 18:55:25 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_0_rivanna_35000000_10     | ok       |  21.896 |  21.896 | 2023-12-01 18:55:26 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_1_rivanna_35000000_10     | ok       |  21.889 |  21.889 | 2023-12-01 18:55:48 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_2_rivanna_35000000_10     | ok       |  21.88  |  21.88  | 2023-12-01 18:56:10 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_3_rivanna_35000000_10     | ok       |  21.853 |  21.853 | 2023-12-01 18:56:32 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_4_rivanna_35000000_10     | ok       |  21.861 |  21.861 | 2023-12-01 18:56:54 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_5_rivanna_35000000_10     | ok       |  21.898 |  21.898 | 2023-12-01 18:57:15 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_6_rivanna_35000000_10     | ok       |  21.886 |  21.886 | 2023-12-01 18:57:37 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_7_rivanna_35000000_10     | ok       |  21.868 |  21.868 | 2023-12-01 18:57:59 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_8_rivanna_35000000_10     | ok       |  21.887 |  21.887 | 2023-12-01 18:58:21 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_9_rivanna_35000000_10     | ok       |  21.913 |  21.913 | 2023-12-01 18:58:43 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | h36n02 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
++--------------------------------+----------+---------+---------+---------------------+-------------------------------------------------------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+# csv,timer,status,time,sum,start,tag,msg,uname.node,user,uname.system,platform.version
+# csv,join_total_rivanna_35000000_10,ok,263.41,263.41,2023-12-01 18:51:01,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_0_rivanna_35000000_10,ok,23.619,23.619,2023-12-01 18:51:03,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_1_rivanna_35000000_10,ok,27.231,27.231,2023-12-01 18:51:27,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_2_rivanna_35000000_10,ok,26.911,26.911,2023-12-01 18:51:54,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_3_rivanna_35000000_10,ok,27.26,27.26,2023-12-01 18:52:21,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_4_rivanna_35000000_10,ok,26.694,26.694,2023-12-01 18:52:48,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_5_rivanna_35000000_10,ok,25.877,25.877,2023-12-01 18:53:15,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_6_rivanna_35000000_10,ok,26.477,26.477,2023-12-01 18:53:41,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_7_rivanna_35000000_10,ok,25.27,25.27,2023-12-01 18:54:07,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_8_rivanna_35000000_10,ok,26.516,26.516,2023-12-01 18:54:32,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,join_9_rivanna_35000000_10,ok,25.873,25.873,2023-12-01 18:54:59,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_total_rivanna_35000000_10,ok,219.736,219.736,2023-12-01 18:55:25,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_0_rivanna_35000000_10,ok,21.896,21.896,2023-12-01 18:55:26,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_1_rivanna_35000000_10,ok,21.889,21.889,2023-12-01 18:55:48,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_2_rivanna_35000000_10,ok,21.88,21.88,2023-12-01 18:56:10,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_3_rivanna_35000000_10,ok,21.853,21.853,2023-12-01 18:56:32,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_4_rivanna_35000000_10,ok,21.861,21.861,2023-12-01 18:56:54,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_5_rivanna_35000000_10,ok,21.898,21.898,2023-12-01 18:57:15,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_6_rivanna_35000000_10,ok,21.886,21.886,2023-12-01 18:57:37,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_7_rivanna_35000000_10,ok,21.868,21.868,2023-12-01 18:57:59,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_8_rivanna_35000000_10,ok,21.887,21.887,2023-12-01 18:58:21,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_9_rivanna_35000000_10,ok,21.913,21.913,2023-12-01 18:58:43,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,h36n02,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+
+### Batch Execution Total time:  483.82735872268677
+### Batch Execution Total time:  483.8283863067627
+### Batch Execution Total time:  483.83257389068604
+### Batch Execution Total time:  483.8334722518921
+### Batch Execution Total time:  483.83471512794495
+### Batch Execution Total time:  483.8404231071472
+### Batch Execution Total time:  483.8733630180359
+### Batch Execution Total time:  483.87183356285095
+### Batch Execution Total time:  485.0288987159729
+### Batch Execution Total time:  483.8719959259033
+### Batch Execution Total time:  485.0618395805359
+### Batch Execution Total time:  485.0595643520355
+### Batch Execution Total time:  485.06325793266296
+### Batch Execution Total time:  485.0642285346985
+### Batch Execution Total time: ### Batch Execution Total time:   485.08096075057983
+485.0810852050781
+### Batch Execution Total time:  485.0825114250183
+### Batch Execution Total time:  485.08289670944214
+### Batch Execution Total time:  485.0843904018402
+### Batch Execution Total time:  485.08474707603455
+### Batch Execution Total time:  485.08590817451477
+### Batch Execution Total time:  485.0905590057373
+### Batch Execution Total time: ### Batch Execution Total time:  485.0946056842804
+ 485.0944962501526
+### Batch Execution Total time:  483.5064218044281
+### Batch Execution Total time:  483.9226961135864
+### Batch Execution Total time:  483.5091350078583
+### Batch Execution Total time:  483.8878080844879
+### Batch Execution Total time:  483.514258146286
+### Batch Execution Total time:  483.9218575954437
+### Batch Execution Total time:  483.5176908969879
+### Batch Execution Total time:  483.88281297683716
+### Batch Execution Total time:  483.5188114643097### Batch Execution Total time:  483.8883230686188
+
+### Batch Execution Total time:  483.92426323890686
+### Batch Execution Total time:  483.5190567970276### Batch Execution Total time:  483.9244363307953
+
+### Batch Execution Total time:  483.94255566596985
+### Batch Execution Total time:  483.9460668563843
+### Batch Execution Total time:  483.94321060180664
+### Batch Execution Total time:  483.9461793899536
+### Batch Execution Total time:  483.9474952220917
+### Batch Execution Total time:  483.9491686820984### Batch Execution Total time:  483.94915080070496
+
+### Batch Execution Total time:  483.9496476650238
+
+### Batch Execution Total time:  485.10856461524963
+### Batch Execution Total time:  485.10814356803894
+### Batch Execution Total time:  485.1013000011444
+### Batch Execution Total time:  485.100510597229
+### Batch Execution Total time:  485.0983986854553
+### Batch Execution Total time:  485.09662199020386
+### Batch Execution Total time:  485.1050007343292
+### Batch Execution Total time:  485.1065094470978
+### Batch Execution Total time:  483.53240418434143
+### Batch Execution Total time:  483.53267526626587
+### Batch Execution Total time:  483.5332622528076
+### Batch Execution Total time:  483.534033536911
+### Batch Execution Total time:  483.9628493785858
+### Batch Execution Total time:  483.96286058425903
+### Batch Execution Total time:  483.96594071388245
+### Batch Execution Total time:  483.97028827667236
+### Batch Execution Total time:  483.9676969051361
+### Batch Execution Total time:  483.96940207481384
+### Batch Execution Total time:  483.96349024772644
+### Batch Execution Total time:  483.9699742794037
+### Batch Execution Total time:  483.9646496772766
+### Batch Execution Total time:  483.96458196640015
+### Batch Execution Total time:  483.9643802642822
+### Batch Execution Total time:  483.96882605552673
+### Batch Execution Total time:  483.90042757987976
+### Batch Execution Total time:  483.8964755535126
+### Batch Execution Total time:  483.91808581352234
+### Batch Execution Total time:  483.8916289806366
+### Batch Execution Total time:  483.8968150615692
+### Batch Execution Total time:  483.9094612598419
+### Batch Execution Total time:  483.91281747817993
+### Batch Execution Total time:  483.87859582901
+### Batch Execution Total time:  483.8936994075775
+### Batch Execution Total time:  483.87836813926697
+### Batch Execution Total time:  483.8899085521698
+### Batch Execution Total time:  483.91614174842834
+### Batch Execution Total time:  483.91201519966125
+### Batch Execution Total time:  483.9184901714325
+### Batch Execution Total time:  485.11695194244385
+### Batch Execution Total time:  485.1193542480469
+### Batch Execution Total time:  485.119735956192
+### Batch Execution Total time:  483.89606833457947
+### Batch Execution Total time:  483.8933525085449
+### Batch Execution Total time:  483.9165782928467
+### Batch Execution Total time:  483.9055278301239
+### Batch Execution Total time:  483.91094875335693
+### Batch Execution Total time:  483.9055540561676
+### Batch Execution Total time:  483.9108235836029
+### Batch Execution Total time:  485.1221191883087
+### Batch Execution Total time:  485.12371706962585
+### Batch Execution Total time:  485.1246988773346
+### Batch Execution Total time:  483.9844515323639
+### Batch Execution Total time:  483.98454427719116
+### Batch Execution Total time:  483.98490500450134
+### Batch Execution Total time:  483.9852879047394
+### Batch Execution Total time:  483.9866909980774
+### Batch Execution Total time:  485.127215385437
+### Batch Execution Total time:  485.1277587413788
+### Batch Execution Total time:  485.1280028820038
+### Batch Execution Total time:  485.1283493041992
+### Batch Execution Total time:  485.1284611225128
+### Batch Execution Total time:  483.93182373046875
+### Batch Execution Total time:  ### Batch Execution Total time:  483.9313704967499
+### Batch Execution Total time:  483.5351448059082
+### Batch Execution Total time:  483.93323588371277
+483.988783121109
+### Batch Execution Total time: ### Batch Execution Total time:  483.537011384964
+### Batch Execution Total time:  483.93377923965454
+### Batch Execution Total time:  483.5578968524933
+ ### Batch Execution Total time:  483.5597298145294
+483.9337508678436### Batch Execution Total time:  483.55935621261597
+### Batch Execution Total time:  485.13001441955566
+
+### Batch Execution Total time:  483.53815174102783
+### Batch Execution Total time:  483.9342510700226### Batch Execution Total time:  483.53947830200195
+
+### Batch Execution Total time:  483.5548930168152
+### Batch Execution Total time:  483.93458366394043### Batch Execution Total time:  483.55431866645813
+
+### Batch Execution Total time:  483.5517933368683
+### Batch Execution Total time:  485.130957365036
+### Batch Execution Total time:  483.5365786552429
+### Batch Execution Total time:  485.13121342658997### Batch Execution Total time:  483.5553967952728
+
+### Batch Execution Total time:  483.5420889854431
+### Batch Execution Total time:  483.9894828796387### Batch Execution Total time:  483.54202604293823
+
+### Batch Execution Total time:  483.9898407459259
+### Batch Execution Total time:  ### Batch Execution Total time:  483.9900131225586
+483.5617551803589
+### Batch Execution Total time:  483.9359178543091
+### Batch Execution Total time:  483.99050998687744
+### Batch Execution Total time:  483.9362189769745
+### Batch Execution Total time:  483.5621700286865
+### Batch Execution Total time:  483.93591594696045
+### Batch Execution Total time:  483.9905421733856### Batch Execution Total time:  483.9372067451477
+
+### Batch Execution Total time:  483.9907717704773
+### Batch Execution Total time:  483.5628683567047### Batch Execution Total time:  483.9379835128784
+
+### Batch Execution Total time:  483.5631215572357
+### Batch Execution Total time:  483.5654742717743
+### Batch Execution Total time:  483.5665445327759### Batch Execution Total time:  483.56662011146545
+### Batch Execution Total time:  483.56689977645874
+
+### Batch Execution Total time:  483.5713074207306
+### Batch Execution Total time:  483.57272577285767
+### Batch Execution Total time:  483.5737855434418
+### Batch Execution Total time:  483.5745105743408
+
+real	8m37.020s
+user	0m0.538s
+sys	0m0.107s
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@batch3>
+Subject: Job 3272025: <cylonrun-w-4> in cluster <summit> Done
+
+Job <cylonrun-w-4> was submitted from host <login3> by user <arupcseuva> in cluster <summit> at Fri Dec  1 13:49:12 2023
+Job was executed on host(s) <1*batch3>, in queue <batch>, as user <arupcseuva> in cluster <summit> at Fri Dec  1 13:49:56 2023
+                            <42*h36n02>
+                            <42*h36n07>
+                            <42*h36n09>
+                            <42*h36n10>
+</ccs/home/arupcseuva> was used as the home directory.
+</ccs/home/arupcseuva/project/dev/cylon/summit/scripts/weak_scaling> was used as the working directory.
+Started at Fri Dec  1 13:49:56 2023
+Terminated at Fri Dec  1 13:59:07 2023
+Results reported at Fri Dec  1 13:59:07 2023
+
+The output (if any) is above this job summary.
+

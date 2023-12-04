@@ -1,0 +1,19 @@
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@batch2>
+Subject: Job 3190814: <cylonrun-s-4> in cluster <summit> Done
+
+Job <cylonrun-s-4> was submitted from host <login2> by user <arupcseuva> in cluster <summit> at Mon Oct  2 23:04:12 2023
+Job was executed on host(s) <1*batch2>, in queue <batch>, as user <arupcseuva> in cluster <summit> at Mon Oct  2 23:04:16 2023
+                            <42*a14n14>
+                            <42*a14n15>
+                            <42*a14n16>
+                            <42*a14n17>
+</ccs/home/arupcseuva> was used as the home directory.
+</ccs/home/arupcseuva/project/dev/cylon/summit/scripts/strong_scaling> was used as the working directory.
+Started at Mon Oct  2 23:04:16 2023
+Terminated at Mon Oct  2 23:04:40 2023
+Results reported at Mon Oct  2 23:04:40 2023
+
+The output (if any) is above this job summary.
+

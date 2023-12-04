@@ -1,0 +1,129 @@
+
+Lmod is automatically replacing "xl/16.1.1-10" with "gcc/9.3.0".
+
+
+Due to MODULEPATH changes, the following have been reloaded:
+  1) spectrum-mpi/10.4.0.3-20210112
+
+
+Task#  0
+###  w 672 35000000 23520000000 0 24.283158530082023 23520000000
+###  w 672 35000000 23520000000 1 23.55248851754836 23520000000
+###  w 672 35000000 23520000000 2 23.736085937846276 23520000000
+###  w 672 35000000 23520000000 3 23.519324134148302 23520000000
+###  w 672 35000000 23520000000 4 23.72286306250663 23520000000
+###  w 672 35000000 23520000000 5 23.604423161773454 23520000000
+###  w 672 35000000 23520000000 6 23.846770725789526 23520000000
+###  w 672 35000000 23520000000 7 23.675780352027644 23520000000
+###  w 672 35000000 23520000000 8 23.668417023051354 23520000000
+###  w 672 35000000 23520000000 9 23.633852479358513 23520000000
+
++---------------------------------+--------------------------------------------------+
+| Attribute                       | Value                                            |
+|---------------------------------+--------------------------------------------------|
+| ANSI_COLOR                      | "0;31"                                           |
+| BUG_REPORT_URL                  | "https://bugzilla.redhat.com/"                   |
+| CPE_NAME                        | "cpe:/o:redhat:enterprise_linux:8.2:GA"          |
+| HOME_URL                        | "https://www.redhat.com/"                        |
+| ID                              | "rhel"                                           |
+| ID_LIKE                         | "fedora"                                         |
+| NAME                            | "Red Hat Enterprise Linux"                       |
+| PLATFORM_ID                     | "platform:el8"                                   |
+| PRETTY_NAME                     | "Red Hat Enterprise Linux 8.2 (Ootpa)"           |
+| REDHAT_BUGZILLA_PRODUCT         | "Red Hat Enterprise Linux 8"                     |
+| REDHAT_BUGZILLA_PRODUCT_VERSION | 8.2                                              |
+| REDHAT_SUPPORT_PRODUCT          | "Red Hat Enterprise Linux"                       |
+| REDHAT_SUPPORT_PRODUCT_VERSION  | "8.2"                                            |
+| VERSION                         | "8.2 (Ootpa)"                                    |
+| VERSION_ID                      | "8.2"                                            |
+| cpu                             |                                                  |
+| cpu_cores                       | 44                                               |
+| cpu_count                       | 50                                               |
+| cpu_threads                     | 50                                               |
+| date                            | 2023-09-25 18:54:42.296343                       |
+| frequency                       | scpufreq(current=3800.0, min=2300.0, max=3800.0) |
+| mem.active                      | 143.3 GiB                                        |
+| mem.available                   | 427.3 GiB                                        |
+| mem.free                        | 423.7 GiB                                        |
+| mem.inactive                    | 5.4 GiB                                          |
+| mem.percent                     | 29.0 %                                           |
+| mem.total                       | 601.7 GiB                                        |
+| mem.used                        | 164.6 GiB                                        |
+| platform.version                | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| python                          | 3.7.7 (default, May 28 2021, 19:38:18)           |
+|                                 | [GCC 8.3.1 20191121 (Red Hat 8.3.1-5)]           |
+| python.pip                      | 23.2.1                                           |
+| python.version                  | 3.7.7                                            |
+| sys.platform                    | linux                                            |
+| uname.machine                   | ppc64le                                          |
+| uname.node                      | g07n11                                           |
+| uname.processor                 | ppc64le                                          |
+| uname.release                   | 4.18.0-193.46.1.el8_2.ppc64le                    |
+| uname.system                    | Linux                                            |
+| uname.version                   | #1 SMP Thu Feb 18 09:47:51 EST 2021              |
+| user                            | None                                             |
++---------------------------------+--------------------------------------------------+
+
++--------------------------------+----------+---------+---------+---------------------+-------------------------------------------------------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+| Name                           | Status   |    Time |     Sum | Start               | tag                                                                                       | msg   | Node   | User   | OS    | Version                             |
+|--------------------------------+----------+---------+---------+---------------------+-------------------------------------------------------------------------------------------+-------+--------+--------+-------+-------------------------------------|
+| sort_total_rivanna_35000000_10 | ok       | 240.081 | 240.081 | 2023-09-25 18:50:42 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | g07n11 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_0_rivanna_35000000_10     | ok       |  24.286 |  24.286 | 2023-09-25 18:50:45 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | g07n11 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_1_rivanna_35000000_10     | ok       |  23.554 |  23.554 | 2023-09-25 18:51:09 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | g07n11 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_2_rivanna_35000000_10     | ok       |  23.738 |  23.738 | 2023-09-25 18:51:32 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | g07n11 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_3_rivanna_35000000_10     | ok       |  23.522 |  23.522 | 2023-09-25 18:51:56 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | g07n11 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_4_rivanna_35000000_10     | ok       |  23.726 |  23.726 | 2023-09-25 18:52:20 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | g07n11 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_5_rivanna_35000000_10     | ok       |  23.607 |  23.607 | 2023-09-25 18:52:43 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | g07n11 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_6_rivanna_35000000_10     | ok       |  23.85  |  23.85  | 2023-09-25 18:53:07 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | g07n11 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_7_rivanna_35000000_10     | ok       |  23.678 |  23.678 | 2023-09-25 18:53:31 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | g07n11 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_8_rivanna_35000000_10     | ok       |  23.671 |  23.671 | 2023-09-25 18:53:54 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | g07n11 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
+| sort_9_rivanna_35000000_10     | ok       |  23.637 |  23.637 | 2023-09-25 18:54:18 | {'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0} |       | g07n11 | None   | Linux | #1 SMP Thu Feb 18 09:47:51 EST 2021 |
++--------------------------------+----------+---------+---------+---------------------+-------------------------------------------------------------------------------------------+-------+--------+--------+-------+-------------------------------------+
+# csv,timer,status,time,sum,start,tag,msg,uname.node,user,uname.system,platform.version
+# csv,sort_total_rivanna_35000000_10,ok,240.081,240.081,2023-09-25 18:50:42,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,g07n11,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_0_rivanna_35000000_10,ok,24.286,24.286,2023-09-25 18:50:45,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,g07n11,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_1_rivanna_35000000_10,ok,23.554,23.554,2023-09-25 18:51:09,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,g07n11,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_2_rivanna_35000000_10,ok,23.738,23.738,2023-09-25 18:51:32,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,g07n11,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_3_rivanna_35000000_10,ok,23.522,23.522,2023-09-25 18:51:56,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,g07n11,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_4_rivanna_35000000_10,ok,23.726,23.726,2023-09-25 18:52:20,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,g07n11,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_5_rivanna_35000000_10,ok,23.607,23.607,2023-09-25 18:52:43,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,g07n11,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_6_rivanna_35000000_10,ok,23.85,23.85,2023-09-25 18:53:07,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,g07n11,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_7_rivanna_35000000_10,ok,23.678,23.678,2023-09-25 18:53:31,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,g07n11,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_8_rivanna_35000000_10,ok,23.671,23.671,2023-09-25 18:53:54,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,g07n11,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+# csv,sort_9_rivanna_35000000_10,ok,23.637,23.637,2023-09-25 18:54:18,{'rows': 35000000, 'it': 10, 'unique': 0.9, 'scaling': 'w', 'host': 'rivanna', 'task': 0},None,g07n11,None,Linux,#1 SMP Thu Feb 18 09:47:51 EST 2021
+
+
+real	4m37.392s
+user	0m0.517s
+sys	0m0.124s
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@batch1>
+Subject: Job 3176944: <cylonrun-w-16> in cluster <summit> Done
+
+Job <cylonrun-w-16> was submitted from host <batch2> by user <arupcseuva> in cluster <summit> at Mon Sep 25 09:15:02 2023
+Job was executed on host(s) <1*batch1>, in queue <batch>, as user <arupcseuva> in cluster <summit> at Mon Sep 25 14:49:14 2023
+                            <42*g07n11>
+                            <42*g07n12>
+                            <42*g07n13>
+                            <42*g07n14>
+                            <42*g24n02>
+                            <42*g25n10>
+                            <42*g25n11>
+                            <42*g25n12>
+                            <42*g25n14>
+                            <42*g25n15>
+                            <42*g25n17>
+                            <42*g31n02>
+                            <42*g31n03>
+                            <42*g31n04>
+                            <42*g31n05>
+                            <42*g31n06>
+</ccs/home/arupcseuva> was used as the home directory.
+</ccs/home/arupcseuva/project/dev/cylon/summit/scripts/weak_scaling> was used as the working directory.
+Started at Mon Sep 25 14:49:14 2023
+Terminated at Mon Sep 25 14:54:45 2023
+Results reported at Mon Sep 25 14:54:45 2023
+
+The output (if any) is above this job summary.
+
