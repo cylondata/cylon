@@ -15,7 +15,7 @@
 echo "..............................................................." 
 export RADICAL_LOG_LVL="DEBUG"
 export RADICAL_PROFILE="TRUE"
-export RADICAL_PILOT_DBURL="mongodb://arup:igB8^gQihaxbYqew@95.217.193.116:27017/arup"
+export RADICAL_PILOT_DBURL="mongodb://You_Mongodb_url"
 echo "..............................................................."  
 lscpu
 echo "..............................................................."
