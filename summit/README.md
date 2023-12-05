@@ -1,6 +1,6 @@
 # Running Cylon on Summit
 
-Gregor von Laszewski (laszewski@gmail.com), and Niranda Perera
+Gregor von Laszewski (laszewski@gmail.com), Niranda Perera, and Arup Sarker(arupcsedu@gmail.com, djy8hg@virginia.edu)
 
 ## Issues on Summit
 
@@ -51,7 +51,8 @@ cd cylon
 git checkout summit
 cd ~
 
-module load python/3.7.7    
+module load python/3.7.7
+module load gcc/9.3.0 
 python -m venv $HOME/CYLON
 source $HOME/CYLON/bin/activate
 
@@ -65,7 +66,6 @@ pip install -U pytest-mpi
 pip install cmake
 pip install numpy
 
-module load gcc/9.3.0
 
 cd ~/cylon
 rm -rf build
