@@ -14,6 +14,7 @@
 
 add_definitions(-DEXAMPLE_CMAKE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\")
 
+
 add_library(cylon_example_utils SHARED
         example_utils.cpp
         example_utils.hpp)
@@ -39,6 +40,8 @@ macro(cylon_add_exe EXENAME)
     target_link_libraries(${EXENAME} ${ARROW_LIB})
     target_link_libraries(${EXENAME} ${GLOG_LIBRARIES})
     target_link_libraries(${EXENAME} cylon_example_utils)
+
+
 
     if (CYLON_GLOO)
         target_link_libraries(${EXENAME} ${GLOO_LIBRARIES})
@@ -80,6 +83,7 @@ cylon_add_exe(parquet_union_example)
 cylon_add_exe(parquet_join_example)
 cylon_add_exe(dist_sort_example)
 cylon_add_exe(slice_example)
+cylon_add_exe(window_example)
 
 if (CYLON_UCX)
     cylon_add_exe(ucx_join_example)
