@@ -22,7 +22,7 @@ jobs:
       matrix:
         include:
           # 20.04 supports CUDA 11.0+
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             cuda: "11.5.2"
             gcc: 9
 
