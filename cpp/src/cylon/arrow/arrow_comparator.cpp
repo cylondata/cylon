@@ -150,7 +150,7 @@ struct CompareFunc<ArrowT, Asc, arrow::enable_if_floating_point<ArrowT>> {
 template<typename ArrowT, bool Asc>
 struct CompareFunc<ArrowT, Asc, arrow::enable_if_has_string_view<ArrowT>> {
 
-  static int compare(const arrow::util::string_view &v1, const arrow::util::string_view &v2) {
+  static int compare(const std::string_view &v1, const std::string_view &v2) {
     if (Asc) {
       return v1.compare(v2);
     } else {

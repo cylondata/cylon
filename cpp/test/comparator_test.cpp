@@ -35,13 +35,13 @@ struct Helper<T, std::enable_if_t<std::is_arithmetic<T>::value>> {
 };
 
 template<>
-struct Helper<arrow::util::string_view> {
-  static arrow::util::string_view max() { return "ZZZZ"; }
-  static arrow::util::string_view min() { return ""; }
+struct Helper<std::string_view> {
+  static std::string_view max() { return "ZZZZ"; }
+  static std::string_view min() { return ""; }
 
   static int compare(bool asc,
-                     const arrow::util::string_view &v1,
-                     const arrow::util::string_view &v2) {
+                     const std::string_view &v1,
+                     const std::string_view &v2) {
     return asc ? v1.compare(v2) : v2.compare(v1);
   }
 };
@@ -229,7 +229,7 @@ TEST_CASE("test table", "[comp]") {
       return std::all_of(cols.begin(), cols.end(), [&](auto c) {
         auto v1 = *c->chunk(0)->GetScalar(i);
         auto v2 = *c->chunk(0)->GetScalar(j);
-        return v1->Equals(v2);
+        return v1->Equals(*v2);
       });
     };
 
@@ -249,7 +249,7 @@ TEST_CASE("test table", "[comp]") {
       for (const auto &c: table->columns()) {
         auto v1 = *c->chunk(0)->GetScalar(i);
         auto v2 = *c->chunk(0)->GetScalar(j);
-        if (v1->Equals(v2)) {
+        if (v1->Equals(*v2)) {
           continue;
         }
 

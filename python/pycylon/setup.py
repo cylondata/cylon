@@ -75,7 +75,7 @@ libraries = []
 extra_compile_args = []
 extra_link_args = []
 
-std_version = '-std=c++14'
+std_version = '-std=c++17'
 extra_compile_args.extend([std_version, '-DARROW_METADATA_V4 -DNEED_EXCLUSIVE_SCAN'])
 extra_compile_args.append('-DOMPI_SKIP_MPICXX=1')
 

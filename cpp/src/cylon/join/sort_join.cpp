@@ -654,27 +654,27 @@ Status SortJoin(const std::shared_ptr<arrow::Table> &left_tab,
                                                         joined_table,
                                                         memory_pool);
       case arrow::Type::STRING:
-        return do_single_column_join<arrow::StringType, arrow::util::string_view>(
+        return do_single_column_join<arrow::StringType, std::string_view>(
             left_tab, right_tab, left_indices[0], right_indices[0],
             join_config.GetType(), join_config.GetLeftTableSuffix(),
             join_config.GetRightTableSuffix(), joined_table, memory_pool);
       case arrow::Type::BINARY:
-        return do_single_column_join<arrow::BinaryType, arrow::util::string_view>(
+        return do_single_column_join<arrow::BinaryType, std::string_view>(
             left_tab, right_tab, left_indices[0], right_indices[0],
             join_config.GetType(), join_config.GetLeftTableSuffix(),
             join_config.GetRightTableSuffix(), joined_table, memory_pool);
       case arrow::Type::LARGE_STRING:
-        return do_single_column_join<arrow::LargeStringType, arrow::util::string_view>(
+        return do_single_column_join<arrow::LargeStringType, std::string_view>(
             left_tab, right_tab, left_indices[0], right_indices[0],
             join_config.GetType(), join_config.GetLeftTableSuffix(),
             join_config.GetRightTableSuffix(), joined_table, memory_pool);
       case arrow::Type::LARGE_BINARY:
-        return do_single_column_join<arrow::LargeBinaryType, arrow::util::string_view>(
+        return do_single_column_join<arrow::LargeBinaryType, std::string_view>(
             left_tab, right_tab, left_indices[0], right_indices[0],
             join_config.GetType(), join_config.GetLeftTableSuffix(),
             join_config.GetRightTableSuffix(), joined_table, memory_pool);
       case arrow::Type::FIXED_SIZE_BINARY:
-        return do_single_column_join<arrow::FixedSizeBinaryType, arrow::util::string_view>(
+        return do_single_column_join<arrow::FixedSizeBinaryType, std::string_view>(
             left_tab, right_tab, left_indices[0], right_indices[0],
             join_config.GetType(), join_config.GetLeftTableSuffix(),
             join_config.GetRightTableSuffix(), joined_table, memory_pool);

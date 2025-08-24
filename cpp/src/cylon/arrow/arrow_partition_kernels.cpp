@@ -260,7 +260,7 @@ class FixedSizeBinaryHashPartitionKernel : public HashPartitionKernel {
       return
           visit_chunked_array<arrow::FixedSizeBinaryType>(
               idx_col,
-              [&](uint64_t global_idx, arrow::util::string_view val) {
+              [&](uint64_t global_idx, std::string_view val) {
                 uint32_t hash = 0;
                 util::MurmurHash3_x86_32(&val, len, 0, &hash);
                 hash += 31 * target_partitions[global_idx];
@@ -276,7 +276,7 @@ class FixedSizeBinaryHashPartitionKernel : public HashPartitionKernel {
     } else {
       return visit_chunked_array<arrow::FixedSizeBinaryType>(
           idx_col,
-          [&](uint64_t global_idx, arrow::util::string_view val) {
+          [&](uint64_t global_idx, std::string_view val) {
             uint32_t hash = 0;
             util::MurmurHash3_x86_32(&val, len, 0, &hash);
             hash += 31 * target_partitions[global_idx];
@@ -302,7 +302,7 @@ class FixedSizeBinaryHashPartitionKernel : public HashPartitionKernel {
 
     return visit_chunked_array<arrow::FixedSizeBinaryType>
         (idx_col,
-         [&](uint64_t global_idx, arrow::util::string_view val) {
+         [&](uint64_t global_idx, std::string_view val) {
            uint32_t hash = 0;
            util::MurmurHash3_x86_32(&val, byte_width, 0, &hash);
            hash += 31 * partial_hashes[global_idx];
@@ -348,7 +348,7 @@ class BinaryHashPartitionKernel : public HashPartitionKernel {
       return
           visit_chunked_array<ArrowT>(
               idx_col,
-              [&](uint64_t global_idx, arrow::util::string_view val) {
+              [&](uint64_t global_idx, std::string_view val) {
                 uint32_t hash = 0;
                 util::MurmurHash3_x86_32(&val, static_cast<int>(val.size()), 0, &hash);
                 hash += 31 * target_partitions[global_idx];
@@ -365,7 +365,7 @@ class BinaryHashPartitionKernel : public HashPartitionKernel {
       return
           visit_chunked_array<ArrowT>(
               idx_col,
-              [&](uint64_t global_idx, arrow::util::string_view val) {
+              [&](uint64_t global_idx, std::string_view val) {
                 uint32_t hash = 0;
                 util::MurmurHash3_x86_32(&val, static_cast<int>(val.size()), 0, &hash);
                 hash += 31 * target_partitions[global_idx];
@@ -390,7 +390,7 @@ class BinaryHashPartitionKernel : public HashPartitionKernel {
     return
         visit_chunked_array<arrow::FixedSizeBinaryType>(
             idx_col,
-            [&](uint64_t global_idx, arrow::util::string_view val) {
+            [&](uint64_t global_idx, std::string_view val) {
               uint32_t hash = 0;
               util::MurmurHash3_x86_32(&val, static_cast<int>(val.size()), 0, &hash);
               hash += 31 * partial_hashes[global_idx];

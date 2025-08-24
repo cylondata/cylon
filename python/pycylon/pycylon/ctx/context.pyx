@@ -80,7 +80,7 @@ cdef class CylonContext:
             if config is None:
                 raise ValueError("No config passed for a distributed context")
 
-            status = CCylonContext.InitDistributed(self.init_dist(config), &self.ctx_shd_ptr)
+            cdef CStatus status = CCylonContext.InitDistributed(self.init_dist(config), &self.ctx_shd_ptr)
             if not status.is_ok():
                 raise Exception(f"Ctx initialization failed: {status.get_msg().decode()}")
 

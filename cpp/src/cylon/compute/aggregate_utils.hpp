@@ -99,9 +99,9 @@ cylon::Status AllReduce(const std::shared_ptr<CylonContext> &ctx,
         auto rcv_scalar = std::make_shared<ScalarT>(*send_scalar);
         std::memset(&rcv_scalar->value, 0, sizeof(CType));
 
-        RETURN_CYLON_STATUS_IF_FAILED(cylon::mpi::AllReduce(ctx, send_scalar->mutable_data(),
-                                                            rcv_scalar->mutable_data(),
-                                                            1, data_type, reduce_ops[i]));
+        RETURN_CYLON_STATUS_IF_FAILED(cylon::mpi::AllReduce(
+            ctx, send_scalar->data(), const_cast<void *>(rcv_scalar->data()), 1,
+            data_type, reduce_ops[i]));
         rcv_scalar_vector.push_back(rcv_scalar);
       }
       auto rcv_struct_scalar = std::make_shared<arrow::StructScalar>(rcv_scalar_vector,

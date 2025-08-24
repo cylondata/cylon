@@ -29,12 +29,12 @@ namespace test {
 Status create_table(std::shared_ptr<cylon::Table> &table) {
   arrow::Int64Builder b0;
   for (const auto &x: {0, 1, 4, 3, 2, 3}) {
-    b0.Append(x);
+    std::ignore = b0.Append(x);
   }
 
   arrow::StringBuilder b1;
   for (const auto &x: {"d", "a", "b", "e", "c", "b"}) {
-    b1.Append(x);
+    std::ignore = b1.Append(x);
   }
 
   const std::shared_ptr<arrow::Schema>
@@ -42,7 +42,7 @@ Status create_table(std::shared_ptr<cylon::Table> &table) {
 
   auto atable = arrow::Table::Make(schema, {b0.Finish().ValueOrDie(), b1.Finish().ValueOrDie()});
 
-  Table::FromArrowTable(ctx, atable, table);
+  std::ignore = Table::FromArrowTable(ctx, atable, table);
 
   return Status::OK();
 }

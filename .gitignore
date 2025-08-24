@@ -38,6 +38,7 @@
 
 # ignore these folders
 build/
+debug/
 **/bin/
 
 

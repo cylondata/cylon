@@ -137,7 +137,7 @@ int arrow_take_test(std::shared_ptr <cylon::CylonContext> &ctx, std::shared_ptr 
   arrow::Int64Builder idx_builder(pool);
   const arrow::Datum input_table(input1->get_table());
 
-  idx_builder.AppendValues({0, 1, 3});
+  std::ignore = idx_builder.AppendValues({0, 1, 3});
   arrow_status = idx_builder.Finish(&out_idx);
 
   const arrow::Datum filter_indices(out_idx);
@@ -175,7 +175,7 @@ int build_int_index_from_values(std::shared_ptr <cylon::CylonContext> &ctx) {
   auto pool = cylon::ToArrowPool(ctx);
   arrow::Int32Builder int_32_builder(pool);
 
-  int_32_builder.AppendValues(ix_vals);
+  std::ignore = int_32_builder.AppendValues(ix_vals);
   arrow_status = int_32_builder.Finish(&index_values);
 
   if (!arrow_status.ok()) {
@@ -712,8 +712,8 @@ int arrow_indexer_test_4() {
   arrow::Int64Builder builder(pool);
   std::shared_ptr <arrow::Array> search_index_array;
   std::vector <int64_t> search_index_values = {7, 10};
-  builder.AppendValues(search_index_values);
-  builder.Finish(&search_index_array);
+  std::ignore = builder.AppendValues(search_index_values);
+  std::ignore = builder.Finish(&search_index_array);
 
   std::shared_ptr <cylon::BaseArrowIndex> index;
   cylon::IndexingType schema = cylon::IndexingType::Linear;
@@ -777,8 +777,8 @@ int arrow_indexer_str_test_4() {
   arrow::StringBuilder builder(pool);
   std::shared_ptr <arrow::Array> search_index_array;
   std::vector <std::string> search_index_values = {"f", "h"};
-  builder.AppendValues(search_index_values);
-  builder.Finish(&search_index_array);
+  std::ignore = builder.AppendValues(search_index_values);
+  std::ignore = builder.Finish(&search_index_array);
 
   std::shared_ptr <cylon::BaseArrowIndex> index;
   cylon::IndexingType schema = cylon::IndexingType::Linear;
@@ -842,8 +842,8 @@ int arrow_indexer_test_5() {
   arrow::Int64Builder builder(pool);
   std::shared_ptr <arrow::Array> search_index_array;
   std::vector <int64_t> search_index_values = {7, 10};
-  builder.AppendValues(search_index_values);
-  builder.Finish(&search_index_array);
+  std::ignore = builder.AppendValues(search_index_values);
+  std::ignore = builder.Finish(&search_index_array);
   int start_column_idx = 0;
   int end_column_idx = 1;
 
@@ -909,8 +909,8 @@ int arrow_indexer_str_test_5() {
   arrow::StringBuilder builder(pool);
   std::shared_ptr <arrow::Array> search_index_array;
   std::vector <std::string> search_index_values = {"f", "h"};
-  builder.AppendValues(search_index_values);
-  builder.Finish(&search_index_array);
+  std::ignore = builder.AppendValues(search_index_values);
+  std::ignore = builder.Finish(&search_index_array);
   int start_column_idx = 0;
   int end_column_idx = 1;
 
@@ -976,8 +976,8 @@ int arrow_indexer_test_6() {
   arrow::Int64Builder builder(pool);
   std::shared_ptr <arrow::Array> search_index_array;
   std::vector <int64_t> search_index_values = {7, 10};
-  builder.AppendValues(search_index_values);
-  builder.Finish(&search_index_array);
+  std::ignore = builder.AppendValues(search_index_values);
+  std::ignore = builder.Finish(&search_index_array);
   std::vector<int> columns = {0, 1};
 
   std::shared_ptr <cylon::BaseArrowIndex> index;
@@ -1042,8 +1042,8 @@ int arrow_indexer_str_test_6() {
   arrow::StringBuilder builder(pool);
   std::shared_ptr <arrow::Array> search_index_array;
   std::vector <std::string> search_index_values = {"f", "h"};
-  builder.AppendValues(search_index_values);
-  builder.Finish(&search_index_array);
+  std::ignore = builder.AppendValues(search_index_values);
+  std::ignore = builder.Finish(&search_index_array);
   std::vector<int> columns = {0, 1};
 
   std::shared_ptr <cylon::BaseArrowIndex> index;
@@ -1310,8 +1310,8 @@ int arrow_iloc_indexer_test_4() {
   arrow::Int64Builder builder(pool);
   std::shared_ptr <arrow::Array> search_index_array;
   std::vector <int64_t> search_index_values = {0, 1, 2, 3, 4, 5};
-  builder.AppendValues(search_index_values);
-  builder.Finish(&search_index_array);
+  std::ignore = builder.AppendValues(search_index_values);
+  std::ignore = builder.Finish(&search_index_array);
 
   std::shared_ptr <cylon::BaseArrowIndex> index;
   cylon::IndexingType schema = cylon::IndexingType::Range;
@@ -1375,8 +1375,8 @@ int arrow_iloc_indexer_test_5() {
   arrow::Int64Builder builder(pool);
   std::shared_ptr <arrow::Array> search_index_array;
   std::vector <int64_t> search_index_values = {0, 1, 2, 3, 4, 5};
-  builder.AppendValues(search_index_values);
-  builder.Finish(&search_index_array);
+  std::ignore = builder.AppendValues(search_index_values);
+  std::ignore = builder.Finish(&search_index_array);
 
   int start_column_idx = 0;
   int end_column_idx = 1;
@@ -1443,8 +1443,8 @@ int arrow_iloc_indexer_test_6() {
   arrow::Int64Builder builder(pool);
   std::shared_ptr <arrow::Array> search_index_array;
   std::vector <int64_t> search_index_values = {0, 1, 2, 3, 4, 5};
-  builder.AppendValues(search_index_values);
-  builder.Finish(&search_index_array);
+  std::ignore = builder.AppendValues(search_index_values);
+  std::ignore = builder.Finish(&search_index_array);
 
   std::vector<int> columns = {0, 1};
 
@@ -1484,11 +1484,11 @@ int create_int64_arrow_array(arrow::Int64Builder &builder,
                              int64_t offset,
                              std::shared_ptr <arrow::Int64Array> &out_array) {
 
-  builder.Reserve(capacity);
+  std::ignore = builder.Reserve(capacity);
   for (int64_t ix = 0 + offset; ix < capacity + offset; ix++) {
-    builder.Append(ix);
+    std::ignore = builder.Append(ix);
   }
-  builder.Finish(&out_array);
+  std::ignore = builder.Finish(&out_array);
 
   return 0;
 }
@@ -1532,8 +1532,8 @@ int arrow_filter_example() {
 
   arrow::Int64Builder builder(pool);
   std::vector <int64_t> search_index_values = {7, 10};
-  builder.AppendValues(search_index_values);
-  builder.Finish(&search_index_array);
+  std::ignore = builder.AppendValues(search_index_values);
+  std::ignore = builder.Finish(&search_index_array);
 
   std::vector<int> columns = {0, 1};
 
@@ -1592,7 +1592,7 @@ int arrow_filter_example() {
 
   arrow::Int64Builder filter_index_builder(pool);
   std::shared_ptr <arrow::Int64Array> filter_index_array;
-  filter_index_builder.Reserve(arr_isin->length());
+  std::ignore = filter_index_builder.Reserve(arr_isin->length());
   auto bool_scalar_true = arrow::MakeScalar<bool>(true);
 
   std::shared_ptr <arrow::BooleanScalar>
@@ -1604,10 +1604,10 @@ int arrow_filter_example() {
 
     auto val = arr_isin_bool_array->Value(ix);
     if (val) {
-      filter_index_builder.Append(ix);
+      std::ignore = filter_index_builder.Append(ix);
     }
   }
-  filter_index_builder.Finish(&filter_index_array);
+  std::ignore = filter_index_builder.Finish(&filter_index_array);
   std::shared_ptr <arrow::Array> casted_index_array = std::static_pointer_cast<arrow::Array>(filter_index_array);
   print_arrow_array(casted_index_array);
 
@@ -1645,8 +1645,8 @@ int arrow_range_indexer_test() {
   arrow::Int64Builder builder(pool);
   std::shared_ptr <arrow::Array> search_index_array;
   std::vector <int64_t> search_index_values = {10};
-  builder.AppendValues(search_index_values);
-  builder.Finish(&search_index_array);
+  std::ignore = builder.AppendValues(search_index_values);
+  std::ignore = builder.Finish(&search_index_array);
 
   std::shared_ptr <cylon::BaseArrowIndex> index;
   cylon::IndexingType schema = cylon::IndexingType::Range;

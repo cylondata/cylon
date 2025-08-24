@@ -56,6 +56,12 @@ class MemoryPool {
   /// returns -1
   virtual int64_t max_memory() const = 0;
 
+  /// The number of bytes that were allocated.
+  virtual int64_t total_bytes_allocated() const = 0;
+
+  /// The number of allocations or reallocations that were requested.
+  virtual int64_t num_allocations() const = 0;
+
   /// The name of the backend used by this MemoryPool (e.g. "system" or "jemalloc");
   virtual std::string backend_name() const = 0;
 

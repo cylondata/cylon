@@ -15,6 +15,8 @@
 #ifndef CYLON_CPP_SRC_CYLON_ARROW_ARROW_TYPE_TRAITS_HPP_
 #define CYLON_CPP_SRC_CYLON_ARROW_ARROW_TYPE_TRAITS_HPP_
 
+#include <string_view>
+
 namespace cylon {
 
 template<typename ArrowT, typename Enable = void>
@@ -35,7 +37,7 @@ template<typename ArrowT>
 struct ArrowTypeTraits<ArrowT, arrow::enable_if_has_string_view<ArrowT>> {
   using ScalarT = typename arrow::TypeTraits<ArrowT>::ScalarType;
   using ArrayT = typename arrow::TypeTraits<ArrowT>::ArrayType;
-  using ValueT = arrow::util::string_view;
+  using ValueT = std::string_view;
 
   static ValueT ExtractFromScalar(const std::shared_ptr<arrow::Scalar> &scalar) {
     return ValueT(*(std::static_pointer_cast<ScalarT>(scalar))->value);

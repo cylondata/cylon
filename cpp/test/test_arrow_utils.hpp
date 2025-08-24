@@ -58,15 +58,15 @@ using ArrowBinaryTypes = std::tuple<arrow::StringType, arrow::LargeStringType,
  auto array = ArrayFromJSON(type, R"(["a", "b", "c"])");
  */
 std::shared_ptr<arrow::Array> ArrayFromJSON(const std::shared_ptr<arrow::DataType> &type,
-                                            arrow::util::string_view json) {
+                                            std::string_view json) {
   const auto &res = arrow::ipc::internal::json::ArrayFromJSON(type, json);
   ARROW_ABORT_NOT_OK(res.status());
   return res.ValueOrDie();
 }
 
 std::shared_ptr<arrow::Array> DictArrayFromJSON(const std::shared_ptr<arrow::DataType> &type,
-                                                arrow::util::string_view indices_json,
-                                                arrow::util::string_view dictionary_json) {
+                                                std::string_view indices_json,
+                                                std::string_view dictionary_json) {
   std::shared_ptr<arrow::Array> out;
   ARROW_ABORT_NOT_OK(arrow::ipc::internal::json::DictArrayFromJSON(type, indices_json, dictionary_json, &out));
   return out;
@@ -105,7 +105,7 @@ std::shared_ptr<arrow::ChunkedArray> ChunkedArrayFromJSON(const std::shared_ptr<
                                      ])");
 */
 std::shared_ptr<arrow::RecordBatch> RecordBatchFromJSON(const std::shared_ptr<arrow::Schema> &schema,
-                                                        arrow::util::string_view json) {
+                                                        std::string_view json) {
   // Parse as a StructArray
   auto struct_type = struct_(schema->fields());
   std::shared_ptr<arrow::Array> struct_array = ArrayFromJSON(struct_type, json);

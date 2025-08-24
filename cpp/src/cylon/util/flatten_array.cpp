@@ -166,7 +166,7 @@ struct BinaryColumnFlattenKernelImpl : public ColumnFlattenKernel {
     } else {
       int64_t i = 1; // dont update offsets[0]
       arrow::VisitArraySpanInline<ArrowT>(*array_data,
-                                          [&](const arrow::util::string_view &val) {
+                                          [&](const std::string_view &val) {
                                             offsets[i] += static_cast<int32_t>(val.size());
                                             i++;
                                           },
