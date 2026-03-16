@@ -55,6 +55,7 @@ int main(int argc, char *argv[]) {
     }
   } else if (mem == "f" && argc == 3) {
     LOG(INFO) << "using files";
+    LOG(INFO) << "loading: " << std::string(argv[2]) + std::to_string(ctx->GetRank()) + ".csv";
     if (!cylon::FromCSV(ctx, std::string(argv[2]) + std::to_string(ctx->GetRank()) + ".csv", table)
         .is_ok()) {
       LOG(ERROR) << "file reading failed!";
