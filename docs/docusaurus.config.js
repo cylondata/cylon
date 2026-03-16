@@ -74,13 +74,15 @@ module.exports = {
                     // It is recommended to set document id as docs home page (`docs/` path).
                     homePageId: 'compile',
                     sidebarPath: require.resolve('./sidebars.js'),
-                    editUrl:
-                        'https://github.com/cylondata/cylon/edit/master/docs/',
+                    editUrl: ({ docPath }) => {
+                        return `https://holocron.so/github/pr/cylondata/cylon/main/editor/docs/docs/${docPath}`
+                    },
                 },
                 blog: {
                     showReadingTime: true,
-                    editUrl:
-                        'https://github.com/cylondata/cylon/edit/master/blog/',
+                    editUrl: ({ docPath }) => {
+                        return `https://holocron.so/github/pr/cylondata/cylon/main/editor/docs/blog/${docPath}`
+                    },
                 },
                 theme: {
                     customCss: require.resolve('./src/css/custom.css'),
