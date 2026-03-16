@@ -20,6 +20,7 @@ from pycylon.net import MPIConfig
 
 if __name__ == "__main__":
 
+
     env = CylonEnv(config=MPIConfig(), distributed=True)
     csv_read_options = CSVReadOptions() \
         .use_threads(False) \
