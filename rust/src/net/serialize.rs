@@ -59,29 +59,6 @@ impl IpcCompression {
     }
 }
 
-/// Compression algorithm for Arrow IPC serialization.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
-pub enum IpcCompression {
-    /// No compression
-    #[default]
-    None,
-    /// LZ4 frame compression (fast)
-    Lz4,
-    /// Zstandard compression (better ratio)
-    Zstd,
-}
-
-impl IpcCompression {
-    /// Convert to Arrow IPC CompressionType
-    fn to_arrow_compression(self) -> Option<CompressionType> {
-        match self {
-            IpcCompression::None => None,
-            IpcCompression::Lz4 => Some(CompressionType::LZ4_FRAME),
-            IpcCompression::Zstd => Some(CompressionType::ZSTD),
-        }
-    }
-}
-
 /// Serialize an Arrow RecordBatch to bytes using Arrow IPC format
 ///
 /// # Arguments

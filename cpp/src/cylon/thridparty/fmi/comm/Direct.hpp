@@ -47,16 +47,6 @@ namespace FMI::Comm {
 
         void send_object(std::shared_ptr<channel_data> buf, Utils::peer_num rcpt_id) override;
 
-        void recv_object(std::shared_ptr<IOState> state, Utils::peer_num sender_id, Utils::Mode mode) override;
-
-        void recv_object_blocking2(std::shared_ptr<IOState> state, Utils::peer_num sender_id);
-
-        bool checkReceive(FMI::Utils::peer_num dest, Utils::Mode mode) override;
-
-        bool checkReceivePing(FMI::Utils::peer_num dest, Utils::Mode mode) override;
-
-        bool checkSend(FMI::Utils::peer_num dest, Utils::Mode mode) override;
-
 
         void send_object(std::shared_ptr<IOState> state, Utils::peer_num rcpt_id, Utils::Mode mode) override;
 
@@ -106,7 +96,6 @@ namespace FMI::Comm {
 
         void check_socket_nbx(Utils::peer_num partner_id, std::string pair_name);
 
-        std::string get_pairing_name(Utils::peer_num a, Utils::peer_num b, Utils::Mode mode);
 
         void handle_event(int socketfd,
                           std::unordered_map<int, std::shared_ptr<IOState>> &states,

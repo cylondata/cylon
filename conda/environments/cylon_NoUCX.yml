@@ -12,6 +12,7 @@ dependencies:
   - libarrow-dataset==16.1.0.*
   - libarrow==16.1.0.*
   - glog
+  - pip
   - openmpi
   - cython>=0.29.31
   - numpy>=1.23,<2.0a0

@@ -21,7 +21,6 @@ pub mod arrow_kernels;
 
 pub mod arrow_all_to_all;
 
-pub mod arrow_all_to_all;
 
 // TODO: Port from cpp/src/cylon/arrow/
 // - arrow_buffer.hpp

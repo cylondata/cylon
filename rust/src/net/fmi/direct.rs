@@ -32,8 +32,10 @@ use super::tcpunch;
 /// Connection timeout for hole punching (120 seconds)
 const HOLEPUNCH_CONNECT_TIMEOUT: u64 = 120000;
 
-/// Maximum TCPunch retry attempts
-const MAX_TCPUNCH_TRIES: i32 = 6;
+/// Maximum TCPunch retry attempts — increased for Lambda's NAT environment
+/// where simultaneous SYN exchange requires more attempts (Lambda coldstarts
+/// can take 5-30s; 20 tries × 500ms = 10s gives adequate window).
+const MAX_TCPUNCH_TRIES: i32 = 20;
 
 /// Create a vector of None options for TcpStream (can't use vec![None; n] since TcpStream doesn't implement Clone)
 fn create_socket_vec(n: usize) -> Vec<Option<TcpStream>> {
@@ -110,7 +112,10 @@ impl Direct {
             Mode::Blocking => "BLOCKING",
             Mode::NonBlocking => "NONBLOCKING",
         };
-        format!("fmi_pair{}_{}{}", min_id, max_id, mode_str)
+        // Include comm_name so concurrent experiments with the same rank topology
+        // (e.g. two ws=2 runs both using fmi_pair0_1) don't cross-pair at the
+        // rendezvous server. comm_name is unique per run (set to experiment_name).
+        format!("{}_fmi_pair{}_{}{}", self.comm_name, min_id, max_id, mode_str)
     }
 
     /// Ensure socket is connected to partner (lazy connection establishment)
@@ -320,6 +325,9 @@ impl Channel for Direct {
                     continue;
                 }
 
+                // Match C++ Direct::init() behavior: only pre-connect NonBlocking
+                // sockets during init when mode==NONBLOCKING. Blocking sockets
+                // are connected on-demand in send()/recv() — matching C++ exactly.
                 if self.mode == Mode::NonBlocking {
                     let pair_name = self.get_pairing_name(self.peer_id, i, Mode::NonBlocking);
                     self.check_socket_nbx(i, &pair_name)?;
@@ -327,6 +335,13 @@ impl Channel for Direct {
             }
         }
         Ok(())
+    }
+
+    /// Override bcast() to use self.mode — equivalent to C++ PeerToPeer::bcast()
+    /// which passes mode through to send/recv. The trait default hardcodes
+    /// Mode::Blocking, which breaks NonBlocking communicators (nonblocking=true).
+    fn bcast(&self, buf: Arc<ChannelData>, root: PeerNum) -> CylonResult<()> {
+        self.bcast_async(buf, root, self.mode.clone(), None)
     }
 
     fn finalize(&mut self) -> CylonResult<()> {

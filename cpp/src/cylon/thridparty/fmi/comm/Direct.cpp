@@ -34,8 +34,6 @@
 
 
 
-
-
 #include <glog/logging.h>
 #include <sys/poll.h>
 
@@ -95,137 +93,8 @@ FMI::Comm::Direct::Direct(const std::shared_ptr<FMI::Utils::Backends> &backend) 
 
 
 
-    sockets[Utils::NONBLOCKING] = {};
-    sockets[Utils::BLOCKING] = {};
-
-
-
     io_states[Utils::Operation::SEND] = {};
     io_states[Utils::Operation::RECEIVE] = {};
-
-
-}
-
-inline const char* ModeToString(FMI::Utils::Mode mode) {
-    switch (mode) {
-        case FMI::Utils::Mode::BLOCKING: return "BLOCKING";
-        case FMI::Utils::Mode::NONBLOCKING: return "NONBLOCKING";
-
-        default: return "UNKNOWN_MODE";
-    }
-}
-
-void FMI::Comm::Direct::start_holepunch_subscriber() {
-    std::thread([this]() {
-        if (redis_port > 0 && !redis_host.empty()) {
-            auto opts = sw::redis::ConnectionOptions{};
-            opts.host = redis_host;
-            opts.port = redis_port;
-            auto redis = std::make_shared<sw::redis::Redis>(opts);
-            auto sub = redis->subscriber();
-
-            sub.on_message([this](const std::string &channel, const std::string &msg) {
-                int from = -1, to = -1;
-                LOG(INFO) << "received message from publisher: " << msg;
-                sscanf(msg.c_str(), "from:%d,to:%d", &from, &to);
-                if (to == this->peer_id) {
-                    LOG(INFO) << "Received reverse connect request from peer " << from;
-                    // Trigger a connect attempt from this node to the sender
-                    std::string pairing = get_pairing_name(this->peer_id, from, Utils::BLOCKING);
-                    try {
-                        check_socket(from, pairing);  // This will do the actual reverse connect
-                    } catch (const Utils::Timeout &) {
-                        LOG(WARNING) << "Reverse connect to " << from << " failed.";
-                    }
-                }
-
-            });
-
-
-            sub.subscribe("fmi_connect");
-
-            try {
-                while (true) sub.consume();  // Blocking wait
-            } catch (const std::exception &e) {
-                LOG(ERROR) << "Redis subscribe error: " << e.what();
-            }
-        }
-    }).detach();
-}
-
-void FMI::Comm::Direct::init_blocking_sockets() {
-    if (num_peers> 0) {
-
-        LOG(INFO) << "init blocking sockets";
-
-        for (int i = 0; i < num_peers; ++i) {
-
-            if (i == peer_id) continue;
-
-            std::string send_pairing_b = get_pairing_name(peer_id, i, Utils::BLOCKING);
-
-            check_socket(i, send_pairing_b);
-
-        }
-
-    }
-    blocking_init = true;
-}
-
-void FMI::Comm::Direct::start_ping_thread(Utils::Mode mode) {
-
-    std::thread([this, mode]() {
-
-            for (int i = 0; i < num_peers; ++i) {
-                if (i == peer_id) continue;
-                if (sockets[mode][i] != -1) {
-                    try {
-                        PingMessage ping{};
-                        ::send(sockets[mode][i], &ping, sizeof(ping), 0);
-                        LOG(INFO) << "Sent PING to peer " << i << " Mode: " << ModeToString(mode);
-
-
-                    } catch (...) {
-                        LOG(ERROR) << "PING send failed to peer " << i << " Mode: " << ModeToString(mode);;
-                    }
-                }
-            }
-            return;
-
-    }).detach();
-
-}
-
-
-void FMI::Comm::Direct::init() {
-    //iterator over world size and create all sockets for non-blocking based on multi-send/receives
-    //create all the connections
-    //start_holepunch_subscriber();
-    if (num_peers> 0) {
-
-        for (int i = 0; i < num_peers; ++i) {
-
-            if (i == peer_id) continue;
-
-
-            if (mode == Utils::NONBLOCKING) {
-                std::string send_pairing_nb = get_pairing_name(peer_id, i, Utils::NONBLOCKING);
-                check_socket_nbx(i, send_pairing_nb);
-            }
-
-            //always create a pair of blocking sockets
-            //std::string send_pairing_b = get_pairing_name(peer_id, i, Utils::BLOCKING);
-
-            //check_socket(i, send_pairing_b);
-
-        }
-
-
-        if (mode == Utils::NONBLOCKING && enable_ping) {
-            start_ping_thread(Utils::NONBLOCKING);
-        }
-    }
-
 
 
 }
@@ -492,104 +361,6 @@ void FMI::Comm::Direct::send_object(std::shared_ptr<IOState> state, Utils::peer_
         send_object_blocking2(state, rcpt_id);
     }
 
-    // Save the state and try again via epoll
-    io_states[Utils::Operation::SEND][socketfd] = state;
-    add_epoll_event(socketfd, state);
-
-
-    while (sent_total < state->request->len) {
-        ssize_t sent = ::send(socketfd, state->request->buf.get() + sent_total,
-                              state->request->len - sent_total, 0);
-
-        if (sent == -1) {
-            if (errno == EINTR) continue;
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                throw Utils::Timeout(); // or use callbackResult if needed
-            }
-            LOG(ERROR) << "Send error: " << strerror(errno);
-            return;
-        }
-
-        sent_total += sent;
-    }
-
-    if (state->callback) state->callback();
-    state->callbackResult(Utils::SUCCESS, "Blocking send complete", state->context);
-}
-
-void FMI::Comm::Direct::send_object(std::shared_ptr<IOState> state, Utils::peer_num rcpt_id,
-                                    Utils::Mode mode) {
-
-    /*if (!blocking_init) {
-        init_blocking_sockets();
-    }*/
-
-    if (mode == Utils::NONBLOCKING) {
-        std::string pairing = get_pairing_name(peer_id, rcpt_id, Utils::NONBLOCKING);
-
-        // Use full-duplex socket for both send/recv
-        check_socket_nbx(rcpt_id, pairing);
-        int socketfd = sockets[Utils::NONBLOCKING][rcpt_id];
-
-
-
-        io_states[Utils::Operation::SEND][socketfd] = state;
-
-        //if (checkSend(socketfd)) {
-        //    handle_event(socketfd, io_states[Utils::SEND], Utils::SEND);
-        //}
-
-        // Zero-length message? Send dummy byte
-        /*if (state.request.len == 0) {
-            char dummy = 0;
-            ssize_t sent = ::send(socketfd, &dummy, 1, 0);
-
-            if (sent == 1) {
-                if (state.callback) state.callback();
-                state.callbackResult(Utils::SUCCESS, "Zero-length message sent with dummy byte.", state.context);
-            } else if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
-                // Need to retry via epoll
-                io_states[Utils::Operation::SEND][socketfd] = state;
-                //add_epoll_event(socketfd, state);
-            } else {
-                state.callbackResult(Utils::DUMMY_SEND_FAILED, strerror(errno), state.context);
-            }
-
-            return;
-        }
-
-
-
-        // Normal message
-        ssize_t processed = ::send(socketfd,
-                                   state.request.buf.get() + state.processed,
-                                   state.request.len - state.processed,
-                                   0);
-
-        if (processed > 0) {
-            state.processed += processed;
-
-            if (state.processed == state.request.len) {
-                if (state.callback) state.callback();
-                state.callbackResult(Utils::SUCCESS, "Send completed", state.context);
-                return;
-            }
-        }
-
-        // Still pending, register for epoll
-        if (processed == -1 && (errno != EAGAIN && errno != EINTR)) {
-            state.callbackResult(Utils::SEND_FAILED, strerror(errno), state.context);
-            return;
-        }*/
-
-        // Save the state and try again via epoll
-        //io_states[Utils::Operation::SEND][socketfd] = state;
-        //add_epoll_event(socketfd, state);
-
-    } else {
-        send_object_blocking2(state, rcpt_id);
-    }
-
 
 }
 
@@ -661,12 +432,6 @@ void FMI::Comm::Direct::recv_object_blocking2(std::shared_ptr<FMI::Comm::IOState
             state->callbackResult(Utils::RECEIVE_FAILED, strerror(errno), state->context);
             return;
         }
-    }
-
-    // Handle zero-length message completion (if no loop body runs)
-    if (state->request->len == 0) {
-        if (state->callback) state->callback();
-        state->callbackResult(Utils::SUCCESS, "Zero-length receive via dummy byte", state->context);
     }
 
     // Handle zero-length message completion (if no loop body runs)
@@ -991,7 +756,6 @@ void FMI::Comm::Direct::handle_event(int sockfd,
 void FMI::Comm::Direct::check_socket_nbx(FMI::Utils::peer_num partner_id, std::string pair_name) {
 
 
-
     if (sockets[Utils::NONBLOCKING].empty()) {
         sockets[Utils::NONBLOCKING] = std::vector<int>(num_peers, -1);
     }
@@ -1202,45 +966,6 @@ bool FMI::Comm::Direct::checkReceivePing(int sockfd, FMI::Utils::Mode mode) {
 
     return false; // No ping available or error
 }
-
-int FMI::Comm::Direct::getMaxTimeout() {
-    return max_timeout;
-}
-
-bool FMI::Comm::Direct::checkRecv2(int fd) {
-    pollfd pfd = { fd, POLLIN, 0 };
-    int poll_result = poll(&pfd, 1, 0);
-
-    if (poll_result > 0) {
-        return true;  // ✅ Ready to read
-    } else if (poll_result == 0) {
-        return false; // ❌ Not ready yet
-    } else {
-        LOG(ERROR) << "checkRecv: poll() failed with errno " << errno << ": " << strerror(errno);
-        return false;
-    }
-}
-
-bool FMI::Comm::Direct::checkReceive(FMI::Utils::peer_num dest, Utils::Mode mode) {
-
-    auto sockfd = sockets[mode][dest];
-    return checkRecv(sockfd);
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

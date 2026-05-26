@@ -45,6 +45,7 @@ CYLON_UCC = strtobool(os.environ.get('CYLON_UCC') or '0')
 CYLON_FMI = strtobool(os.environ.get('CYLON_FMI') or '0')
 CYLON_LIBFABRIC = strtobool(os.environ.get('CYLON_LIBFABRIC') or '0')
 CYLON_REDIS = strtobool(os.environ.get('CYLON_REDIS') or '0')
+CYLON_SIMD = strtobool(os.environ.get('CYLON_SIMD') or '0')
 UCX_LOCAL_INSTALL = strtobool(os.environ.get('UCX_LOCAL_INSTALL') or '0')
 UCC_PREFIX = os.environ.get('UCC_PREFIX')
 
@@ -59,6 +60,7 @@ print("CYLON REDIS: ", CYLON_REDIS)
 print("REDIS prefix:", REDIS_PREFIX)
 print("CYLON FMI: ", CYLON_FMI)
 print("CYLON LIBFABRIC: ", CYLON_LIBFABRIC)
+print("CYLON SIMD: ", CYLON_SIMD)
 
 
 
@@ -90,7 +92,7 @@ if not ARROW_PREFIX:
     arrow_lib_dir = pyarrow_location
     if not os.path.exists(arrow_lib_dir):
         arrow_lib_dir = os.path.join(pyarrow_location, "lib64")
-    extra_compile_args.append('-D_GLIBCXX_USE_CXX11_ABI=0')
+    extra_compile_args.append('-D_GLIBCXX_USE_CXX11_ABI=1')
 else:
     arrow_include_dir = os.path.join(ARROW_PREFIX, "include")
     arrow_lib_dir = os.path.join(ARROW_PREFIX, "lib")
@@ -157,7 +159,7 @@ else:
 
 macros = []
 # compile_time_env serves as preprocessor macros. ref: https://github.com/cython/cython/issues/2488
-compile_time_env = {'CYTHON_GLOO': False, 'CYTHON_UCC': False, 'CYTHON_UCX': False, 'CYTHON_REDIS': False, 'CYTHON_FMI': False, 'CYTHON_LIBFABRIC': False}
+compile_time_env = {'CYTHON_GLOO': False, 'CYTHON_UCC': False, 'CYTHON_UCX': False, 'CYTHON_REDIS': False, 'CYTHON_FMI': False, 'CYTHON_LIBFABRIC': False, 'CYTHON_SIMD': False}
 if CYLON_GLOO:
     libraries.append('gloo')
     library_dirs.append(os.path.join(GLOO_PREFIX, 'lib'))
@@ -218,6 +220,9 @@ if CYLON_REDIS:
 else:
     macros.append(('BUILD_CYLON_REDIS', '0'))
 
+if CYLON_SIMD:
+    macros.append(('BUILD_CYLON_SIMD', '1'))
+    compile_time_env['CYTHON_SIMD'] = True
 
 print('Libraries    :', libraries)
 print("Lib dirs     :", library_dirs)
@@ -229,6 +234,10 @@ print("Compile time env:", compile_time_env)
 
 # Adopted the Cudf Python Build format
 # https://github.com/rapidsai/cudf
+
+cython_exclude = []
+if not CYLON_SIMD:
+    cython_exclude.append("pycylon/simd/*.pyx")
 
 extensions = [
     Extension(
@@ -244,7 +253,10 @@ extensions = [
     )]
 
 compiler_directives = {"profile": False, "language_level": 3, "embedsignature": True}
-packages = find_packages(include=["pycylon", "pycylon.*"])
+exclude_packages = []
+if not CYLON_SIMD:
+    exclude_packages.append("pycylon.simd")
+packages = find_packages(include=["pycylon", "pycylon.*"], exclude=exclude_packages)
 
 print("PACKAGES: " + str(packages))
 
@@ -258,6 +270,7 @@ setup(
                     ],
     ext_modules=cythonize(
         extensions,
+        exclude=cython_exclude,
         nthreads=1,  # Single thread for clearer error output
         compiler_directives=compiler_directives,
         compile_time_env=compile_time_env,

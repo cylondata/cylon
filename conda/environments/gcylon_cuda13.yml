@@ -16,6 +16,7 @@ dependencies:
   - libcudf=26.02
   - rmm=26.02
   - librmm=26.02
+  - pip
   # CUDA 13.x toolkit
   - cuda-version=13
   - cuda-cudart

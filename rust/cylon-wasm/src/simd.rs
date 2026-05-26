@@ -337,3 +337,29 @@ pub fn cosine_similarity_f32(a: &[f32], b: &[f32]) -> f32 {
 pub fn euclidean_distance_f32(a: &[f32], b: &[f32]) -> f32 {
     simd_euclidean_distance_f32(a, b)
 }
+
+/// Batch cosine search: compare query against all embeddings in a flat buffer.
+/// Returns JSON string array of {index, similarity} sorted by descending similarity.
+///
+/// # Arguments
+/// * `query` - Query vector (f32)
+/// * `embeddings` - Flat buffer of embeddings (num_rows * dim floats)
+/// * `dim` - Embedding dimension
+/// * `threshold` - Minimum cosine similarity
+/// * `top_k` - Maximum results to return
+#[wasm_bindgen]
+pub fn batch_cosine_search_f32(
+    query: &[f32],
+    embeddings: &[f32],
+    dim: usize,
+    threshold: f32,
+    top_k: usize,
+) -> Result<String, JsValue> {
+    let results = cylon::simd::batch_cosine_search(query, embeddings, dim, threshold, top_k);
+    let json_results: Vec<serde_json::Value> = results
+        .iter()
+        .map(|r| serde_json::json!({"index": r.index, "similarity": r.similarity}))
+        .collect();
+    serde_json::to_string(&json_results)
+        .map_err(|e| JsValue::from_str(&e.to_string()))
+}

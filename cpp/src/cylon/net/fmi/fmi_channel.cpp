@@ -254,7 +254,15 @@ namespace cylon::fmi {
                 if (rank == recvRank) {
                     continue;//FMI does not support local receives, so process during sends
                 }
-            }
+                // Init a new pending receive for the request
+                auto *buf = new PendingReceive();
+                buf->receiveId = recvRank;
+                // Add to pendingReceive object to pendingReceives map
+                pendingReceives.insert(std::pair<int, PendingReceive *>(recvRank, buf));
+                // Receive for the initial header buffer
+                // Init context
+                buf->context = new FMI::Utils::fmiContext;
+                buf->context->completed = 0;
 
                 auto send_data_byte_size = CYLON_CHANNEL_HEADER_SIZE * sizeof(int);
                 auto send_void_ptr = const_cast<void *>(static_cast<const void *>(buf->headerBuf));
@@ -404,34 +412,12 @@ namespace cylon::fmi {
                 peerBusy = true;
                 break;
             }
-        } else if (pend_send->status == SEND_FINISH) {
-            // we are going to send complete
-            send_comp_fn->sendFinishComplete(finishRequests[rank]);
-            pend_send->status = SEND_DONE;
-        } else if (pend_send->status != SEND_DONE) {
-            // throw an exception and log
-            LOG(FATAL) << "At an un-expected state " << pend_send->status;
-        }
-    }
-
-    void FMIChannel::progressSendTo(int peer_id) {
-        // Role-based ordering: Only send first if rank < peer_id
-        //if (worldSize > 2) {
-        //   if (rank >= peer_id) return;
-        //}
-
-        PendingSend *ps = sends[peer_id];
-
-        if (peer_id == rank) {
-            progressSendsLocal(sends[peer_id]);
-            return;
         }
 
         if (peerBusy) {
             release_lock(lock_key, lock_val);
             return;
         }
-    }
 
         // Check if peer is RECEIVING
         auto peerRecvStatusStr = redis->get(peer_receive_status_key);
@@ -610,15 +596,6 @@ namespace cylon::fmi {
                             if (finishRequests.count(dest)) {
                                 sendFinishHeader(x);
                             } else {
-                                // If pending data is empty
-                                // Notify about send completion
-                                send_comp_fn->sendComplete(x.second->currentSend);
-                                x.second->currentSend = {};
-
-                            // Check if request is in finish
-                            if (finishRequests.find(x.first) != finishRequests.end()) {
-                                sendFinishHeader(x);
-                            } else {
                                 // If req is not in finish then re-init
                                 x.second->status = SEND_INIT;
                             }
@@ -645,15 +622,7 @@ namespace cylon::fmi {
 
     void FMIChannel::progressReceiveFrom(int peer_id) {
 
-        //check if ok to receive (can't rely on sender to block sending
-        //so, we need to check for socket activity in blocking mode
-        /*if (!communicator->checkIfOkToReceive(peer_id)) {
-            LOG(INFO) << "unable to receive -- releasing lock key: " << lock_key << "peerId: " << peer_id;
-            release_lock(lock_key, lock_val);
-            return;
-        }*/
-
-        publishStatus(rank, peer_id, RECEIVING, RECEIVE);
+        if (peer_id == rank) return;
 
         PendingReceive *recv = pendingReceives[peer_id];
 
@@ -775,100 +744,11 @@ namespace cylon::fmi {
             publishStatus(rank, peer_id, IDLE, RECEIVE);
         }
 
-        if (recv->status == RECEIVE_LENGTH_POSTED && recv->context->completed == 1) {
-
-                publishStatus(rank, peer_id, IDLE, RECEIVE);
-                LOG(INFO) << "finished RECEIVE_INIT -- releasing lock key: " << lock_key << " peer_id: " << peer_id;
-                //release_lock(lock_key, lock_val);
-                return;
-            } else {
-                release_lock(lock_key, lock_val);
-                publishStatus(rank, peer_id, IDLE, RECEIVE);
-                return;
-            }
-        } else if (recv->status == RECEIVE_LENGTH_POSTED && recv->context->completed == 1) {
-
-            int length     = recv->headerBuf[0];
-            int finFlag    = recv->headerBuf[1];
-
-            if (finFlag == CYLON_MSG_FIN) {
-                release_lock(lock_key, lock_val);
-                recv->status = RECEIVED_FIN;
-                rcv_fn->receivedHeader(peer_id, finFlag, nullptr, 0);
-                publishStatus(rank, peer_id, IDLE, RECEIVE);
-                LOG(INFO) << "[rank " << rank << "] ✅ Received FIN from " << peer_id;
-                LOG(INFO) << "finished CYLON_MSG_FIN -- releasing lock key: " << lock_key << " peer_id: " << peer_id;
-
-                return;
-            }
-
-            if (communicator->checkIfOkToReceive(peer_id, FMI::Utils::BLOCKING)) {
-                release_lock(lock_key, lock_val);
-                delete recv->context;
-                recv->context = new FMI::Utils::fmiContext();
-                recv->context->completed = 0;
-
-                allocator->Allocate(length, &recv->data);
-                recv->length = length;
-
-                FMI::Comm::Data<void *> payload(recv->data->GetByteBuffer(), length,
-                                                FMI::Comm::noop_deleter);
-                FMI_Irecv(payload, peer_id, recv->context);
-                recv->status = RECEIVE_POSTED;
-
-                int *header = new int[6];
-                std::memcpy(header, &recv->headerBuf[2], 6 * sizeof(int));
-                rcv_fn->receivedHeader(peer_id, finFlag, header, 6);
-
-                publishStatus(rank, peer_id, IDLE, RECEIVE);
-                //LOG(INFO) << "finished RECEIVE_LENGTH_POSTED -- releasing lock key: " << lock_key << " peer_id: "
-                //          << peer_id;
-
-                return;
-            } else {
-                release_lock(lock_key, lock_val);
-                publishStatus(rank, peer_id, IDLE, RECEIVE);
-                return;
-            }
-        } else if  (recv->status == RECEIVE_POSTED && recv->context->completed == 1) {
-            if (communicator->checkIfOkToReceive(peer_id, FMI::Utils::BLOCKING)) {
-                release_lock(lock_key, lock_val);
-                rcv_fn->receivedData(peer_id, recv->data, recv->length);
-
-                std::fill_n(recv->headerBuf, CYLON_CHANNEL_HEADER_SIZE, 0);
-                delete recv->context;
-                recv->context = new FMI::Utils::fmiContext();
-                recv->context->completed = 0;
-
-                FMI::Comm::Data<void *> next_header(recv->headerBuf,
-                                                    CYLON_CHANNEL_HEADER_SIZE * sizeof(int),
-                                                    FMI::Comm::noop_deleter);
-                FMI_Irecv(next_header, peer_id, recv->context);
-                recv->status = RECEIVE_LENGTH_POSTED;
-
-                publishStatus(rank, peer_id, IDLE, RECEIVE);
-                LOG(INFO) << "finished RECEIVE_POSTED -- releasing lock key: " << lock_key << " peer_id: " << peer_id;
-            } else {
-                release_lock(lock_key, lock_val);
-                publishStatus(rank, peer_id, IDLE, RECEIVE);
-            }
-        } else {
-            publishStatus(rank, peer_id, IDLE, RECEIVE);
-        }
-
-    }
-
     }
 
     void FMIChannel::progressReceives() {
 
         if (mode == FMI::Utils::NONBLOCKING) {
-
-        if (mode == FMI::Utils::BLOCKING) {
-            /*for (auto x: pendingReceives) {
-                progressReceiveFrom(x.first);
-            }*/
-        } else {
 
             communicator->communicator_event_progress(FMI::Utils::Operation::RECEIVE);
 
@@ -1161,25 +1041,6 @@ namespace cylon::fmi {
                 }
             });
         }
-
-        bool FMIChannel::isSendComplete(int peer_id) {
-            auto it = sends.find(peer_id);
-            if (it == sends.end() || it->second == nullptr) {
-                return false;
-            }
-            PendingSend* ps = sends[peer_id];
-            return ps->status == SEND_DONE;
-        }
-
-        bool FMIChannel::isReceiveComplete(int peer_id) {
-            auto it = pendingReceives.find(peer_id);
-            if (it == pendingReceives.end() || it->second == nullptr) {
-                return false;
-            }
-            PendingReceive* recv = pendingReceives[peer_id];
-            return recv->status == RECEIVED_FIN;
-        }
-
 
     }
 

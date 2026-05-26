@@ -49,11 +49,6 @@ aws-config = { version = "1.5", optional = true }
 aws-sdk-s3 = { version = "1.65", optional = true }
 aws-smithy-types = { version = "1.2", optional = true }
 
-# AWS SDK (optional, for S3 checkpoint storage)
-aws-config = { version = "1.5", optional = true }
-aws-sdk-s3 = { version = "1.65", optional = true }
-aws-smithy-types = { version = "1.2", optional = true }
-
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -113,248 +108,150 @@ gpu = []  # GPU support via gcylon FFI
 name = "distributed_join_all_types"
 required-features = ["mpi"]
 
-[[example]]
-name = "distributed_join_mpi"
-required-features = ["mpi"]
-
-[[example]]
-name = "distributed_set_ops_mpi"
-required-features = ["mpi"]
-
-[[example]]
-name = "dist_sort_example"
-required-features = ["mpi"]
-
-[[example]]
-name = "mpi_hello"
-required-features = ["mpi"]
-
-[[example]]
-name = "shuffle_mpi"
-required-features = ["mpi"]
-
-[[example]]
-name = "join_example"
-required-features = ["mpi"]
-
-[[example]]
-name = "union_example"
-required-features = ["mpi"]
-
-[[example]]
-name = "intersect_example"
-required-features = ["mpi"]
-
-[[example]]
-name = "subtract_example"
-required-features = ["mpi"]
-
-[[example]]
-name = "sorting_example"
-required-features = ["mpi"]
-
-[[example]]
-name = "unique_example"
-required-features = ["mpi"]
-
-[[example]]
-name = "select_example"
-
-[[example]]
-name = "project_example"
-
-[[example]]
-name = "multicolumn_sorting_example"
-required-features = ["mpi"]
-
-[[example]]
-name = "multi_idx_join_example"
-required-features = ["mpi"]
-
-[[example]]
-name = "table_from_vectors_example"
-
-[[example]]
-name = "compute_example"
-required-features = ["mpi"]
-
-[[example]]
-name = "slice_example"
-required-features = ["mpi"]
-
-[[example]]
-name = "demo_join"
-required-features = ["mpi"]
-
-[[example]]
-name = "parquet_union_example"
-required-features = ["mpi", "parquet"]
-
-[[example]]
-name = "parquet_join_example"
-required-features = ["mpi", "parquet"]
-
-[[example]]
-name = "create_test_parquet"
-required-features = ["parquet"]
-
-[[example]]
-name = "ucx_join_example"
-required-features = ["ucx", "ucc", "redis"]
-
-[[example]]
-name = "ucc_operators_example"
-required-features = ["ucx", "ucc", "redis"]
-
-[[example]]
-name = "redis_ucc_ucx_example"
-required-features = ["ucx", "ucc", "redis"]
-
-[[example]]
-name = "fmi_example"
-required-features = ["fmi", "redis"]
-
-[[example]]
-name = "groupby_perf"
-required-features = ["mpi"]
-
-[[example]]
-name = "gpu_shuffle"
-required-features = ["gpu"]
-
-[[example]]
-name = "gpu_sort"
-required-features = ["gpu"]
-
-[[example]]
-name = "gpu_join"
-required-features = ["gpu"]
-
-[[example]]
-name = "distributed_join_all_types"
-required-features = ["mpi"]
 
 [[example]]
 name = "distributed_join_mpi"
 required-features = ["mpi"]
 
+
 [[example]]
 name = "distributed_set_ops_mpi"
 required-features = ["mpi"]
+
 
 [[example]]
 name = "dist_sort_example"
 required-features = ["mpi"]
 
+
 [[example]]
 name = "mpi_hello"
 required-features = ["mpi"]
+
 
 [[example]]
 name = "shuffle_mpi"
 required-features = ["mpi"]
 
+
 [[example]]
 name = "join_example"
 required-features = ["mpi"]
+
 
 [[example]]
 name = "union_example"
 required-features = ["mpi"]
 
+
 [[example]]
 name = "intersect_example"
 required-features = ["mpi"]
+
 
 [[example]]
 name = "subtract_example"
 required-features = ["mpi"]
 
+
 [[example]]
 name = "sorting_example"
 required-features = ["mpi"]
+
 
 [[example]]
 name = "unique_example"
 required-features = ["mpi"]
 
+
 [[example]]
 name = "select_example"
 
+
 [[example]]
 name = "project_example"
+
 
 [[example]]
 name = "multicolumn_sorting_example"
 required-features = ["mpi"]
 
+
 [[example]]
 name = "multi_idx_join_example"
 required-features = ["mpi"]
 
+
 [[example]]
 name = "table_from_vectors_example"
+
 
 [[example]]
 name = "compute_example"
 required-features = ["mpi"]
 
+
 [[example]]
 name = "slice_example"
 required-features = ["mpi"]
+
 
 [[example]]
 name = "demo_join"
 required-features = ["mpi"]
 
+
 [[example]]
 name = "parquet_union_example"
 required-features = ["mpi", "parquet"]
+
 
 [[example]]
 name = "parquet_join_example"
 required-features = ["mpi", "parquet"]
 
+
 [[example]]
 name = "create_test_parquet"
 required-features = ["parquet"]
+
 
 [[example]]
 name = "ucx_join_example"
 required-features = ["ucx", "ucc", "redis"]
 
+
 [[example]]
 name = "ucc_operators_example"
 required-features = ["ucx", "ucc", "redis"]
+
 
 [[example]]
 name = "redis_ucc_ucx_example"
 required-features = ["ucx", "ucc", "redis"]
 
+
 [[example]]
 name = "fmi_example"
 required-features = ["fmi", "redis"]
+
 
 [[example]]
 name = "groupby_perf"
 required-features = ["mpi"]
 
+
 [[example]]
 name = "gpu_shuffle"
 required-features = ["gpu"]
+
 
 [[example]]
 name = "gpu_sort"
 required-features = ["gpu"]
 
+
 [[example]]
 name = "gpu_join"
 required-features = ["gpu"]
 
-[profile.release]
-lto = true
-codegen-units = 1
-
-[profile.bench]
-lto = true
-codegen-units = 1

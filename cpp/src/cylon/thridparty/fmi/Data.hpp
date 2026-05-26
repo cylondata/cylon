@@ -94,8 +94,6 @@ namespace FMI::Comm {
 
     static inline std::function<void(void*)> noop_deleter = [](void*) {};
 
-    static inline std::function<void(void*)> noop_deleter = [](void*) {};
-
     template<>
     class Data<void*> {
     public:

@@ -146,52 +146,6 @@ int FMI::Comm::Channel::getMaxTimeout() {
     return -1;
 }
 
-void
-FMI::Comm::Channel::allgatherv(const channel_data &sendbuf, const channel_data &recvbuf, FMI::Utils::peer_num root,
-                                   const std::vector<int32_t> &recvcounts, const std::vector<int32_t> &displs,
-                                   Utils::Mode mode,
-                                   std::function<void(FMI::Utils::NbxStatus, const std::string&,
-                                                      FMI::Utils::fmiContext *)> callback) {}
-
-void FMI::Comm::Channel::gatherv(const std::shared_ptr<channel_data> sendbuf,
-                                 std::shared_ptr<channel_data> recvbuf,
-                                 FMI::Utils::peer_num root,
-                                 const std::vector<int32_t> &recvcounts,
-                                 const std::vector<int32_t> &displs) {
-    gatherv(sendbuf, recvbuf, root, recvcounts, displs, Utils::BLOCKING, nullptr);
-
-}
-
-void FMI::Comm::Channel::gatherv(const std::shared_ptr<channel_data> sendbuf,
-                                 std::shared_ptr<channel_data> recvbuf,
-                                 FMI::Utils::peer_num root,
-                                 const std::vector<int32_t> &recvcounts,
-                                 const std::vector<int32_t> &displs,
-                                 Utils::Mode mode, std::function<void(FMI::Utils::NbxStatus, const std::string&,
-                                                                      FMI::Utils::fmiContext *)> callback) {
-
-}
-
-void FMI::Comm::Channel::bcast(std::shared_ptr<channel_data> buf, FMI::Utils::peer_num root) {
-    bcast(buf, root, Utils::BLOCKING, nullptr);
-
-}
-
-void FMI::Comm::Channel::bcast(std::shared_ptr<channel_data> buf, FMI::Utils::peer_num root, FMI::Utils::Mode mode,
-                               std::function<void(FMI::Utils::NbxStatus, const std::string &,
-                                                  FMI::Utils::fmiContext *)> callback) {
-
-}
-
-int FMI::Comm::Channel::getMaxTimeout() {
-    return -1;
-}
-
-
-void FMI::Comm::Channel::init() {
-//noop
-}
-
 
 void FMI::Comm::Channel::init() {
 //noop

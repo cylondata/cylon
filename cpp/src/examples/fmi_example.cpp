@@ -127,11 +127,8 @@ int main(int argc, char *argv[]) {
 
     auto redisNamespace = std::string(argv[11]);
 
-    auto rank = std::stoi(argv[2]);
 
     /*auto backend = std::make_shared<FMI::Utils::DirectBackend>();
-
-
 
 
 
@@ -170,71 +167,6 @@ int main(int argc, char *argv[]) {
 
     cylon::Status status;
     /*const std::string csv1 =  directory + "user_device_tm_" + std::to_string(modified_rank) + ".csv";
-    const std::string csv2 = directory + "user_usage_tm_" + std::to_string(modified_rank) + ".csv";
-
-    std::shared_ptr<cylon::Table> first_table, second_table, joined_table;
-
-
-    status = cylon::FromCSV(ctx, csv1, first_table);
-    CHECK_STATUS(status, "Reading csv1 failed!")
-
-    status = cylon::FromCSV(ctx, csv2, second_table);
-    CHECK_STATUS(status, "Reading csv2 failed!")*/
-    std::shared_ptr<cylon::Table> first_table, second_table, joined_table;
-    cylon::examples::create_two_in_memory_tables(kCount, kDup, ctx, first_table, second_table);
-
-    //auto join_config = cylon::join::config::JoinConfig::InnerJoin(0, 3);
-    cylon::join::config::JoinConfig join_config{cylon::join::config::JoinType::INNER, 0, 0,
-                                       cylon::join::config::JoinAlgorithm::SORT, "l_", "r_"};
-
-    status = cylon::DistributedJoin(first_table, second_table, join_config, joined_table);
-    LOG(INFO) << "Status returned: " << status.get_code() << " msg: " <<status.get_msg();
-    CHECK_STATUS(status, "Join failed!")
-
-    LOG(INFO) << "First table had : " << first_table->Rows() << " and Second table had : "
-              << second_table->Rows() << ", Joined has : " << joined_table->Rows();
-
-    LOG(INFO) << "AllReduce Collective Test";
-
-
-    using TestType = arrow::Int32Type;
-    std::shared_ptr<arrow::DataType> type = arrow::TypeTraits<TestType>::type_singleton();
-
-    auto rank2 = *arrow::MakeScalar(ctx->GetRank())->CastTo(type);
-
-    auto base_arr =  ArrayFromJSON(type, "[1, 2, 3, 4]");
-    // all reduce local sample histograms
-    auto arr = arrow::compute::Multiply(base_arr, rank2)->make_array();
-    auto col = cylon::Column::Make(std::move(arr));
-
-    const auto &comm = ctx->GetCommunicator();
-
-    auto multiplier = *arrow::MakeScalar((worldsize - 1) * worldsize / 2)->CastTo(type);
-    auto exp = arrow::compute::Multiply(base_arr, multiplier)->make_array();
-
-    std::shared_ptr<cylon::Column> res;
-    CHECK_STATUS(comm->AllReduce(col, cylon::net::SUM, &res), "allreducefailed");
-
-    const auto &rcv = res->data();
-
-    LOG(INFO) << "AllReduce Result: " << rcv->ToString();
-
-
-
-    ctx->Finalize();
-    return 0;
-
-    if (!cylon::CylonContext::InitDistributed(config, &ctx).is_ok()) {
-        return 1;
-    }
-
-    LOG(INFO) << "rank:" << ctx->GetRank() << " size:" << ctx->GetWorldSize();
-
-    ctx->Barrier();
-
-    const int modified_rank = ctx->GetRank() + 1;
-
-    const std::string csv1 =  directory + "user_device_tm_" + std::to_string(modified_rank) + ".csv";
     const std::string csv2 = directory + "user_usage_tm_" + std::to_string(modified_rank) + ".csv";
 
     std::shared_ptr<cylon::Table> first_table, second_table, joined_table;

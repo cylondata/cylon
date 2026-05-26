@@ -12,6 +12,7 @@ dependencies:
   - glog
   - openmpi
   - ucx
+  - pip
   - cython>=0.29.31
   - numpy>=1.23,<2.0a0
   - pandas>=2.0,<2.2.3dev

@@ -34,6 +34,7 @@ pub mod partition;
 
 pub mod row;
 pub mod scalar;
+pub mod simd;
 pub mod table;
 pub mod util;
 

@@ -26,9 +26,6 @@ use crate::net::serialize::{deserialize_record_batch, serialize_record_batch};
 pub mod column;
 pub use column::{Column, FromVector};
 
-pub mod column;
-pub use column::Column;
-
 /// Table provides the main API for using cylon for data processing
 /// Corresponds to C++ Table class from cpp/src/cylon/table.hpp
 #[derive(Clone)]

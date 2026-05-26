@@ -17,15 +17,23 @@
 
 use log::{debug, error, info, trace, warn};
 
-/// Initialize logging with default configuration
+/// Initialize logging with default configuration.
+/// Writes to stdout so Lambda Node.js runtime captures it in CloudWatch.
+/// Colors are disabled (WriteStyle::Never) for clean log output.
 pub fn init_logging() {
-    env_logger::init();
+    env_logger::Builder::from_default_env()
+        .write_style(env_logger::WriteStyle::Never)
+        .target(env_logger::Target::Stdout)
+        .init();
 }
 
-/// Initialize logging with specific level
+/// Initialize logging with specific level.
+/// Writes to stdout so Lambda Node.js runtime captures it in CloudWatch.
 pub fn init_logging_with_level(level: log::LevelFilter) {
     env_logger::Builder::from_default_env()
         .filter_level(level)
+        .write_style(env_logger::WriteStyle::Never)
+        .target(env_logger::Target::Stdout)
         .init();
 }
 

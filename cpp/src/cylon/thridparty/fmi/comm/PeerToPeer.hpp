@@ -106,16 +106,6 @@ namespace FMI::Comm {
                   Utils::Mode mode,
                   std::function<void(FMI::Utils::NbxStatus, const std::string&, FMI::Utils::fmiContext *)> callback);
 
-
-        void recv(FMI::Utils::peer_num src,
-                      Utils::Mode mode,
-                      std::shared_ptr<IOState> state);
-
-        void recv(std::shared_ptr<channel_data> buf, FMI::Utils::peer_num src,
-                  Utils::fmiContext * context,
-                  Utils::Mode mode,
-                  std::function<void(FMI::Utils::NbxStatus, const std::string&, FMI::Utils::fmiContext *)> callback);
-
         //! Binomial tree broadcast implementation
         void bcast(std::shared_ptr<channel_data> buf, FMI::Utils::peer_num root, Utils::Mode mode,
                    std::function<void(FMI::Utils::NbxStatus, const std::string &, FMI::Utils::fmiContext *)> callback) override;
@@ -179,15 +169,8 @@ namespace FMI::Comm {
 
         virtual void send_object(std::shared_ptr<IOState> state, Utils::peer_num peer_id, Utils::Mode mode) = 0;
 
-        //! Send an object to peer with ID peer_id. Needs to be implemented by the channels(non-blocking).
-
-        virtual void send_object(std::shared_ptr<IOState> state, Utils::peer_num peer_id, Utils::Mode mode) = 0;
-
         //! Receive an object from peer with ID peer_id. Needs to be implemented by the channels.
         virtual void recv_object(const std::shared_ptr<channel_data> buf, Utils::peer_num peer_id) = 0;
-
-        //! Receive an object from peer with ID peer_id. Needs to be implemented by the channels (non-blocking).
-        virtual void recv_object(std::shared_ptr<IOState> state, Utils::peer_num peer_id, Utils::Mode mode) = 0;
 
         //! Receive an object from peer with ID peer_id. Needs to be implemented by the channels (non-blocking).
         virtual void recv_object(std::shared_ptr<IOState> state, Utils::peer_num peer_id, Utils::Mode mode) = 0;

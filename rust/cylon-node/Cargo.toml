@@ -23,6 +23,9 @@ gloo = ["cylon/gloo"]
 napi = { version = "2", features = ["async", "napi8"] }
 napi-derive = "2"
 
+# Logging — use cylon's init_logging() which sets WriteStyle::Never for CloudWatch
+log = "0.4"
+
 # Use the main cylon crate
 cylon = { path = ".." }
 

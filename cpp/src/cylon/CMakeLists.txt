@@ -124,9 +124,18 @@ else (CYLON_LIBFABRIC)
     set(CYLON_LIBFABRIC_FILES)
 endif (CYLON_LIBFABRIC)
 
+if (CYLON_SIMD)
+    set(CYLON_SIMD_FILES
+            simd/simd_ops.hpp
+            simd/simd_ops.cpp)
+else ()
+    set(CYLON_SIMD_FILES)
+endif ()
+
 add_library(cylon SHARED
         ${UCX_CYLON_FILES}
         ${UCC_CYLON_FILES}
+        ${CYLON_SIMD_FILES}
         ${CYLON_GLOO_FILES}
         ${CYLON_LIBFABRIC_FILES}
         ${UCX_REDIS_CYLON_FILES}
@@ -383,6 +392,9 @@ add_subdirectory(thridparty/fmi/comm)
 add_subdirectory(thridparty/fmi/utils)
 add_subdirectory(compute)
 add_subdirectory(checkpoint)
+if (CYLON_SIMD)
+    add_subdirectory(simd)
+endif ()
 
 set_target_properties(cylon PROPERTIES VERSION ${CYLON_VERSION})
 

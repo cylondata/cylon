@@ -21,11 +21,6 @@ pub mod arrow_io;
 #[cfg(feature = "parquet")]
 pub mod parquet_config;
 
-#[cfg(feature = "parquet")]
-pub mod arrow_io;
-#[cfg(feature = "parquet")]
-pub mod parquet_config;
-
 pub use csv::{CsvReadOptions, CsvWriteOptions, read_csv, write_csv};
 
 #[cfg(feature = "parquet")]

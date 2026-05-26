@@ -75,25 +75,6 @@
             }
         }
 
-        std::string NbxStatusToString(FMI::Utils::NbxStatus status) {
-            switch (status) {
-                case FMI::Utils::NbxStatus::SUCCESS: return "SUCCESS";
-                case FMI::Utils::NbxStatus::CONNECTION_CLOSED_BY_PEER: return "CONNECTION_CLOSED_BY_PEER";
-                case FMI::Utils::NbxStatus::SOCKET_CREATE_FAILED: return "SOCKET_CREATE_FAILED";
-                case FMI::Utils::NbxStatus::TCP_NODELAY_FAILED: return "TCP_NODELAY_FAILED";
-                case FMI::Utils::NbxStatus::FCNTL_GET_FAILED: return "FCNTL_GET_FAILED";
-                case FMI::Utils::NbxStatus::FCNTL_SET_FAILED: return "FCNTL_SET_FAILED";
-                case FMI::Utils::NbxStatus::ADD_EVENT_FAILED: return "ADD_EVENT_FAILED";
-                case FMI::Utils::NbxStatus::EPOLL_WAIT_FAILED: return "EPOLL_WAIT_FAILED";
-                case FMI::Utils::NbxStatus::SOCKET_PAIR_FAILED: return "SOCKET_PAIR_FAILED";
-                case FMI::Utils::NbxStatus::SOCKET_SET_SO_RCVTIMEO_FAILED: return "SOCKET_SET_SO_RCVTIMEO_FAILED";
-                case FMI::Utils::NbxStatus::SOCKET_SET_SO_SNDTIMEO_FAILED: return "SOCKET_SET_SO_SNDTIMEO_FAILED";
-                case FMI::Utils::NbxStatus::SOCKET_SET_TCP_NODELAY_FAILED: return "SOCKET_SET_TCP_NODELAY_FAILED";
-                case FMI::Utils::NbxStatus::SOCKET_SET_NONBLOCKING_FAILED: return "SOCKET_SET_NONBLOCKING_FAILED";
-                default: return "UNKNOWN_STATUS";
-            }
-        }
-
         void FmiTableAllgatherImpl::Init(int num_buffers) {
             CYLON_UNUSED(num_buffers);
         }

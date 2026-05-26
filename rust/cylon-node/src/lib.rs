@@ -160,11 +160,23 @@ pub struct Communicator {
     inner: Arc<dyn CylonCommunicator>,
 }
 
+/// Initialize the Rust logger once (idempotent).
+/// Delegates to cylon::util::logging::init_logging() which uses WriteStyle::Never
+/// (no ANSI color codes) and reads RUST_LOG for level — e.g. RUST_LOG=info
+/// surfaces TCPunch diagnostics in CloudWatch.
+fn init_logger() {
+    static INIT: std::sync::Once = std::sync::Once::new();
+    INIT.call_once(|| {
+        cylon::util::logging::init_logging();
+    });
+}
+
 #[napi]
 impl Communicator {
     /// Create a communicator with the specified backend
     #[napi(factory)]
     pub fn create(config: CommunicatorConfig) -> Result<Self> {
+        init_logger();
         let inner: Arc<dyn CylonCommunicator> = match config.comm_type {
             CommunicatorType::Fmi => {
                 #[cfg(feature = "fmi")]
