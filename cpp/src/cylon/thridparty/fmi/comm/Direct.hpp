@@ -26,6 +26,9 @@
 #include <thread>
 #include <atomic>
 #include <memory>
+#include <set>
+#include <vector>
+#include <deque>
 
 namespace FMI::Comm {
 
@@ -91,11 +94,35 @@ namespace FMI::Comm {
         std::string direct_redis_host_override;
         std::unique_ptr<RedisDirectEstablisher> redis_direct;
 
+        //! Per-rank peer sets from FMI_REQUIRED_PEERS ("0:1,2;1:0,3"). Keyed by rank
+        //! rather than pre-selected for this one because the Redis INCR counter assigns
+        //! peer_id after this channel is constructed — selecting a row any earlier would
+        //! use another rank's peers and silently break pairing symmetry.
+        //! Empty means "unknown schedule" and falls back to connecting to every peer.
+        std::unordered_map<Utils::peer_num, std::set<Utils::peer_num>> required_peers_by_rank;
+        unsigned int establish_parallelism = 8;
 
-        std::unordered_map<Utils::Operation, std::unordered_map<int, std::shared_ptr<IOState>>> io_states;
+        static std::unordered_map<Utils::peer_num, std::set<Utils::peer_num>>
+        parse_peer_map(const char *spec);
+
+        std::vector<Utils::peer_num> connection_targets() const;
+
+        void establish_connections(const std::vector<Utils::peer_num> &targets, Utils::Mode m);
 
 
-        Utils::EventProcessStatus channel_event_progress(std::unordered_map<int, std::shared_ptr<IOState>> &states,
+        //! Outstanding nonblocking operations per socket, oldest first. A queue
+        //! rather than a single state because a caller may post several
+        //! operations to the same peer before draining — a table gather posts one
+        //! per serialized buffer. Assigning instead of queueing silently dropped
+        //! every operation but the last, leaving those receive buffers unfilled.
+        //! FIFO is the right order: the bytes arrive in the order both sides
+        //! posted them on the stream.
+        std::unordered_map<Utils::Operation,
+                           std::unordered_map<int, std::deque<std::shared_ptr<IOState>>>> io_states;
+
+
+        Utils::EventProcessStatus channel_event_progress(
+                std::unordered_map<int, std::deque<std::shared_ptr<IOState>>> &states,
                                                          Utils::Operation op);
 
         //! Checks if connection with a peer partner_id is already established, otherwise establishes it using TCPunch.
@@ -110,7 +137,7 @@ namespace FMI::Comm {
         // failure) this call, so the caller can remove it from states; false if still
         // pending (e.g. EAGAIN/EWOULDBLOCK) and needs another progress call.
         bool handle_event(int socketfd,
-                          std::unordered_map<int, std::shared_ptr<IOState>> &states,
+                          std::unordered_map<int, std::deque<std::shared_ptr<IOState>>> &states,
                           Utils::Operation op) const;
 
         bool checkReceivePing(int sockeetfd, Utils::Mode mode);

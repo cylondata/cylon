@@ -101,12 +101,19 @@ Status TableAllgatherImpl::Execute(const std::shared_ptr<Table> &table,
                                         &all_disps));
 
 
+  // Row counts travel with the buffers — see the note in TableGatherImpl::Execute.
+  int32_t local_rows = static_cast<int32_t>(table->Rows());
+  std::vector<int32_t> num_rows_per_table(ctx->GetWorldSize(), 0);
+  RETURN_CYLON_STATUS_IF_FAILED(AllgatherBufferSizes(&local_rows, 1,
+                                                     num_rows_per_table.data()));
+
   // need to reshape all_disps for per-table basis
   auto buffer_offsets_per_table = ReshapeDispToPerTable(all_disps);
 
   const int num_tables = (int) all_disps[0].size();
   return DeserializeTables(ctx, table->get_table()->schema(), num_tables, receive_buffers,
-                           buffer_sizes_per_table, buffer_offsets_per_table, out);
+                           buffer_sizes_per_table, buffer_offsets_per_table, out,
+                           num_rows_per_table);
 }
 
 Status TableGatherImpl::Execute(const std::shared_ptr<cylon::TableSerializer> &serializer,
@@ -206,12 +213,26 @@ Status TableGatherImpl::Execute(const std::shared_ptr<Table> &table,
                                         gather_root, gather_from_root,
                                         &buffer_sizes_per_table, &receive_buffers, &all_disps));
 
+  // Row counts travel with the buffers: a bit-packed boolean column has no
+  // recoverable length, so a table of only boolean columns would otherwise
+  // arrive empty.
+  const bool is_root = gather_root == ctx->GetRank();
+  int32_t local_rows =
+      (is_root && !gather_from_root) ? 0 : static_cast<int32_t>(table->Rows());
+  std::vector<int32_t> num_rows_per_table;
+  if (is_root) {
+    num_rows_per_table.resize(ctx->GetWorldSize(), 0);
+  }
+  RETURN_CYLON_STATUS_IF_FAILED(GatherBufferSizes(&local_rows, 1, num_rows_per_table.data(),
+                                                  gather_root));
+
   // need to reshape all_disps for per-table basis
-  if (gather_root == ctx->GetRank()) {
+  if (is_root) {
     auto buffer_offsets_per_table = ReshapeDispToPerTable(all_disps);
     const int num_tables = (int) all_disps[0].size();
     return DeserializeTables(ctx, table->get_table()->schema(), num_tables, receive_buffers,
-                             buffer_sizes_per_table, buffer_offsets_per_table, out);
+                             buffer_sizes_per_table, buffer_offsets_per_table, out,
+                             num_rows_per_table);
   }
   return Status::OK();
 }
@@ -351,10 +372,19 @@ Status TableBcastImpl::Execute(const std::shared_ptr<TableSerializer> &serialize
                                               : std::vector<int32_t>(num_buffers, 0);
   RETURN_CYLON_STATUS_IF_FAILED(BcastBufferSizes(buffer_sizes.data(), num_buffers, bcast_root));
 
-  // broadcast data types
-  *data_types = is_root ? serializer->getDataTypes() : std::vector<int32_t>(num_buffers / 3, 0);
-  RETURN_CYLON_STATUS_IF_FAILED(BcastBufferSizes(data_types->data(), data_types->size(),
-                                                 bcast_root));
+  // broadcast data types. The count travels on the wire rather than being derived
+  // from num_buffers: there is one data type per column, but a column with a nested
+  // type occupies more than three buffer slots, so num_buffers / 3 would leave root
+  // and non-root disagreeing on how many elements this broadcast moves.
+  if (is_root) {
+    *data_types = serializer->getDataTypes();
+  }
+  int32_t num_data_types = is_root ? static_cast<int32_t>(data_types->size()) : 0;
+  RETURN_CYLON_STATUS_IF_FAILED(BcastBufferSizes(&num_data_types, 1, bcast_root));
+  if (!is_root) {
+    data_types->assign(num_data_types, 0);
+  }
+  RETURN_CYLON_STATUS_IF_FAILED(BcastBufferSizes(data_types->data(), num_data_types, bcast_root));
 
   // if all buffer sizes are zero, there are zero rows in the table
   // no need to broadcast any buffers
@@ -425,6 +455,9 @@ Status TableBcastImpl::Execute(std::shared_ptr<Table> *table, int bcast_root,
   // first, broadcast schema
   RETURN_CYLON_STATUS_IF_FAILED(BcastArrowSchema(*this, &schema, bcast_root, is_root, pool));
 
+  int32_t num_rows = is_root ? static_cast<int32_t>((*table)->Rows()) : 0;
+  RETURN_CYLON_STATUS_IF_FAILED(BcastBufferSizes(&num_rows, 1, bcast_root));
+
   std::shared_ptr<TableSerializer> serializer;
   if (is_root) {
     RETURN_CYLON_STATUS_IF_FAILED(CylonTableSerializer::Make(*table, &serializer));
@@ -446,8 +479,9 @@ Status TableBcastImpl::Execute(std::shared_ptr<Table> *table, int bcast_root,
       RETURN_CYLON_STATUS_IF_ARROW_FAILED(cylon::util::MakeEmptyArrowTable(schema, &atable, pool));
       return Table::FromArrowTable(ctx, std::move(atable), *table);
     } else {
-      assert((int) receive_buffers.size() == 3 * schema->num_fields());
-      RETURN_CYLON_STATUS_IF_FAILED(DeserializeTable(ctx, schema, receive_buffers, table));
+      assert((int) receive_buffers.size() == BufferSlots(schema));
+      RETURN_CYLON_STATUS_IF_FAILED(DeserializeTable(ctx, schema, receive_buffers, table,
+                                                     num_rows));
     }
   }
   return Status::OK();

@@ -124,6 +124,20 @@ Status CheckSupportedTypes(const std::shared_ptr<arrow::Table> &table) {
       case arrow::Type::TIME32:
       case arrow::Type::TIME64:
         continue;
+      case arrow::Type::STRUCT:
+        // Children claim their own buffer slots; the struct itself only carries
+        // a validity bitmap. See BufferSlots in table_serialize.cpp.
+        continue;
+      case arrow::Type::FIXED_SIZE_LIST: {
+        // Serializable because the width lives in the type: the child's values
+        // ride in the data slot and no offsets buffer is needed.
+        const auto &t_value = std::static_pointer_cast<arrow::FixedSizeListType>(t->type());
+        if (arrow::is_fixed_width(t_value->value_type()->id())) {
+          continue;
+        }
+        return {Code::NotImplemented, "unsupported value type for fixed size lists "
+                                          + t_value->value_type()->ToString()};
+      }
       case arrow::Type::LIST: {
         const auto &t_value = std::static_pointer_cast<arrow::ListType>(t->type());
         switch (t_value->value_type()->id()) {

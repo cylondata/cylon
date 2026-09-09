@@ -77,9 +77,18 @@
     };                              \
   } while (0)
 
+// Chunking is per column: column 0 can be contiguous while a later column is not.
+#define CYLON_TABLE_IS_CHUNKED(arrow_table)                              \
+  ([&]() -> bool {                                                       \
+    for (const auto &_cylon_col : (arrow_table)->columns()) {            \
+      if (_cylon_col->num_chunks() != 1) { return true; }                \
+    }                                                                    \
+    return false;                                                        \
+  }())
+
 #define COMBINE_CHUNKS_RETURN_CYLON_STATUS(arrow_table, pool)   \
   do{                                                           \
-    if ((arrow_table)->column(0)->num_chunks() > 1){            \
+    if (CYLON_TABLE_IS_CHUNKED(arrow_table)){                   \
       const auto &res = (arrow_table)->CombineChunks((pool));   \
       RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());        \
       (arrow_table) = std::move(res).ValueOrDie();              \
@@ -88,7 +97,7 @@
 
 #define COMBINE_CHUNKS_RETURN_ARROW_STATUS(arrow_table, pool) \
   do{                                                         \
-    if ((arrow_table)->column(0)->num_chunks() > 1){          \
+    if (CYLON_TABLE_IS_CHUNKED(arrow_table)){                 \
       const auto &res = (arrow_table)->CombineChunks((pool)); \
       if (!res.ok()) {                                        \
         return res.status();                                  \

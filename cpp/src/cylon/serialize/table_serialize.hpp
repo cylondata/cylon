@@ -20,6 +20,10 @@
 
 namespace cylon{
 
+// Wire buffer slots for a schema. Nested types occupy more than the flat
+// (validity, offsets, data) triple, so this is not 3 * num_fields.
+int32_t BufferSlots(const std::shared_ptr<arrow::Schema> &schema);
+
 class CylonTableSerializer : public TableSerializer {
  public:
   CylonTableSerializer(std::shared_ptr<arrow::Table> table,
@@ -70,21 +74,29 @@ class CylonTableSerializer : public TableSerializer {
  * start reading data. size = num_buffers
  * @return
  */
+// `num_rows` is the table's real row count, supplied by the caller when the
+// collective carried it. Pass -1 to derive it from the buffer sizes instead.
+// Deriving is not always possible: a bit-packed boolean buffer of n bytes could
+// hold anywhere from 8n-7 to 8n rows, so a table whose columns are all boolean
+// has no recoverable length and decodes as empty unless the count is given.
 Status DeserializeTable(const std::shared_ptr<CylonContext> &ctx,
                         const std::shared_ptr<arrow::Schema> &schema,
                         const std::vector<std::shared_ptr<Buffer>> &received_buffers,
                         const std::vector<int32_t> &buffer_sizes,
                         const std::vector<int32_t> &buffer_offsets,
-                        std::shared_ptr<Table> *output);
+                        std::shared_ptr<Table> *output,
+                        int32_t num_rows = -1);
 Status DeserializeTable(const std::shared_ptr<CylonContext> &ctx,
                         const std::shared_ptr<arrow::Schema> &schema,
                         const std::vector<std::shared_ptr<Buffer>> &received_buffers,
                         const std::vector<int32_t> &buffer_sizes,
-                        std::shared_ptr<Table> *output);
+                        std::shared_ptr<Table> *output,
+                        int32_t num_rows = -1);
 Status DeserializeTable(const std::shared_ptr<CylonContext> &ctx,
                         const std::shared_ptr<arrow::Schema> &schema,
                         const std::vector<std::shared_ptr<Buffer>> &received_buffers,
-                        std::shared_ptr<Table> *output);
+                        std::shared_ptr<Table> *output,
+                        int32_t num_rows = -1);
 
 /**
  * Deserialize a world_size number of tables generated from an operation like AllGather.
@@ -108,7 +120,8 @@ Status DeserializeTables(const std::shared_ptr<CylonContext> &ctx,
                          const std::vector<std::shared_ptr<Buffer>> &received_buffers,
                          const std::vector<int32_t> &buffer_sizes_per_table,
                          const std::vector<int32_t> &buffer_offsets_per_table,
-                         std::vector<std::shared_ptr<Table>> *output);
+                         std::vector<std::shared_ptr<Table>> *output,
+                         const std::vector<int32_t> &num_rows_per_table = {});
 
 class CylonColumnSerializer : public ColumnSerializer {
  public:

@@ -23,6 +23,8 @@
 #include <netdb.h>
 #include <cstring>
 #include <cerrno>
+#include <cstdlib>
+#include <algorithm>
 #include <iostream>
 #include <vector>
 #include <memory>
@@ -94,6 +96,12 @@ FMI::Comm::Direct::Direct(const std::shared_ptr<FMI::Utils::Backends> &backend) 
         redis_direct = std::make_unique<RedisDirectEstablisher>();
     }
 
+    required_peers_by_rank = parse_peer_map(std::getenv("FMI_REQUIRED_PEERS"));
+    if (const char *width = std::getenv("FMI_ESTABLISH_PARALLELISM")) {
+        int parsed = std::atoi(width);
+        if (parsed > 0) establish_parallelism = static_cast<unsigned int>(parsed);
+    }
+
     sockets[Utils::NONBLOCKING] = {};
     sockets[Utils::BLOCKING] = {};
 
@@ -152,20 +160,128 @@ void FMI::Comm::Direct::start_holepunch_subscriber() {
     }).detach();
 }
 
+std::unordered_map<FMI::Utils::peer_num, std::set<FMI::Utils::peer_num>>
+FMI::Comm::Direct::parse_peer_map(const char *spec) {
+    std::unordered_map<Utils::peer_num, std::set<Utils::peer_num>> by_rank;
+    if (spec == nullptr) return by_rank;
+
+    std::string text(spec);
+    std::size_t row_start = 0;
+    while (row_start <= text.size()) {
+        std::size_t semi = text.find(';', row_start);
+        if (semi == std::string::npos) semi = text.size();
+        std::string row = text.substr(row_start, semi - row_start);
+
+        std::size_t colon = row.find(':');
+        if (colon != std::string::npos) {
+            try {
+                auto owner = static_cast<Utils::peer_num>(std::stoi(row.substr(0, colon)));
+                std::set<Utils::peer_num> peers;
+                std::string list = row.substr(colon + 1);
+                std::size_t start = 0;
+                while (start <= list.size()) {
+                    std::size_t comma = list.find(',', start);
+                    if (comma == std::string::npos) comma = list.size();
+                    std::string token = list.substr(start, comma - start);
+                    if (token.find_first_not_of(" \t") != std::string::npos) {
+                        peers.insert(static_cast<Utils::peer_num>(std::stoi(token)));
+                    }
+                    if (comma == list.size()) break;
+                    start = comma + 1;
+                }
+                by_rank[owner] = std::move(peers);
+            } catch (const std::exception &) {
+                LOG(WARNING) << "FMI_REQUIRED_PEERS: ignoring unparseable row \"" << row << "\"";
+            }
+        }
+        if (semi == text.size()) break;
+        row_start = semi + 1;
+    }
+    return by_rank;
+}
+
+std::vector<FMI::Utils::peer_num> FMI::Comm::Direct::connection_targets() const {
+    std::vector<Utils::peer_num> targets;
+
+    // Selected here rather than at construction: peer_id is only final once the
+    // Redis INCR counter has assigned it, which happens after this channel is built.
+    auto row = required_peers_by_rank.find(peer_id);
+    bool restricted = row != required_peers_by_rank.end();
+    if (!required_peers_by_rank.empty() && !restricted) {
+        LOG(WARNING) << "FMI_REQUIRED_PEERS has no row for rank " << peer_id
+                     << " — connecting to every peer instead";
+    }
+
+    for (int i = 0; i < num_peers; ++i) {
+        if (i == peer_id) continue;
+        if (restricted && row->second.count(i) == 0) continue;
+        targets.push_back(i);
+    }
+    return targets;
+}
+
+void FMI::Comm::Direct::establish_connections(const std::vector<Utils::peer_num> &targets,
+                                              Utils::Mode m) {
+    if (targets.empty()) return;
+
+    // Both socket vectors are sized here, before any worker starts: check_socket
+    // and check_socket_nbx lazily allocate them on first use, which is a data race
+    // once establishment runs concurrently. Sized up front, workers only ever write
+    // sockets[m][partner_id] at distinct indices, which needs no lock.
+    if (sockets[Utils::NONBLOCKING].empty()) {
+        sockets[Utils::NONBLOCKING] = std::vector<int>(num_peers, -1);
+    }
+    if (sockets[Utils::BLOCKING].empty()) {
+        sockets[Utils::BLOCKING] = std::vector<int>(num_peers, -1);
+    }
+
+    unsigned int width = std::min<unsigned int>(
+            static_cast<unsigned int>(targets.size()), std::max(1u, establish_parallelism));
+
+    LOG(INFO) << "establishing " << targets.size() << " of " << (num_peers - 1)
+              << " possible peer connections (" << ModeToString(m) << ", parallelism " << width << ")";
+
+    if (width == 1) {
+        for (auto partner : targets) {
+            if (m == Utils::NONBLOCKING) {
+                check_socket_nbx(partner, get_pairing_name(peer_id, partner, m));
+            } else {
+                check_socket(partner, get_pairing_name(peer_id, partner, m));
+            }
+        }
+        return;
+    }
+
+    std::atomic<std::size_t> next{0};
+    std::vector<std::thread> workers;
+    workers.reserve(width);
+    for (unsigned int t = 0; t < width; ++t) {
+        workers.emplace_back([this, &targets, &next, m]() {
+            for (std::size_t i = next++; i < targets.size(); i = next++) {
+                Utils::peer_num partner = targets[i];
+                try {
+                    if (m == Utils::NONBLOCKING) {
+                        check_socket_nbx(partner, get_pairing_name(peer_id, partner, m));
+                    } else {
+                        check_socket(partner, get_pairing_name(peer_id, partner, m));
+                    }
+                } catch (const std::exception &e) {
+                    LOG(ERROR) << "establishing connection to peer " << partner << " failed: " << e.what();
+                } catch (...) {
+                    LOG(ERROR) << "establishing connection to peer " << partner << " failed";
+                }
+            }
+        });
+    }
+    for (auto &w : workers) w.join();
+}
+
 void FMI::Comm::Direct::init_blocking_sockets() {
     if (num_peers> 0) {
 
         LOG(INFO) << "init blocking sockets";
 
-        for (int i = 0; i < num_peers; ++i) {
-
-            if (i == peer_id) continue;
-
-            std::string send_pairing_b = get_pairing_name(peer_id, i, Utils::BLOCKING);
-
-            check_socket(i, send_pairing_b);
-
-        }
+        establish_connections(connection_targets(), Utils::BLOCKING);
 
     }
     blocking_init = true;
@@ -206,21 +322,8 @@ void FMI::Comm::Direct::init() {
     }
     if (num_peers> 0) {
 
-        for (int i = 0; i < num_peers; ++i) {
-
-            if (i == peer_id) continue;
-
-
-            if (mode == Utils::NONBLOCKING) {
-                std::string send_pairing_nb = get_pairing_name(peer_id, i, Utils::NONBLOCKING);
-                check_socket_nbx(i, send_pairing_nb);
-            }
-
-            //always create a pair of blocking sockets
-            //std::string send_pairing_b = get_pairing_name(peer_id, i, Utils::BLOCKING);
-
-            //check_socket(i, send_pairing_b);
-
+        if (mode == Utils::NONBLOCKING) {
+            establish_connections(connection_targets(), Utils::NONBLOCKING);
         }
 
 
@@ -249,7 +352,13 @@ std::string FMI::Comm::Direct::get_pairing_name(FMI::Utils::peer_num a,
                                                 FMI::Utils::Mode mode) {
     int min_id = std::min(a, b);
     int max_id = std::max(a, b);
-    return "fmi_pair" + std::to_string(min_id) + "_" + std::to_string(max_id) + ModeToString(mode);
+    // Must stay byte-identical to the Rust client's format in
+    // rust/src/net/fmi/direct.rs — a C++ rank and a Rust rank in the same run
+    // pair only if both compute the same string. Both the C++ client and the
+    // Rust server silently truncate this to 99 bytes, so comm_name must stay
+    // under ~73 chars or distinct runs collide again.
+    return comm_name + "_fmi_pair" + std::to_string(min_id) + "_"
+           + std::to_string(max_id) + ModeToString(mode);
 }
 
 void FMI::Comm::Direct::send_object_blocking2(std::shared_ptr<FMI::Comm::IOState> state, FMI::Utils::peer_num rcpt_id) {
@@ -321,7 +430,7 @@ void FMI::Comm::Direct::send_object(std::shared_ptr<IOState> state, Utils::peer_
 
 
 
-        io_states[Utils::Operation::SEND][socketfd] = state;
+        io_states[Utils::Operation::SEND][socketfd].push_back(state);
 
         //if (checkSend(socketfd)) {
         //    handle_event(socketfd, io_states[Utils::SEND], Utils::SEND);
@@ -337,7 +446,7 @@ void FMI::Comm::Direct::send_object(std::shared_ptr<IOState> state, Utils::peer_
                 state.callbackResult(Utils::SUCCESS, "Zero-length message sent with dummy byte.", state.context);
             } else if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
                 // Need to retry via epoll
-                io_states[Utils::Operation::SEND][socketfd] = state;
+                io_states[Utils::Operation::SEND][socketfd].push_back(state);
                 //add_epoll_event(socketfd, state);
             } else {
                 state.callbackResult(Utils::DUMMY_SEND_FAILED, strerror(errno), state.context);
@@ -371,7 +480,7 @@ void FMI::Comm::Direct::send_object(std::shared_ptr<IOState> state, Utils::peer_
         }*/
 
         // Save the state and try again via epoll
-        //io_states[Utils::Operation::SEND][socketfd] = state;
+        //io_states[Utils::Operation::SEND][socketfd].push_back(state);
         //add_epoll_event(socketfd, state);
 
     } else {
@@ -472,7 +581,7 @@ void FMI::Comm::Direct::recv_object(std::shared_ptr<IOState> state, Utils::peer_
 
 
 
-        io_states[Utils::Operation::RECEIVE][sender_socket] = state;
+        io_states[Utils::Operation::RECEIVE][sender_socket].push_back(state);
         //if (checkRecv(sender_socket)) {
         //    handle_event(sender_socket, io_states[Utils::RECEIVE], Utils::RECEIVE);
         //}
@@ -609,7 +718,8 @@ void FMI::Comm::Direct::check_timeouts(std::unordered_map<int, IOState> states) 
 }
 
 FMI::Utils::EventProcessStatus
-FMI::Comm::Direct::channel_event_progress(std::unordered_map<int, std::shared_ptr<IOState>> &states, Utils::Operation op) {
+FMI::Comm::Direct::channel_event_progress(
+        std::unordered_map<int, std::deque<std::shared_ptr<IOState>>> &states, Utils::Operation op) {
     if (states.empty()) {
         return FMI::Utils::EMPTY;
     }
@@ -622,6 +732,11 @@ FMI::Comm::Direct::channel_event_progress(std::unordered_map<int, std::shared_pt
         int fd = it->first;
         bool done = false;
 
+        if (it->second.empty()) {
+            it = states.erase(it);
+            continue;
+        }
+
         if (op == Utils::SEND && checkSend(fd)) {
             done = handle_event(fd, states, op);
         } else if (op == Utils::RECEIVE && checkRecv2(fd)) {
@@ -632,7 +747,12 @@ FMI::Comm::Direct::channel_event_progress(std::unordered_map<int, std::shared_pt
             done = handle_event(fd, states, op);
         }
 
-        it = done ? states.erase(it) : std::next(it);
+        // Only the finished operation leaves; anything queued behind it on this
+        // socket is serviced by a later pass, in the order it was posted.
+        if (done) {
+            it->second.pop_front();
+        }
+        it = it->second.empty() ? states.erase(it) : std::next(it);
     }
 
     return states.empty() ? FMI::Utils::EMPTY : FMI::Utils::PROCESSING;
@@ -659,12 +779,12 @@ FMI::Utils::EventProcessStatus FMI::Comm::Direct::channel_event_progress(Utils::
 }
 
 bool FMI::Comm::Direct::handle_event(int sockfd,
-                                     std::unordered_map<int, std::shared_ptr<IOState>> &states,
+                                     std::unordered_map<int, std::deque<std::shared_ptr<IOState>>> &states,
                                      Utils::Operation op) const {
 
 
-    if (op == Utils::SEND && /*(ev.events & EPOLLOUT) &&*/ states.count(sockfd)) {
-        auto state = states[sockfd];
+    if (op == Utils::SEND && states.count(sockfd) && !states[sockfd].empty()) {
+        auto state = states[sockfd].front();
         // Zero-length message? Send dummy byte
         if (state->request->len == 0) {
             char dummy = 0;
@@ -722,8 +842,8 @@ bool FMI::Comm::Direct::handle_event(int sockfd,
     }
 
 
-    if (op == Utils::RECEIVE && states.count(sockfd)) {
-        auto state = states[sockfd];
+    if (op == Utils::RECEIVE && states.count(sockfd) && !states[sockfd].empty()) {
+        auto state = states[sockfd].front();
 
         void *buffer = state->request->len == 0
                        ? static_cast<void *>(&state->dummy)
